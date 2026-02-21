@@ -69,7 +69,7 @@ public actor BLETransport: MeshTransport {
     ///
     /// - Parameter address: An optional BLE peripheral identifier (UUID string). If provided,
     ///   the transport will attempt to connect only to that specific device. If `nil`, it scans
-    ///   for any device advertising the Nordic UART Service with a name starting with "MeshCore".
+    ///   for any device advertising the Nordic UART Service.
     ///
     /// - Note: This transport does not handle automatic reconnection. Reconnection logic should
     ///   be implemented at a higher level (e.g., in ``MeshCoreSession``) by observing
@@ -308,8 +308,8 @@ private final class BLEDelegate: NSObject, CBCentralManagerDelegate, CBPeriphera
                     state.scan = nil
                     state.targetAddress = nil
                 }
-            } else if let name = peripheral.name, name.hasPrefix("MeshCore") {
-                // Default: match by name prefix
+            } else {
+                // Accept any device advertising the Nordic UART service
                 central.stopScan()
                 state.scan?.resume(returning: peripheral)
                 state.scan = nil
