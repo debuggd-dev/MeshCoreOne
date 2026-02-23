@@ -19,6 +19,11 @@ final class ChatTableViewController<Item: Identifiable & Hashable & Sendable, Ce
         case main
     }
 
+    private struct SnapshotApplyRequest {
+        var snapshot: NSDiffableDataSourceSnapshot<Section, Item.ID>
+        var animatingDifferences: Bool
+    }
+
     // MARK: - Properties
 
     private var items: [Item] = []
@@ -28,6 +33,8 @@ final class ChatTableViewController<Item: Identifiable & Hashable & Sendable, Ce
     private var itemIndexByID: [Item.ID: Int] = [:]
     private var cellContentProvider: ((Item) -> CellContent)?
     private var dataSource: UITableViewDiffableDataSource<Section, Item.ID>?
+    private var isApplyingSnapshot = false
+    private var pendingSnapshotApplies: [SnapshotApplyRequest] = []
 
     /// Tracks scroll position relative to bottom
     private(set) var isAtBottom: Bool = true
@@ -218,6 +225,40 @@ final class ChatTableViewController<Item: Identifiable & Hashable & Sendable, Ce
     /// When true, updateItems will skip auto-scroll (caller will scroll explicitly)
     private var skipAutoScroll = false
 
+    private func applySnapshot(
+        _ snapshot: NSDiffableDataSourceSnapshot<Section, Item.ID>,
+        animatingDifferences: Bool
+    ) {
+        let request = SnapshotApplyRequest(snapshot: snapshot, animatingDifferences: animatingDifferences)
+
+        if isApplyingSnapshot {
+            pendingSnapshotApplies.append(request)
+            return
+        }
+
+        applySnapshotRequest(request)
+    }
+
+    private func applySnapshotRequest(_ request: SnapshotApplyRequest) {
+        guard let dataSource else {
+            pendingSnapshotApplies.removeAll()
+            isApplyingSnapshot = false
+            return
+        }
+
+        isApplyingSnapshot = true
+        dataSource.apply(request.snapshot, animatingDifferences: request.animatingDifferences) { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                self.isApplyingSnapshot = false
+
+                guard !self.pendingSnapshotApplies.isEmpty else { return }
+                let nextRequest = self.pendingSnapshotApplies.removeFirst()
+                self.applySnapshotRequest(nextRequest)
+            }
+        }
+    }
+
     func updateItems(_ newItems: [Item], animated: Bool = true) {
         let previousCount = items.count
         let wasAtBottom = isAtBottom
@@ -250,21 +291,21 @@ final class ChatTableViewController<Item: Identifiable & Hashable & Sendable, Ce
 
         if hasStructuralChanges {
             // Apply structural changes with animation
-            dataSource?.apply(snapshot, animatingDifferences: animated && previousCount > 0)
+            applySnapshot(snapshot, animatingDifferences: animated && previousCount > 0)
 
             // Then reload changed items without animation (separate apply)
             if !changedIDs.isEmpty {
-                var reloadSnapshot = dataSource?.snapshot() ?? snapshot
+                var reloadSnapshot = snapshot
                 reloadSnapshot.reloadItems(changedIDs)
-                dataSource?.apply(reloadSnapshot, animatingDifferences: false)
+                applySnapshot(reloadSnapshot, animatingDifferences: false)
             }
         } else if !changedIDs.isEmpty {
             // No structural changes, just content updates - reload without animation
             snapshot.reloadItems(changedIDs)
-            dataSource?.apply(snapshot, animatingDifferences: false)
+            applySnapshot(snapshot, animatingDifferences: false)
         } else {
             // No changes at all, but still apply to sync state
-            dataSource?.apply(snapshot, animatingDifferences: false)
+            applySnapshot(snapshot, animatingDifferences: false)
         }
 
         // Handle unread tracking
@@ -386,7 +427,7 @@ final class ChatTableViewController<Item: Identifiable & Hashable & Sendable, Ce
         var snapshot = dataSource?.snapshot() ?? NSDiffableDataSourceSnapshot<Section, Item.ID>()
         if snapshot.itemIdentifiers.contains(targetID) {
             snapshot.reloadItems([targetID])
-            dataSource?.apply(snapshot, animatingDifferences: false)
+            applySnapshot(snapshot, animatingDifferences: false)
         }
     }
 
