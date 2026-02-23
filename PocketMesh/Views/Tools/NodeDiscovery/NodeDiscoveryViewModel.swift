@@ -54,7 +54,7 @@ struct NodeDiscoveryResult: Identifiable, Sendable {
 @Observable
 @MainActor
 final class NodeDiscoveryViewModel {
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier!, category: "NodeDiscoveryViewModel")
+    private static let logger = Logger(subsystem: "com.pocketmesh", category: "NodeDiscoveryViewModel")
     private static let scanDuration: Duration = .seconds(15)
 
     // MARK: - Published state
@@ -138,9 +138,11 @@ final class NodeDiscoveryViewModel {
                         self.appendOrUpdateResult(from: response)
                     }
                 }
+            } catch is CancellationError {
+                // Normal timeout cancellation — not an error
             } catch {
                 Self.logger.error("Node discovery failed: \(error.localizedDescription)")
-                self.errorMessage = L10n.Tools.Tools.NodeDiscovery.errorTitle
+                self.errorMessage = error.localizedDescription
             }
 
             self.finishScan()

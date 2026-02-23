@@ -43,6 +43,8 @@ struct NodeDiscoveryRowView: View {
             .font(.caption)
             .monospaced()
             .foregroundStyle(.tertiary)
+            .lineLimit(1)
+            .truncationMode(.middle)
     }
 }
 
