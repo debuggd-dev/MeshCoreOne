@@ -238,7 +238,7 @@ public final class ConnectionManager {
     // MARK: - Internal Components
 
     let modelContainer: ModelContainer
-    let defaults: UserDefaults
+    private let defaults: UserDefaults
     let transport: iOSBLETransport
     var wifiTransport: WiFiTransport?
     var session: MeshCoreSession?

@@ -7,7 +7,7 @@ extension ConnectionManager {
 
     /// Starts periodic heartbeat to detect dead WiFi connections.
     /// ESP32's TCP stack doesn't respond to TCP keepalives, so we use application-level probes.
-    func startWiFiHeartbeat() {
+    private func startWiFiHeartbeat() {
         stopWiFiHeartbeat()
 
         wifiHeartbeatTask = Task { [weak self] in
@@ -44,7 +44,7 @@ extension ConnectionManager {
     // MARK: - WiFi Disconnection Handling
 
     /// Handles unexpected WiFi connection loss
-    func handleWiFiDisconnection(error: Error?) async {
+    private func handleWiFiDisconnection(error: Error?) async {
         // User-initiated disconnect - don't reconnect
         guard connectionIntent.wantsConnection else { return }
 
@@ -96,7 +96,7 @@ extension ConnectionManager {
     // MARK: - WiFi Reconnection
 
     /// Starts the WiFi reconnection retry loop
-    func startWiFiReconnection() {
+    private func startWiFiReconnection() {
         // If a reconnect task is already running, don't start another
         if wifiReconnectTask != nil {
             logger.info("WiFi reconnection already in progress, skipping")
@@ -151,7 +151,7 @@ extension ConnectionManager {
     }
 
     /// Attempts to reconnect to the WiFi device using stored connection info
-    func reconnectWiFi() async throws {
+    private func reconnectWiFi() async throws {
         guard let wifiTransport,
               let (host, port) = await wifiTransport.connectionInfo else {
             throw ConnectionError.connectionFailed("No WiFi connection info")
@@ -191,7 +191,7 @@ extension ConnectionManager {
     }
 
     /// Completes WiFi reconnection by re-establishing services
-    func completeWiFiReconnection(
+    private func completeWiFiReconnection(
         session: MeshCoreSession,
         transport: WiFiTransport,
         deviceID: UUID

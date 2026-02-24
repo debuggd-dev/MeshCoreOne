@@ -60,7 +60,7 @@ extension ConnectionManager {
     }
 
     /// Connects to a device immediately after ASK pairing with retry logic
-    func connectAfterPairing(deviceID: UUID, maxAttempts: Int = 4) async throws {
+    private func connectAfterPairing(deviceID: UUID, maxAttempts: Int = 4) async throws {
         logger.info("[BLE] connectAfterPairing: device=\(deviceID.uuidString.prefix(8)), maxAttempts=\(maxAttempts)")
         var lastError: Error = ConnectionError.connectionFailed("Unknown error")
 
@@ -203,7 +203,7 @@ extension ConnectionManager {
     ///   - predicate: Filter applied to all contacts to determine which to remove.
     ///   - onRemove: Optional callback invoked after each successful removal (for per-contact logging).
     /// - Returns: Count of removed vs total matching contacts
-    func removeContacts(
+    private func removeContacts(
         matching predicate: (ContactDTO) -> Bool,
         onRemove: ((_ contact: ContactDTO) -> Void)? = nil
     ) async throws -> RemoveUnfavoritedResult {
