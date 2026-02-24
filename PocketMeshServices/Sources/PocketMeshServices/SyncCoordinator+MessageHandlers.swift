@@ -36,7 +36,7 @@ extension SyncCoordinator {
         return true
     }
 
-    // swiftlint:disable:next function_body_length cyclomatic_complexity
+    // swiftlint:disable:next function_body_length
     func wireMessageHandlers(services: ServiceContainer, deviceID: UUID) async {
         logger.info("Wiring message handlers for device \(deviceID)")
 
@@ -61,24 +61,13 @@ extension SyncCoordinator {
             }
 
             // Look up path data from RxLogEntry (for direct messages, channelIndex is nil)
-            var pathNodes: Data?
-            var pathLength = message.pathLength
-            do {
-                if let rxEntry = try await services.dataStore.findRxLogEntry(
-                    channelIndex: nil,
-                    senderTimestamp: timestamp,
-                    withinSeconds: 10,
-                    contactName: contact?.displayName
-                ) {
-                    pathNodes = rxEntry.pathNodes
-                    pathLength = rxEntry.pathLength  // Use RxLogEntry pathLength for consistency
-                    self.logger.debug("Correlated incoming direct message to RxLogEntry, pathLength: \(pathLength), pathNodes: \(pathNodes?.count ?? 0) bytes")
-                } else {
-                    self.logger.debug("No RxLogEntry found for direct message from \(contact?.displayName ?? "unknown")")
-                }
-            } catch {
-                self.logger.error("Failed to lookup RxLogEntry for direct message: \(error)")
-            }
+            let (pathNodes, pathLength) = await self.lookupRxLogEntry(
+                services: services,
+                channelIndex: nil,
+                senderTimestamp: timestamp,
+                defaultPathLength: message.pathLength,
+                contactName: contact?.displayName
+            )
 
             // Check for self-mention before creating DTO
             let hasSelfMention = !selfNodeName.isEmpty &&
@@ -124,68 +113,14 @@ extension SyncCoordinator {
             }
 
             // Check if this is a DM reaction
-            if let parsed = ReactionParser.parseDM(message.text),
-               let contact {
-                // Try to find target in cache first
-                if let targetMessageID = await services.reactionService.findDMTargetMessage(
-                    messageHash: parsed.messageHash,
-                    contactID: contact.id
-                ) {
-                    let reactionDTO = ReactionDTO(
-                        messageID: targetMessageID,
-                        emoji: parsed.emoji,
-                        senderName: contact.displayName,
-                        messageHash: parsed.messageHash,
-                        rawText: message.text,
-                        contactID: contact.id,
-                        deviceID: deviceID
-                    )
-                    if await self.persistReactionIfNew(reactionDTO, services: services) {
-                        self.logger.debug("Saved DM reaction \(parsed.emoji) to message \(targetMessageID)")
-                    }
-
-                    return  // Don't save as regular message
-                }
-
-                // Try persistence fallback
-                let now = UInt32(Date().timeIntervalSince1970)
-                let windowStart = now > self.reactionTimestampWindowSeconds ? now - self.reactionTimestampWindowSeconds : 0
-                let windowEnd = now + self.reactionTimestampWindowSeconds
-
-                if let targetMessage = try? await services.dataStore.findDMMessageForReaction(
-                    deviceID: deviceID,
-                    contactID: contact.id,
-                    messageHash: parsed.messageHash,
-                    timestampWindow: windowStart...windowEnd,
-                    limit: 200
-                ) {
-                    let reactionDTO = ReactionDTO(
-                        messageID: targetMessage.id,
-                        emoji: parsed.emoji,
-                        senderName: contact.displayName,
-                        messageHash: parsed.messageHash,
-                        rawText: message.text,
-                        contactID: contact.id,
-                        deviceID: deviceID
-                    )
-                    if await self.persistReactionIfNew(reactionDTO, services: services) {
-                        self.logger.debug("Saved DM reaction \(parsed.emoji) to message \(targetMessage.id) (from DB)")
-                    }
-
-                    return
-                }
-
-                // Queue as pending if target not found
-                await services.reactionService.queuePendingDMReaction(
-                    parsed: parsed,
-                    contactID: contact.id,
-                    senderName: contact.displayName,
-                    rawText: message.text,
-                    deviceID: deviceID
-                )
-
-                self.logger.debug("Queued pending DM reaction \(parsed.emoji)")
-                return  // Don't save as regular message
+            if let contact,
+               await self.handleDMReaction(
+                   text: message.text,
+                   contact: contact,
+                   deviceID: deviceID,
+                   services: services
+               ) {
+                return
             }
 
             do {
@@ -224,25 +159,14 @@ extension SyncCoordinator {
 
                 // Only increment unread count, post notification, and update badge for non-blocked contacts
                 if let contactID = contact?.id, contact?.isBlocked != true {
-                    // Only increment unread if user is NOT currently viewing this contact's chat
-                    let isViewingContact = await services.notificationService.activeContactID == contactID
-                    if !isViewingContact {
-                        try await services.dataStore.incrementUnreadCount(contactID: contactID)
-
-                        // Increment unread mention count if message contains self-mention
-                        if hasSelfMention {
-                            try await services.dataStore.incrementUnreadMentionCount(contactID: contactID)
-                        }
-                    }
-
-                    await services.notificationService.postDirectMessageNotification(
-                        from: contact?.displayName ?? "Unknown",
+                    try await self.updateDMUnreadsAndNotify(
+                        messageDTO: messageDTO,
                         contactID: contactID,
+                        contact: contact,
                         messageText: message.text,
-                        messageID: messageDTO.id,
-                        isMuted: contact?.isMuted ?? false
+                        hasSelfMention: hasSelfMention,
+                        services: services
                     )
-                    await services.notificationService.updateBadgeCount()
                 }
 
                 // Notify UI via SyncCoordinator
@@ -274,24 +198,12 @@ extension SyncCoordinator {
             }
 
             // Look up path data from RxLogEntry using sender timestamp (stored during decryption)
-            var pathNodes: Data?
-            var pathLength = message.pathLength
-            self.logger.debug("Looking up RxLogEntry for channel \(message.channelIndex) with senderTimestamp: \(timestamp)")
-            do {
-                if let rxEntry = try await services.dataStore.findRxLogEntry(
-                    channelIndex: message.channelIndex,
-                    senderTimestamp: timestamp,
-                    withinSeconds: 10
-                ) {
-                    pathNodes = rxEntry.pathNodes
-                    pathLength = rxEntry.pathLength  // Use RxLogEntry pathLength for consistency
-                    self.logger.info("Correlated channel message to RxLogEntry: pathLength=\(pathLength), pathNodes=\(pathNodes?.count ?? 0) bytes")
-                } else {
-                    self.logger.warning("No RxLogEntry found for channel \(message.channelIndex), senderTimestamp: \(timestamp)")
-                }
-            } catch {
-                self.logger.error("Failed to lookup RxLogEntry for channel message: \(error)")
-            }
+            let (pathNodes, pathLength) = await self.lookupRxLogEntry(
+                services: services,
+                channelIndex: message.channelIndex,
+                senderTimestamp: timestamp,
+                defaultPathLength: message.pathLength
+            )
 
             // Check for self-mention before creating DTO
             // Filter out messages where user mentions themselves
@@ -340,85 +252,16 @@ extension SyncCoordinator {
             }
 
             // Check if this is a reaction
-            if let parsed = services.reactionService.tryProcessAsReaction(messageText) {
-                if let targetMessageID = await services.reactionService.findTargetMessage(
-                    parsed: parsed,
-                    channelIndex: message.channelIndex
-                ) {
-                    let reactionDTO = ReactionDTO(
-                        messageID: targetMessageID,
-                        emoji: parsed.emoji,
-                        senderName: senderNodeName ?? "Unknown",
-                        messageHash: parsed.messageHash,
-                        rawText: messageText,
-                        channelIndex: message.channelIndex,
-                        deviceID: deviceID
-                    )
-                    if await self.persistReactionIfNew(reactionDTO, services: services) {
-                        self.logger.debug("Saved reaction \(parsed.emoji) to message \(targetMessageID)")
-                    }
-
-                    return  // Don't save as regular message
-                }
-                let now = UInt32(receiveTime.timeIntervalSince1970)
-                let windowStart = now > self.reactionTimestampWindowSeconds ? now - self.reactionTimestampWindowSeconds : 0
-                let windowEnd = now + self.reactionTimestampWindowSeconds
-
-                self.logger.debug("[REACTION-DEBUG] DB lookup: selfNodeName='\(selfNodeName)', targetSender=\(parsed.targetSender), hash=\(parsed.messageHash)")
-
-                if let targetMessage = try? await services.dataStore.findChannelMessageForReaction(
-                    deviceID: deviceID,
-                    channelIndex: message.channelIndex,
-                    parsedReaction: parsed,
-                    localNodeName: selfNodeName.isEmpty ? nil : selfNodeName,
-                    timestampWindow: windowStart...windowEnd,
-                    limit: 200
-                ) {
-                    let targetMessageID = targetMessage.id
-                    let reactionDTO = ReactionDTO(
-                        messageID: targetMessageID,
-                        emoji: parsed.emoji,
-                        senderName: senderNodeName ?? "Unknown",
-                        messageHash: parsed.messageHash,
-                        rawText: messageText,
-                        channelIndex: message.channelIndex,
-                        deviceID: deviceID
-                    )
-                    if await self.persistReactionIfNew(reactionDTO, services: services) {
-                        let targetSenderName: String?
-                        if targetMessage.direction == .outgoing {
-                            targetSenderName = selfNodeName.isEmpty ? nil : selfNodeName
-                        } else {
-                            targetSenderName = targetMessage.senderNodeName
-                        }
-
-                        if let targetSenderName {
-                            // Index for future reactions (pending matches not needed here since
-                            // message exists in DB, so pending reactions would also match via DB fallback)
-                            _ = await services.reactionService.indexMessage(
-                                id: targetMessageID,
-                                channelIndex: message.channelIndex,
-                                senderName: targetSenderName,
-                                text: targetMessage.text,
-                                timestamp: targetMessage.reactionTimestamp
-                            )
-                        }
-
-                        self.logger.debug("Saved reaction \(parsed.emoji) to message \(targetMessageID) via DB lookup")
-                    }
-
-                    return  // Don't save as regular message
-                }
-
-                // Queue reaction for later matching when target message arrives
-                await services.reactionService.queuePendingReaction(
-                    parsed: parsed,
-                    channelIndex: message.channelIndex,
-                    senderNodeName: senderNodeName ?? "Unknown",
-                    rawText: messageText,
-                    deviceID: deviceID
-                )
-                return  // Don't save as regular message
+            if await self.handleChannelReaction(
+                text: messageText,
+                channelIndex: message.channelIndex,
+                senderNodeName: senderNodeName,
+                selfNodeName: selfNodeName,
+                receiveTime: receiveTime,
+                deviceID: deviceID,
+                services: services
+            ) {
+                return
             }
 
             do {
@@ -457,42 +300,17 @@ extension SyncCoordinator {
 
                 // Only update unread count, badges, and notify UI for non-blocked senders
                 if await !self.isBlockedSender(senderNodeName) {
-                    if let channelID = channel?.id {
-                        // Only increment unread if user is NOT currently viewing this channel
-                        let activeIndex = await services.notificationService.activeChannelIndex
-                        let activeDeviceID = await services.notificationService.activeChannelDeviceID
-                        let isViewingChannel = activeIndex == channel?.index && activeDeviceID == channel?.deviceID
-                        if !isViewingChannel {
-                            try await services.dataStore.incrementChannelUnreadCount(channelID: channelID)
-
-                            // Increment unread mention count if message contains self-mention
-                            if hasSelfMention {
-                                try await services.dataStore.incrementChannelUnreadMentionCount(channelID: channelID)
-                            }
-                        }
-                    }
-                    if channel == nil {
-                        await self.recordUnresolvedChannelNotification(
-                            channelIndex: message.channelIndex,
-                            deviceID: deviceID,
-                            senderTimestamp: timestamp
-                        )
-                    }
-
-                    await services.notificationService.postChannelMessageNotification(
-                        channelName: channel?.name ?? "Channel \(message.channelIndex)",
+                    try await self.updateChannelUnreadsAndNotify(
+                        messageDTO: messageDTO,
+                        channel: channel,
                         channelIndex: message.channelIndex,
-                        deviceID: deviceID,
-                        senderName: senderNodeName,
+                        senderNodeName: senderNodeName,
                         messageText: messageText,
-                        messageID: messageDTO.id,
-                        notificationLevel: channel?.notificationLevel ?? .all,
-                        hasSelfMention: hasSelfMention
+                        timestamp: timestamp,
+                        hasSelfMention: hasSelfMention,
+                        deviceID: deviceID,
+                        services: services
                     )
-                    await services.notificationService.updateBadgeCount()
-
-                    // Notify MessageEventBroadcaster for real-time chat updates
-                    await self.onChannelMessageReceived?(messageDTO, message.channelIndex)
                 }
 
                 // Notify conversation list of changes
@@ -590,6 +408,301 @@ extension SyncCoordinator {
     }
 
     // MARK: - Message Handler Helpers
+
+    /// Looks up path data from an RxLogEntry to correlate with an incoming message.
+    private func lookupRxLogEntry(
+        services: ServiceContainer,
+        channelIndex: UInt8?,
+        senderTimestamp: UInt32,
+        defaultPathLength: UInt8,
+        contactName: String? = nil
+    ) async -> (pathNodes: Data?, pathLength: UInt8) {
+        if let channelIndex {
+            logger.debug("Looking up RxLogEntry for channel \(channelIndex) with senderTimestamp: \(senderTimestamp)")
+        }
+
+        do {
+            if let rxEntry = try await services.dataStore.findRxLogEntry(
+                channelIndex: channelIndex,
+                senderTimestamp: senderTimestamp,
+                withinSeconds: 10,
+                contactName: contactName
+            ) {
+                let pathLength = rxEntry.pathLength
+                let pathNodes = rxEntry.pathNodes
+                if channelIndex != nil {
+                    logger.info("Correlated channel message to RxLogEntry: pathLength=\(pathLength), pathNodes=\(pathNodes.count) bytes")
+                } else {
+                    logger.debug("Correlated incoming direct message to RxLogEntry, pathLength: \(pathLength), pathNodes: \(pathNodes.count) bytes")
+                }
+                return (pathNodes, pathLength)
+            } else {
+                if channelIndex != nil {
+                    logger.warning("No RxLogEntry found for channel \(channelIndex!), senderTimestamp: \(senderTimestamp)")
+                } else {
+                    logger.debug("No RxLogEntry found for direct message from \(contactName ?? "unknown")")
+                }
+            }
+        } catch {
+            if channelIndex != nil {
+                logger.error("Failed to lookup RxLogEntry for channel message: \(error)")
+            } else {
+                logger.error("Failed to lookup RxLogEntry for direct message: \(error)")
+            }
+        }
+
+        return (nil, defaultPathLength)
+    }
+
+    /// Handles an incoming DM reaction by looking up the target message and persisting the reaction.
+    ///
+    /// - Returns: `true` if the message was consumed as a reaction (caller should return early).
+    private func handleDMReaction(
+        text: String,
+        contact: ContactDTO,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        guard let parsed = ReactionParser.parseDM(text) else { return false }
+
+        // Try to find target in cache first
+        if let targetMessageID = await services.reactionService.findDMTargetMessage(
+            messageHash: parsed.messageHash,
+            contactID: contact.id
+        ) {
+            let reactionDTO = ReactionDTO(
+                messageID: targetMessageID,
+                emoji: parsed.emoji,
+                senderName: contact.displayName,
+                messageHash: parsed.messageHash,
+                rawText: text,
+                contactID: contact.id,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved DM reaction \(parsed.emoji) to message \(targetMessageID)")
+            }
+
+            return true
+        }
+
+        // Try persistence fallback
+        let now = UInt32(Date().timeIntervalSince1970)
+        let windowStart = now > reactionTimestampWindowSeconds ? now - reactionTimestampWindowSeconds : 0
+        let windowEnd = now + reactionTimestampWindowSeconds
+
+        if let targetMessage = try? await services.dataStore.findDMMessageForReaction(
+            deviceID: deviceID,
+            contactID: contact.id,
+            messageHash: parsed.messageHash,
+            timestampWindow: windowStart...windowEnd,
+            limit: 200
+        ) {
+            let reactionDTO = ReactionDTO(
+                messageID: targetMessage.id,
+                emoji: parsed.emoji,
+                senderName: contact.displayName,
+                messageHash: parsed.messageHash,
+                rawText: text,
+                contactID: contact.id,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved DM reaction \(parsed.emoji) to message \(targetMessage.id) (from DB)")
+            }
+
+            return true
+        }
+
+        // Queue as pending if target not found
+        await services.reactionService.queuePendingDMReaction(
+            parsed: parsed,
+            contactID: contact.id,
+            senderName: contact.displayName,
+            rawText: text,
+            deviceID: deviceID
+        )
+
+        logger.debug("Queued pending DM reaction \(parsed.emoji)")
+        return true
+    }
+
+    /// Handles an incoming channel reaction by looking up the target message and persisting the reaction.
+    ///
+    /// - Returns: `true` if the message was consumed as a reaction.
+    private func handleChannelReaction(
+        text: String,
+        channelIndex: UInt8,
+        senderNodeName: String?,
+        selfNodeName: String,
+        receiveTime: Date,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        guard let parsed = services.reactionService.tryProcessAsReaction(text) else { return false }
+
+        let senderName = senderNodeName ?? "Unknown"
+
+        if let targetMessageID = await services.reactionService.findTargetMessage(
+            parsed: parsed,
+            channelIndex: channelIndex
+        ) {
+            let reactionDTO = ReactionDTO(
+                messageID: targetMessageID,
+                emoji: parsed.emoji,
+                senderName: senderName,
+                messageHash: parsed.messageHash,
+                rawText: text,
+                channelIndex: channelIndex,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved reaction \(parsed.emoji) to message \(targetMessageID)")
+            }
+
+            return true
+        }
+
+        let now = UInt32(receiveTime.timeIntervalSince1970)
+        let windowStart = now > reactionTimestampWindowSeconds ? now - reactionTimestampWindowSeconds : 0
+        let windowEnd = now + reactionTimestampWindowSeconds
+
+        logger.debug("DB lookup: selfNodeName='\(selfNodeName)', targetSender=\(parsed.targetSender), hash=\(parsed.messageHash)")
+
+        if let targetMessage = try? await services.dataStore.findChannelMessageForReaction(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            parsedReaction: parsed,
+            localNodeName: selfNodeName.isEmpty ? nil : selfNodeName,
+            timestampWindow: windowStart...windowEnd,
+            limit: 200
+        ) {
+            let targetMessageID = targetMessage.id
+            let reactionDTO = ReactionDTO(
+                messageID: targetMessageID,
+                emoji: parsed.emoji,
+                senderName: senderName,
+                messageHash: parsed.messageHash,
+                rawText: text,
+                channelIndex: channelIndex,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                let targetSenderName: String?
+                if targetMessage.direction == .outgoing {
+                    targetSenderName = selfNodeName.isEmpty ? nil : selfNodeName
+                } else {
+                    targetSenderName = targetMessage.senderNodeName
+                }
+
+                if let targetSenderName {
+                    // Index for future reactions (pending matches not needed here since
+                    // message exists in DB, so pending reactions would also match via DB fallback)
+                    _ = await services.reactionService.indexMessage(
+                        id: targetMessageID,
+                        channelIndex: channelIndex,
+                        senderName: targetSenderName,
+                        text: targetMessage.text,
+                        timestamp: targetMessage.reactionTimestamp
+                    )
+                }
+
+                logger.debug("Saved reaction \(parsed.emoji) to message \(targetMessageID) via DB lookup")
+            }
+
+            return true
+        }
+
+        // Queue reaction for later matching when target message arrives
+        await services.reactionService.queuePendingReaction(
+            parsed: parsed,
+            channelIndex: channelIndex,
+            senderNodeName: senderName,
+            rawText: text,
+            deviceID: deviceID
+        )
+        return true
+    }
+
+    /// Increments unread counts and posts a notification for a direct message.
+    private func updateDMUnreadsAndNotify(
+        messageDTO: MessageDTO,
+        contactID: UUID,
+        contact: ContactDTO?,
+        messageText: String,
+        hasSelfMention: Bool,
+        services: ServiceContainer
+    ) async throws {
+        // Only increment unread if user is NOT currently viewing this contact's chat
+        let isViewingContact = await services.notificationService.activeContactID == contactID
+        if !isViewingContact {
+            try await services.dataStore.incrementUnreadCount(contactID: contactID)
+
+            // Increment unread mention count if message contains self-mention
+            if hasSelfMention {
+                try await services.dataStore.incrementUnreadMentionCount(contactID: contactID)
+            }
+        }
+
+        await services.notificationService.postDirectMessageNotification(
+            from: contact?.displayName ?? "Unknown",
+            contactID: contactID,
+            messageText: messageText,
+            messageID: messageDTO.id,
+            isMuted: contact?.isMuted ?? false
+        )
+        await services.notificationService.updateBadgeCount()
+    }
+
+    /// Increments unread counts, posts a notification, and notifies real-time listeners for a channel message.
+    private func updateChannelUnreadsAndNotify(
+        messageDTO: MessageDTO,
+        channel: ChannelDTO?,
+        channelIndex: UInt8,
+        senderNodeName: String?,
+        messageText: String,
+        timestamp: UInt32,
+        hasSelfMention: Bool,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async throws {
+        if let channelID = channel?.id {
+            // Only increment unread if user is NOT currently viewing this channel
+            let activeIndex = await services.notificationService.activeChannelIndex
+            let activeDeviceID = await services.notificationService.activeChannelDeviceID
+            let isViewingChannel = activeIndex == channel?.index && activeDeviceID == channel?.deviceID
+            if !isViewingChannel {
+                try await services.dataStore.incrementChannelUnreadCount(channelID: channelID)
+
+                // Increment unread mention count if message contains self-mention
+                if hasSelfMention {
+                    try await services.dataStore.incrementChannelUnreadMentionCount(channelID: channelID)
+                }
+            }
+        }
+        if channel == nil {
+            recordUnresolvedChannelNotification(
+                channelIndex: channelIndex,
+                deviceID: deviceID,
+                senderTimestamp: timestamp
+            )
+        }
+
+        await services.notificationService.postChannelMessageNotification(
+            channelName: channel?.name ?? "Channel \(channelIndex)",
+            channelIndex: channelIndex,
+            deviceID: deviceID,
+            senderName: senderNodeName,
+            messageText: messageText,
+            messageID: messageDTO.id,
+            notificationLevel: channel?.notificationLevel ?? .all,
+            hasSelfMention: hasSelfMention
+        )
+        await services.notificationService.updateBadgeCount()
+
+        // Notify MessageEventBroadcaster for real-time chat updates
+        await onChannelMessageReceived?(messageDTO, channelIndex)
+    }
 
     private func recordUnresolvedChannelNotification(
         channelIndex: UInt8,
