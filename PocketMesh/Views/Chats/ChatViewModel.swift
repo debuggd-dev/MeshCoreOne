@@ -212,7 +212,7 @@ final class ChatViewModel {
     var linkPreviewCache: (any LinkPreviewCaching)?
     var messageService: MessageService?
     var notificationService: NotificationService?
-    var channelService: ChannelService?
+    private var channelService: ChannelService?
     private var roomServerService: RoomServerService?
     var contactService: ContactService?
     var syncCoordinator: SyncCoordinator?
