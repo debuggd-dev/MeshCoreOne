@@ -41,9 +41,7 @@ struct BLEStatusIndicatorView: View {
         Button {
             showingDeviceSelection = true
         } label: {
-            Image(systemName: iconName)
-                .foregroundStyle(iconColor)
-                .symbolEffect(.pulse, isActive: isAnimating)
+            StatusIcon(iconName: iconName, iconColor: iconColor, isAnimating: isAnimating)
         }
         .accessibilityLabel(L10n.Settings.BleStatus.accessibilityLabel)
         .accessibilityValue(statusTitle)
@@ -58,7 +56,7 @@ struct BLEStatusIndicatorView: View {
                 Section {
                     if device.clientRepeat {
                         Label(L10n.Settings.BleStatus.repeatModeActive, systemImage: "repeat")
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(AppColors.Radio.repeatMode)
                     }
                     VStack(alignment: .leading) {
                         Label(device.nodeName, systemImage: "antenna.radiowaves.left.and.right")
@@ -112,9 +110,7 @@ struct BLEStatusIndicatorView: View {
                 }
             }
         } label: {
-            Image(systemName: iconName)
-                .foregroundStyle(iconColor)
-                .symbolEffect(.pulse, isActive: isAnimating)
+            StatusIcon(iconName: iconName, iconColor: iconColor, isAnimating: isAnimating)
         }
         .popoverTip(deviceMenuTip)
         .sensoryFeedback(.success, trigger: successFeedbackTrigger)
@@ -137,15 +133,15 @@ struct BLEStatusIndicatorView: View {
 
     private var iconColor: Color {
         if appState.connectedDevice?.clientRepeat == true {
-            return .orange
+            return AppColors.Radio.repeatMode
         }
         switch appState.connectionState {
         case .disconnected:
             return .secondary
         case .connecting, .connected:
-            return .blue
+            return AppColors.Radio.connecting
         case .ready:
-            return .green
+            return AppColors.Radio.ready
         }
     }
 
@@ -215,6 +211,18 @@ struct BLEStatusIndicatorView: View {
         } catch {
             logger.warning("Failed to update location from GPS: \(error.localizedDescription)")
         }
+    }
+}
+
+private struct StatusIcon: View {
+    let iconName: String
+    let iconColor: Color
+    let isAnimating: Bool
+
+    var body: some View {
+        Image(systemName: iconName)
+            .foregroundStyle(iconColor)
+            .symbolEffect(.pulse, isActive: isAnimating)
     }
 }
 

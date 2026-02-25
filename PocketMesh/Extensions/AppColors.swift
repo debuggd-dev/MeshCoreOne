@@ -97,6 +97,15 @@ enum AppColors {
         static let color = Color(hex: 0x336688) // slate blue
     }
 
+    // MARK: - Radio Status
+
+    /// Colors for the BLE status indicator toolbar icon.
+    enum Radio {
+        static let repeatMode = Color(hex: 0xFF9500)
+        static let connecting = Color(hex: 0x007AFF)
+        static let ready = Color(hex: 0x34C759)
+    }
+
     // MARK: - UI Elements
 
     /// Colors for message bubbles and related UI.
