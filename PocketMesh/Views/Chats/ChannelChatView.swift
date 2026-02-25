@@ -382,7 +382,7 @@ struct ChannelChatView: View {
                 .overlay(alignment: .bottomTrailing) {
                     VStack(spacing: 12) {
                         if showDividerFAB {
-                            ScrollToDividerFAB(
+                            ScrollToDividerButton(
                                 onTap: {
                                     scrollToDividerRequest += 1
                                     hasDismissedDividerFAB = true
@@ -392,14 +392,14 @@ struct ChannelChatView: View {
                         }
 
                         if !unseenMentionIDs.isEmpty {
-                            ScrollToMentionFAB(
+                            ScrollToMentionButton(
                                 unreadMentionCount: unseenMentionIDs.count,
                                 onTap: { scrollToNextMention() }
                             )
                             .transition(.scale.combined(with: .opacity))
                         }
 
-                        ScrollToBottomFAB(
+                        ScrollToBottomButton(
                             isVisible: !isAtBottom,
                             unreadCount: unreadCount,
                             onTap: { scrollToBottomRequest += 1 }

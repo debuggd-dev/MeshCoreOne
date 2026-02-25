@@ -147,7 +147,7 @@ struct RoomConversationView: View {
                     isDividerVisible: .constant(false)
                 )
                 .overlay(alignment: .bottomTrailing) {
-                    ScrollToBottomFAB(
+                    ScrollToBottomButton(
                         isVisible: !isAtBottom,
                         unreadCount: unreadCount,
                         onTap: { scrollToBottomRequest += 1 }

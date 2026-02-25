@@ -269,14 +269,14 @@ final class TracePathMapViewModel {
                 let quality = PathLineOverlay.SignalQuality(snr: hop.snr)
 
                 // Create new overlay with signal quality
-                let updatedOverlay = overlay.withSignalQuality(quality, snrDB: hop.snr)
+                let updatedOverlay = overlay.withSignalQuality(quality, snr: hop.snr)
                 updatedOverlays.append(updatedOverlay)
 
                 // Add badge annotation at midpoint
                 let badge = StatsBadgeAnnotation(
                     coordinate: updatedOverlay.midpoint,
                     distanceMeters: updatedOverlay.distanceMeters,
-                    snrDB: hop.snr,
+                    snr: hop.snr,
                     segmentIndex: index
                 )
                 badgeAnnotations.append(badge)

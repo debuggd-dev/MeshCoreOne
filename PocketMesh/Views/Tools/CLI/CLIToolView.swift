@@ -190,7 +190,7 @@ private struct CLIToolContent: View {
             if !scrollPosition.isPositionedByUser {
                 EmptyView()
             } else {
-                ScrollToBottomButton {
+                CLIScrollToBottomButton {
                     scrollPosition.scrollTo(edge: .bottom)
                 }
             }
@@ -344,7 +344,7 @@ private struct CLIToolContent: View {
     }
 }
 
-private struct ScrollToBottomButton: View {
+private struct CLIScrollToBottomButton: View {
     let action: () -> Void
 
     var body: some View {

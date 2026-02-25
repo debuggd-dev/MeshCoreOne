@@ -280,32 +280,6 @@ public enum L10n {
         /// Location: ChatView.swift - Error when loading older messages fails
         public static let loadOlderMessagesFailed = L10n.tr("Chats", "chats.errors.loadOlderMessagesFailed", fallback: "Failed to load older messages")
       }
-      public enum Fab {
-        public enum Badge {
-          /// Location: ScrollToMentionFAB.swift, ScrollToBottomFAB.swift - Badge text for 99+ unread
-          public static let overflow = L10n.tr("Chats", "chats.fab.badge.overflow", fallback: "99+")
-        }
-        public enum ScrollToBottom {
-          /// Location: ScrollToBottomFAB.swift - Accessibility label for scroll to bottom button
-          public static let accessibilityLabel = L10n.tr("Chats", "chats.fab.scrollToBottom.accessibilityLabel", fallback: "Scroll to latest message")
-        }
-        public enum ScrollToDivider {
-          /// Location: ScrollToDividerFAB.swift - Accessibility hint for scroll to divider button
-          public static let accessibilityHint = L10n.tr("Chats", "chats.fab.scrollToDivider.accessibilityHint", fallback: "Double-tap to scroll to the new messages divider")
-          /// Location: ScrollToDividerFAB.swift - Accessibility label for scroll to divider button
-          public static let accessibilityLabel = L10n.tr("Chats", "chats.fab.scrollToDivider.accessibilityLabel", fallback: "Scroll to new messages")
-        }
-        public enum ScrollToMention {
-          /// Location: ScrollToMentionFAB.swift - Accessibility hint for scroll to mention button
-          public static let accessibilityHint = L10n.tr("Chats", "chats.fab.scrollToMention.accessibilityHint", fallback: "Double-tap to navigate to the message")
-          /// Location: ScrollToMentionFAB.swift - Accessibility label for scroll to mention button
-          public static let accessibilityLabel = L10n.tr("Chats", "chats.fab.scrollToMention.accessibilityLabel", fallback: "Scroll to your oldest unread mention")
-          /// Location: ScrollToMentionFAB.swift - Accessibility value for unread mention count - %d is the number of unread mentions
-          public static func accessibilityValue(_ p1: Int) -> String {
-            return L10n.tr("Chats", "chats.fab.scrollToMention.accessibilityValue", p1, fallback: "%d unread mentions")
-          }
-        }
-      }
       public enum Filter {
         /// Location: ChatsView.swift - Accessibility label when no filter is active
         public static let accessibilityLabel = L10n.tr("Chats", "chats.filter.accessibilityLabel", fallback: "Filter conversations")
@@ -776,6 +750,32 @@ public enum L10n {
           public static let message = L10n.tr("Chats", "chats.scanQR.permissionDenied.message", fallback: "Please enable camera access in Settings to scan QR codes.")
           /// Location: ScanChannelQRView.swift - Camera permission denied title
           public static let title = L10n.tr("Chats", "chats.scanQR.permissionDenied.title", fallback: "Camera Access Required")
+        }
+      }
+      public enum ScrollButton {
+        public enum Badge {
+          /// Location: ScrollToMentionButton.swift, ScrollToBottomButton.swift - Badge text for 99+ unread
+          public static let overflow = L10n.tr("Chats", "chats.scrollButton.badge.overflow", fallback: "99+")
+        }
+        public enum ScrollToBottom {
+          /// Location: ScrollToBottomButton.swift - Accessibility label for scroll to bottom button
+          public static let accessibilityLabel = L10n.tr("Chats", "chats.scrollButton.scrollToBottom.accessibilityLabel", fallback: "Scroll to latest message")
+        }
+        public enum ScrollToDivider {
+          /// Location: ScrollToDividerButton.swift - Accessibility hint for scroll to divider button
+          public static let accessibilityHint = L10n.tr("Chats", "chats.scrollButton.scrollToDivider.accessibilityHint", fallback: "Double-tap to scroll to the new messages divider")
+          /// Location: ScrollToDividerButton.swift - Accessibility label for scroll to divider button
+          public static let accessibilityLabel = L10n.tr("Chats", "chats.scrollButton.scrollToDivider.accessibilityLabel", fallback: "Scroll to new messages")
+        }
+        public enum ScrollToMention {
+          /// Location: ScrollToMentionButton.swift - Accessibility hint for scroll to mention button
+          public static let accessibilityHint = L10n.tr("Chats", "chats.scrollButton.scrollToMention.accessibilityHint", fallback: "Double-tap to navigate to the message")
+          /// Location: ScrollToMentionButton.swift - Accessibility label for scroll to mention button
+          public static let accessibilityLabel = L10n.tr("Chats", "chats.scrollButton.scrollToMention.accessibilityLabel", fallback: "Scroll to your oldest unread mention")
+          /// Location: ScrollToMentionButton.swift - Accessibility value for unread mention count - %d is the number of unread mentions
+          public static func accessibilityValue(_ p1: Int) -> String {
+            return L10n.tr("Chats", "chats.scrollButton.scrollToMention.accessibilityValue", p1, fallback: "%d unread mentions")
+          }
         }
       }
       public enum Search {

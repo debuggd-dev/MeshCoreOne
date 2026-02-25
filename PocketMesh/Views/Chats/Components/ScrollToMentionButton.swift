@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Floating action button to scroll to unread mentions
-struct ScrollToMentionFAB: View {
+/// Button to scroll to unread mentions
+struct ScrollToMentionButton: View {
     let unreadMentionCount: Int
     let onTap: () -> Void
 
@@ -17,15 +17,15 @@ struct ScrollToMentionFAB: View {
         .overlay(alignment: .topTrailing) {
             unreadBadge
         }
-        .accessibilityLabel(L10n.Chats.Chats.Fab.ScrollToMention.accessibilityLabel)
-        .accessibilityValue(L10n.Chats.Chats.Fab.ScrollToMention.accessibilityValue(unreadMentionCount))
-        .accessibilityHint(L10n.Chats.Chats.Fab.ScrollToMention.accessibilityHint)
+        .accessibilityLabel(L10n.Chats.Chats.ScrollButton.ScrollToMention.accessibilityLabel)
+        .accessibilityValue(L10n.Chats.Chats.ScrollButton.ScrollToMention.accessibilityValue(unreadMentionCount))
+        .accessibilityHint(L10n.Chats.Chats.ScrollButton.ScrollToMention.accessibilityHint)
     }
 
     @ViewBuilder
     private var unreadBadge: some View {
         if unreadMentionCount > 0 {
-            Text(unreadMentionCount > 99 ? L10n.Chats.Chats.Fab.Badge.overflow : "\(unreadMentionCount)")
+            Text(unreadMentionCount > 99 ? L10n.Chats.Chats.ScrollButton.Badge.overflow : "\(unreadMentionCount)")
                 .font(.caption2.bold())
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)
@@ -37,11 +37,11 @@ struct ScrollToMentionFAB: View {
 }
 
 #Preview("With multiple") {
-    ScrollToMentionFAB(unreadMentionCount: 5, onTap: {})
+    ScrollToMentionButton(unreadMentionCount: 5, onTap: {})
         .padding(50)
 }
 
 #Preview("With one") {
-    ScrollToMentionFAB(unreadMentionCount: 1, onTap: {})
+    ScrollToMentionButton(unreadMentionCount: 1, onTap: {})
         .padding(50)
 }

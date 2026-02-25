@@ -478,7 +478,7 @@ private struct ChatMessagesContent: View {
                 .overlay(alignment: .bottomTrailing) {
                     VStack(spacing: 12) {
                         if showDividerFAB {
-                            ScrollToDividerFAB(
+                            ScrollToDividerButton(
                                 onTap: {
                                     scrollToDividerRequest += 1
                                     hasDismissedDividerFAB = true
@@ -488,14 +488,14 @@ private struct ChatMessagesContent: View {
                         }
 
                         if !unseenMentionIDs.isEmpty {
-                            ScrollToMentionFAB(
+                            ScrollToMentionButton(
                                 unreadMentionCount: unseenMentionIDs.count,
                                 onTap: { onScrollToMention() }
                             )
                             .transition(.scale.combined(with: .opacity))
                         }
 
-                        ScrollToBottomFAB(
+                        ScrollToBottomButton(
                             isVisible: !isAtBottom,
                             unreadCount: unreadCount,
                             onTap: { scrollToBottomRequest += 1 }

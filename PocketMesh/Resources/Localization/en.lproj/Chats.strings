@@ -117,28 +117,28 @@
 /* Location: RelativeTimestampText.swift - Timestamp for messages under 1 minute old */
 "chats.timestamp.now" = "Now";
 
-// MARK: - Floating Action Buttons
+// MARK: - Scroll Buttons
 
-/* Location: ScrollToMentionFAB.swift - Accessibility label for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityLabel" = "Scroll to your oldest unread mention";
+/* Location: ScrollToMentionButton.swift - Accessibility label for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityLabel" = "Scroll to your oldest unread mention";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility hint for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityHint" = "Double-tap to navigate to the message";
+/* Location: ScrollToMentionButton.swift - Accessibility hint for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityHint" = "Double-tap to navigate to the message";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
-"chats.fab.scrollToMention.accessibilityValue" = "%d unread mentions";
+/* Location: ScrollToMentionButton.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
+"chats.scrollButton.scrollToMention.accessibilityValue" = "%d unread mentions";
 
-/* Location: ScrollToBottomFAB.swift - Accessibility label for scroll to bottom button */
-"chats.fab.scrollToBottom.accessibilityLabel" = "Scroll to latest message";
+/* Location: ScrollToBottomButton.swift - Accessibility label for scroll to bottom button */
+"chats.scrollButton.scrollToBottom.accessibilityLabel" = "Scroll to latest message";
 
-/* Location: ScrollToMentionFAB.swift, ScrollToBottomFAB.swift - Badge text for 99+ unread */
-"chats.fab.badge.overflow" = "99+";
+/* Location: ScrollToMentionButton.swift, ScrollToBottomButton.swift - Badge text for 99+ unread */
+"chats.scrollButton.badge.overflow" = "99+";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility label for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
+/* Location: ScrollToDividerButton.swift - Accessibility label for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility hint for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
+/* Location: ScrollToDividerButton.swift - Accessibility hint for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
 
 // MARK: - Chat View (Direct Messages)
 

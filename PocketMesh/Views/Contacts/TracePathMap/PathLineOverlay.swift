@@ -29,7 +29,7 @@ final class PathLineOverlay: MKPolyline {
     private(set) var distanceMeters: Double = 0
 
     /// SNR value in dB - immutable after creation
-    private(set) var snrDB: Double = 0
+    private(set) var snr: Double = 0
 
     /// Index of this segment in the path (0 = user to first hop) - immutable after creation
     private(set) var segmentIndex: Int = 0
@@ -46,13 +46,13 @@ final class PathLineOverlay: MKPolyline {
         to end: CLLocationCoordinate2D,
         segmentIndex: Int,
         signalQuality: SignalQuality = .untraced,
-        snrDB: Double = 0
+        snr: Double = 0
     ) -> PathLineOverlay {
         var coords = [start, end]
         let overlay = PathLineOverlay(coordinates: &coords, count: 2)
         overlay.segmentIndex = segmentIndex
         overlay.signalQuality = signalQuality
-        overlay.snrDB = snrDB
+        overlay.snr = snr
         overlay.startCoordinate = start
         overlay.endCoordinate = end
 
@@ -65,13 +65,13 @@ final class PathLineOverlay: MKPolyline {
     }
 
     /// Create a new overlay with updated signal quality (immutable pattern)
-    func withSignalQuality(_ quality: SignalQuality, snrDB: Double) -> PathLineOverlay {
+    func withSignalQuality(_ quality: SignalQuality, snr: Double) -> PathLineOverlay {
         PathLineOverlay.line(
             from: startCoordinate,
             to: endCoordinate,
             segmentIndex: segmentIndex,
             signalQuality: quality,
-            snrDB: snrDB
+            snr: snr
         )
     }
 
