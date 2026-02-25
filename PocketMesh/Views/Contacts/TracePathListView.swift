@@ -41,6 +41,14 @@ enum PickerNode: Identifiable {
         case .discovered: true
         }
     }
+
+    /// The underlying DTO for passing to ViewModel methods
+    var underlying: any RepeaterResolvable {
+        switch self {
+        case .contact(let c): c
+        case .discovered(let d): d
+        }
+    }
 }
 
 /// List-based view for building trace paths
@@ -190,30 +198,17 @@ struct TracePathListView: View {
                         Button {
                             recentlyAddedRepeaterID = node.id
                             addHapticTrigger += 1
-                            switch node {
-                            case .contact(let c): viewModel.addRepeater(c)
-                            case .discovered(let d): viewModel.addDiscoveredRepeater(d)
-                            }
+                            viewModel.addNode(node.underlying)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading) {
                                     HStack {
                                         Text(node.displayName)
                                         if node.isRoom {
-                                            Text(L10n.Contacts.Contacts.NodeKind.room)
-                                                .font(.caption2.weight(.medium))
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(.orange.opacity(0.15), in: .capsule)
-                                                .foregroundStyle(.orange)
+                                            NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.room, color: .orange)
                                         }
                                         if node.isDiscovered {
-                                            Text(L10n.Contacts.Contacts.NodeKind.discovered)
-                                                .font(.caption2.weight(.medium))
-                                                .padding(.horizontal, 6)
-                                                .padding(.vertical, 2)
-                                                .background(.blue.opacity(0.15), in: .capsule)
-                                                .foregroundStyle(.blue)
+                                            NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.discovered, color: .blue)
                                         }
                                     }
                                     Text(node.publicKeyHex)

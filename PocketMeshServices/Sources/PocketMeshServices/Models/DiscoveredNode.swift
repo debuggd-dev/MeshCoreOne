@@ -69,7 +69,7 @@ public final class DiscoveredNode {
 // MARK: - Sendable DTO
 
 /// A sendable snapshot of DiscoveredNode for cross-actor transfers
-public struct DiscoveredNodeDTO: Sendable, Equatable, Identifiable {
+public struct DiscoveredNodeDTO: Sendable, Equatable, Identifiable, RepeaterResolvable {
     public let id: UUID
     public let deviceID: UUID
     public let publicKey: Data
@@ -89,6 +89,9 @@ public struct DiscoveredNodeDTO: Sendable, Equatable, Identifiable {
     public var hasLocation: Bool {
         latitude != 0 || longitude != 0
     }
+
+    public var recencyDate: Date { lastHeard }
+    public var resolvableName: String { name }
 
     public init(
         id: UUID,

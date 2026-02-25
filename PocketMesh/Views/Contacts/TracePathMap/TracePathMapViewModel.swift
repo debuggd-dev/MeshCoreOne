@@ -168,7 +168,7 @@ final class TracePathMapViewModel {
             result = .removed
         } else if !isRepeaterInPath(repeater) {
             // Add to path
-            traceViewModel.addRepeater(repeater)
+            traceViewModel.addNode(repeater)
             result = .added
         } else {
             // Tapping middle hop - provide feedback that this action is not allowed

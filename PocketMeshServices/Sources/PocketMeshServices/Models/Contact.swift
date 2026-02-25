@@ -233,7 +233,7 @@ public extension Contact {
 // MARK: - Sendable DTO
 
 /// A sendable snapshot of Contact for cross-actor transfers
-public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable {
+public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterResolvable {
     public let id: UUID
     public let deviceID: UUID
     public let publicKey: Data
@@ -389,6 +389,14 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable {
         // Default to Li-Ion
         return OCVPreset.liIon.ocvArray
     }
+
+    // MARK: - RepeaterResolvable
+
+    public var recencyDate: Date {
+        Date(timeIntervalSince1970: Double(lastModified))
+    }
+
+    public var resolvableName: String { displayName }
 
     /// Converts to a protocol ContactFrame for sending to device
     public func toContactFrame() -> ContactFrame {

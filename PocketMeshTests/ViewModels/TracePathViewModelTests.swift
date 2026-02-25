@@ -135,7 +135,7 @@ struct PathEditClearsSavedPathTests {
 
         #expect(viewModel.activeSavedPath != nil)
 
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
 
         #expect(viewModel.activeSavedPath == nil)
     }
@@ -144,7 +144,7 @@ struct PathEditClearsSavedPathTests {
     func removeRepeaterClearsActiveSavedPath() {
         let viewModel = TracePathViewModel()
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
         // Re-set since addRepeater clears it
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
 
@@ -160,8 +160,8 @@ struct PathEditClearsSavedPathTests {
         let viewModel = TracePathViewModel()
 
         // Add two repeaters
-        viewModel.addRepeater(createTestContact())
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
 
         #expect(viewModel.activeSavedPath != nil)
@@ -479,7 +479,7 @@ struct ErrorHandlingTests {
 
         #expect(viewModel.errorMessage != nil)
 
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
 
         #expect(viewModel.errorMessage == nil)
     }
@@ -487,7 +487,7 @@ struct ErrorHandlingTests {
     @Test("removeRepeater clears error")
     func removeRepeaterClearsError() {
         let viewModel = TracePathViewModel()
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.setError("Test error")
 
         #expect(viewModel.errorMessage != nil)
@@ -500,8 +500,8 @@ struct ErrorHandlingTests {
     @Test("moveRepeater clears error")
     func moveRepeaterClearsError() {
         let viewModel = TracePathViewModel()
-        viewModel.addRepeater(createTestContact())
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.setError("Test error")
 
         #expect(viewModel.errorMessage != nil)
@@ -892,7 +892,7 @@ struct PathCaptureTests {
             longitude: 0,
             lastModified: 0
         )
-        viewModel.addRepeater(ContactDTO(from: contact))
+        viewModel.addNode(ContactDTO(from: contact))
 
         // fullPathBytes is now different from result.tracedPathBytes
         // canSavePath should be false
@@ -918,7 +918,7 @@ struct PathCaptureTests {
             longitude: 0,
             lastModified: 0
         )
-        viewModel.addRepeater(ContactDTO(from: contact))
+        viewModel.addNode(ContactDTO(from: contact))
 
         // Get the current full path bytes
         let currentPath = viewModel.fullPathBytes
@@ -1394,7 +1394,7 @@ struct CodeInputParsingTests {
         let viewModel = TracePathViewModel()
         let alpha = createContact(prefix: 0xA3, name: "Alpha")
         viewModel.availableRepeaters = [alpha]
-        viewModel.addRepeater(alpha)
+        viewModel.addNode(alpha)
 
         let result = viewModel.addRepeatersFromCodes("A3")
 
@@ -1478,7 +1478,7 @@ struct CodeInputParsingTests {
         let viewModel = TracePathViewModel()
         let alpha = createContact(prefix: 0xA3, name: "Alpha")
         viewModel.availableRepeaters = [alpha]
-        viewModel.addRepeater(alpha)
+        viewModel.addNode(alpha)
 
         let result = viewModel.addRepeatersFromCodes("ZZ, 11, A3")
 
@@ -1584,7 +1584,7 @@ struct OutboundPathNameResolutionTests {
         viewModel.setContactsForTesting([contact1Modified, contact2Modified])
 
         // User selects contact1 for their path
-        viewModel.addRepeater(contact1Modified)
+        viewModel.addNode(contact1Modified)
 
         // Run trace
         let traceInfo = TraceInfo(
@@ -1615,7 +1615,7 @@ struct OutboundPathNameResolutionTests {
         let viewModel = TracePathViewModel()
         let key = Data([0x3F] + Array(repeating: UInt8(0), count: 31))
         let contact = createContact(prefix: 0x3F, name: "Tower")
-        viewModel.addRepeater(contact)
+        viewModel.addNode(contact)
 
         #expect(viewModel.outboundPath.count == 1)
         #expect(viewModel.outboundPath[0].publicKey == key)
@@ -1671,7 +1671,7 @@ struct OutboundPathNameResolutionTests {
         viewModel.setContactsForTesting([nearRepeater, farRepeater])
 
         // User explicitly selects the near repeater
-        viewModel.addRepeater(nearRepeater)
+        viewModel.addNode(nearRepeater)
 
         let traceInfo = TraceInfo(
             tag: 42,
@@ -1787,7 +1787,7 @@ struct RoomSupportTests {
         let viewModel = TracePathViewModel()
         let room = createContact(prefix: 0xB2, name: "Room Server", type: .room)
 
-        viewModel.addRepeater(room)
+        viewModel.addNode(room)
 
         #expect(viewModel.outboundPath.count == 1)
         #expect(viewModel.outboundPath[0].resolvedName == "Room Server")

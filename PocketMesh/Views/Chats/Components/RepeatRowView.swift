@@ -81,11 +81,11 @@ struct RepeatRowView: View {
         }
 
         if let repeater = RepeaterResolver.bestMatch(for: repeaterHash, in: repeaters, userLocation: userLocation) {
-            return repeater.displayName
+            return repeater.resolvableName
         }
 
         if let node = RepeaterResolver.bestMatch(for: repeaterHash, in: discoveredRepeaters, userLocation: userLocation) {
-            return node.name
+            return node.resolvableName
         }
 
         return L10n.Chats.Chats.Repeats.unknownRepeater

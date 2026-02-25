@@ -428,32 +428,29 @@ final class TracePathViewModel {
 
     // MARK: - Hash Resolution
 
-    /// Resolve hash bytes to the best matching repeater name
+    /// Resolve hash bytes to the best matching node name (contacts first, then discovered)
     func resolveHashToName(_ hashBytes: Data) -> String? {
-        if let contact = bestRepeaterMatch(for: hashBytes) {
-            return contact.displayName
-        }
-        return bestDiscoveredMatch(for: hashBytes)?.name
+        resolveNode(for: hashBytes)?.resolvableName
     }
 
     private var currentUserLocation: CLLocation? {
         appState?.locationService.currentLocation
     }
 
-    private func bestRepeaterMatch(for hop: PathHop) -> ContactDTO? {
-        RepeaterResolver.bestMatch(for: hop, in: availableNodes, userLocation: currentUserLocation)
+    /// Try contacts first, then discovered nodes. Returns the best match from either source.
+    private func resolveNode(for hashBytes: Data) -> (any RepeaterResolvable)? {
+        if let contact = RepeaterResolver.bestMatch(for: hashBytes, in: availableNodes, userLocation: currentUserLocation) {
+            return contact
+        }
+        return RepeaterResolver.bestMatch(for: hashBytes, in: discoveredRepeaters, userLocation: currentUserLocation)
     }
 
-    private func bestRepeaterMatch(for hashBytes: Data) -> ContactDTO? {
-        RepeaterResolver.bestMatch(for: hashBytes, in: availableNodes, userLocation: currentUserLocation)
-    }
-
-    private func bestDiscoveredMatch(for hop: PathHop) -> DiscoveredNodeDTO? {
-        RepeaterResolver.bestMatch(for: hop, in: discoveredRepeaters, userLocation: currentUserLocation)
-    }
-
-    private func bestDiscoveredMatch(for hashBytes: Data) -> DiscoveredNodeDTO? {
-        RepeaterResolver.bestMatch(for: hashBytes, in: discoveredRepeaters, userLocation: currentUserLocation)
+    /// Try contacts first, then discovered nodes, using full PathHop for exact key match.
+    private func resolveNode(for hop: PathHop) -> (any RepeaterResolvable)? {
+        if let contact = RepeaterResolver.bestMatch(for: hop, in: availableNodes, userLocation: currentUserLocation) {
+            return contact
+        }
+        return RepeaterResolver.bestMatch(for: hop, in: discoveredRepeaters, userLocation: currentUserLocation)
     }
 
     // MARK: - Data Loading
@@ -480,22 +477,11 @@ final class TracePathViewModel {
 
     // MARK: - Path Manipulation
 
-    /// Add a repeater to the outbound path
-    func addRepeater(_ repeater: ContactDTO) {
-        clearError()
-        let hashBytes = Data(repeater.publicKey.prefix(hashSize))
-        let hop = PathHop(hashBytes: hashBytes, publicKey: repeater.publicKey, resolvedName: repeater.displayName)
-        outboundPath.append(hop)
-        activeSavedPath = nil
-        pendingPathHash = nil
-        result = nil
-    }
-
-    /// Add a discovered repeater to the outbound path
-    func addDiscoveredRepeater(_ node: DiscoveredNodeDTO) {
+    /// Add a node to the outbound path
+    func addNode(_ node: some RepeaterResolvable) {
         clearError()
         let hashBytes = Data(node.publicKey.prefix(hashSize))
-        let hop = PathHop(hashBytes: hashBytes, publicKey: node.publicKey, resolvedName: node.name)
+        let hop = PathHop(hashBytes: hashBytes, publicKey: node.publicKey, resolvedName: node.resolvableName)
         outboundPath.append(hop)
         activeSavedPath = nil
         pendingPathHash = nil
@@ -548,13 +534,9 @@ final class TracePathViewModel {
                 continue
             }
 
-            // Find matching repeater (prefer closer or more recent on collisions)
-            if let repeater = bestRepeaterMatch(for: hashData) {
-                let hop = PathHop(hashBytes: hashData, publicKey: repeater.publicKey, resolvedName: repeater.displayName)
-                outboundPath.append(hop)
-                result.added.append(code)
-            } else if let node = bestDiscoveredMatch(for: hashData) {
-                let hop = PathHop(hashBytes: hashData, publicKey: node.publicKey, resolvedName: node.name)
+            // Find matching node (prefer closer or more recent on collisions)
+            if let match = resolveNode(for: hashData) {
+                let hop = PathHop(hashBytes: hashData, publicKey: match.publicKey, resolvedName: match.resolvableName)
                 outboundPath.append(hop)
                 result.added.append(code)
             } else {
@@ -726,23 +708,11 @@ final class TracePathViewModel {
         for start in stride(from: 0, to: min(outboundByteCount, fullPath.count), by: size) {
             let end = min(start + size, fullPath.count)
             let hashBytes = Data(fullPath[start..<end])
-            let matchedRepeater = bestRepeaterMatch(for: hashBytes)
-            let resolvedName: String?
-            let publicKey: Data?
-            if let matchedRepeater {
-                resolvedName = matchedRepeater.displayName
-                publicKey = matchedRepeater.publicKey
-            } else if let discoveredMatch = bestDiscoveredMatch(for: hashBytes) {
-                resolvedName = discoveredMatch.name
-                publicKey = discoveredMatch.publicKey
-            } else {
-                resolvedName = nil
-                publicKey = nil
-            }
+            let match = resolveNode(for: hashBytes)
             outboundPath.append(PathHop(
                 hashBytes: hashBytes,
-                publicKey: publicKey,
-                resolvedName: resolvedName
+                publicKey: match?.publicKey,
+                resolvedName: match?.resolvableName
             ))
         }
 
@@ -1165,30 +1135,13 @@ final class TracePathViewModel {
 
             if let bytes = node.hashBytes {
                 let matchingHop = outboundPath.first(where: { $0.hashBytes == bytes })
-                let bestMatch: ContactDTO?
-                if let hop = matchingHop {
-                    bestMatch = bestRepeaterMatch(for: hop)
-                } else {
-                    bestMatch = bestRepeaterMatch(for: bytes)
-                }
+                let match = matchingHop.flatMap({ resolveNode(for: $0) }) ?? resolveNode(for: bytes)
 
-                if let bestMatch {
-                    resolvedName = bestMatch.displayName
-                    if bestMatch.hasLocation {
-                        latitude = bestMatch.latitude
-                        longitude = bestMatch.longitude
-                    }
-                } else if let hop = matchingHop, let discoveredMatch = bestDiscoveredMatch(for: hop) {
-                    resolvedName = discoveredMatch.name
-                    if discoveredMatch.hasLocation {
-                        latitude = discoveredMatch.latitude
-                        longitude = discoveredMatch.longitude
-                    }
-                } else if let discoveredMatch = bestDiscoveredMatch(for: bytes) {
-                    resolvedName = discoveredMatch.name
-                    if discoveredMatch.hasLocation {
-                        latitude = discoveredMatch.latitude
-                        longitude = discoveredMatch.longitude
+                if let match {
+                    resolvedName = match.resolvableName
+                    if match.hasLocation {
+                        latitude = match.latitude
+                        longitude = match.longitude
                     }
                 } else {
                     resolvedName = matchingHop?.resolvedName

@@ -128,13 +128,13 @@ final class PathManagementViewModel {
     func resolveHashToName(_ hashBytes: Data) -> String? {
         let matches = allContacts.filter { $0.publicKey.prefix(hashBytes.count) == hashBytes }
         if matches.count == 1 {
-            return matches[0].displayName
+            return matches[0].resolvableName
         }
         // Fall back to discovered nodes with same single-match rule
         if matches.isEmpty {
             let discoveredMatches = discoveredNodes.filter { $0.publicKey.prefix(hashBytes.count) == hashBytes }
             if discoveredMatches.count == 1 {
-                return discoveredMatches[0].name
+                return discoveredMatches[0].resolvableName
             }
         }
         return nil  // Ambiguous (multiple matches) or unknown
@@ -183,17 +183,10 @@ final class PathManagementViewModel {
         }
     }
 
-    /// Add a repeater to the path using its public key prefix
-    func addRepeater(_ repeater: ContactDTO) {
-        let hashBytes = Data(repeater.publicKey.prefix(hashSize))
-        let hop = PathHop(hashBytes: hashBytes, publicKey: repeater.publicKey, resolvedName: repeater.displayName)
-        editablePath.append(hop)
-    }
-
-    /// Add a discovered repeater to the path using its public key prefix
-    func addDiscoveredRepeater(_ node: DiscoveredNodeDTO) {
+    /// Add a node to the path using its public key prefix
+    func addNode(_ node: some RepeaterResolvable) {
         let hashBytes = Data(node.publicKey.prefix(hashSize))
-        let hop = PathHop(hashBytes: hashBytes, publicKey: node.publicKey, resolvedName: node.name)
+        let hop = PathHop(hashBytes: hashBytes, publicKey: node.publicKey, resolvedName: node.resolvableName)
         editablePath.append(hop)
     }
 

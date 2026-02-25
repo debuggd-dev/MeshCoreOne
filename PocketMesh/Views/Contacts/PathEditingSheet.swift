@@ -114,22 +114,14 @@ struct PathEditingSheet: View {
                 ForEach(filteredNodes) { node in
                     Button {
                         addHapticTrigger += 1
-                        switch node {
-                        case .contact(let c): viewModel.addRepeater(c)
-                        case .discovered(let d): viewModel.addDiscoveredRepeater(d)
-                        }
+                        viewModel.addNode(node.underlying)
                     } label: {
                         HStack {
                             VStack(alignment: .leading) {
                                 HStack {
                                     Text(node.displayName)
                                     if node.isDiscovered {
-                                        Text(L10n.Contacts.Contacts.NodeKind.discovered)
-                                            .font(.caption2.weight(.medium))
-                                            .padding(.horizontal, 6)
-                                            .padding(.vertical, 2)
-                                            .background(.blue.opacity(0.15), in: .capsule)
-                                            .foregroundStyle(.blue)
+                                        NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.discovered, color: .blue)
                                     }
                                 }
                                 Text(node.publicKeyHex)
