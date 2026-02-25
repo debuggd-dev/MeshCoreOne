@@ -1088,7 +1088,7 @@ extension BLEStateMachine {
         let deviceID = peripheral.identifier
         logger.info("[BLE] iOS auto-reconnect started: \(deviceID.uuidString.prefix(8)), will attempt automatic reconnection")
 
-        // C1/C2: Clean up pending operations before transitioning.
+        // Clean up pending operations before transitioning.
         // This ensures any pending setup continuations and write waiters are properly
         // resumed/failed, preventing orphaned continuations and waiter starvation.
         cancelPendingWriteOperations()
