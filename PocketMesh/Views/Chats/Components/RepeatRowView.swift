@@ -7,6 +7,7 @@ import SwiftUI
 struct RepeatRowView: View {
     let repeatEntry: MessageRepeatDTO
     let repeaters: [ContactDTO]
+    let discoveredRepeaters: [DiscoveredNodeDTO]
     let userLocation: CLLocation?
 
     var body: some View {
@@ -83,6 +84,10 @@ struct RepeatRowView: View {
             return repeater.displayName
         }
 
+        if let node = RepeaterResolver.bestMatch(for: repeaterHash, in: discoveredRepeaters, userLocation: userLocation) {
+            return node.name
+        }
+
         return L10n.Chats.Chats.Repeats.unknownRepeater
     }
 }
@@ -99,6 +104,7 @@ struct RepeatRowView: View {
                 rxLogEntryID: nil
             ),
             repeaters: [],
+            discoveredRepeaters: [],
             userLocation: nil
         )
 
@@ -112,6 +118,7 @@ struct RepeatRowView: View {
                 rxLogEntryID: nil
             ),
             repeaters: [],
+            discoveredRepeaters: [],
             userLocation: nil
         )
     }

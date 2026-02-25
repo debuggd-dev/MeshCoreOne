@@ -34,6 +34,7 @@ struct MessageActionsSheet: View {
     @State private var isDetailExpanded = false
     @State private var repeats: [MessageRepeatDTO]?
     @State private var contacts: [ContactDTO] = []
+    @State private var discoveredNodes: [DiscoveredNodeDTO] = []
     @State private var pathViewModel = MessagePathViewModel()
 
     var body: some View {
@@ -82,8 +83,10 @@ struct MessageActionsSheet: View {
             if availability.canShowRepeatDetails {
                 do {
                     contacts = try await services.dataStore.fetchContacts(deviceID: message.deviceID)
+                    discoveredNodes = try await services.dataStore.fetchDiscoveredNodes(deviceID: message.deviceID)
                 } catch {
                     contacts = []
+                    discoveredNodes = []
                 }
                 repeats = await services.heardRepeatsService.refreshRepeats(for: message.id)
             } else if availability.canViewPath {
@@ -315,6 +318,7 @@ struct MessageActionsSheet: View {
             RepeatDetailsContent(
                 repeats: repeats,
                 contacts: contacts,
+                discoveredNodes: discoveredNodes,
                 userLocation: appState.locationService.currentLocation
             )
         } else if availability.canViewPath {

@@ -8,10 +8,15 @@ import SwiftUI
 struct RepeatDetailsContent: View {
     let repeats: [MessageRepeatDTO]?
     let contacts: [ContactDTO]
+    let discoveredNodes: [DiscoveredNodeDTO]
     let userLocation: CLLocation?
 
     private var repeaters: [ContactDTO] {
         contacts.filter { $0.type == .repeater }
+    }
+
+    private var discoveredRepeaters: [DiscoveredNodeDTO] {
+        discoveredNodes.filter { $0.nodeType == .repeater }
     }
 
     var body: some View {
@@ -27,6 +32,7 @@ struct RepeatDetailsContent: View {
                     RepeatRowView(
                         repeatEntry: repeatEntry,
                         repeaters: repeaters,
+                        discoveredRepeaters: discoveredRepeaters,
                         userLocation: userLocation
                     )
                 }

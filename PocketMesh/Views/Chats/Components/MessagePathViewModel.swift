@@ -8,6 +8,7 @@ import SwiftUI
 final class MessagePathViewModel {
     var contacts: [ContactDTO] = []
     var repeaters: [ContactDTO] = []
+    var discoveredRepeaters: [DiscoveredNodeDTO] = []
     var isLoading = true
 
     private let logger = Logger(subsystem: "com.pocketmesh", category: "MessagePathViewModel")
@@ -23,10 +24,13 @@ final class MessagePathViewModel {
             let fetched = try await services.dataStore.fetchContacts(deviceID: deviceID)
             contacts = fetched
             repeaters = fetched.filter { $0.type == .repeater }
+            let nodes = try await services.dataStore.fetchDiscoveredNodes(deviceID: deviceID)
+            discoveredRepeaters = nodes.filter { $0.nodeType == .repeater }
         } catch {
             logger.error("Failed to load contacts: \(error.localizedDescription)")
             contacts = []
             repeaters = []
+            discoveredRepeaters = []
         }
 
         isLoading = false
@@ -54,6 +58,9 @@ final class MessagePathViewModel {
     func repeaterName(for hashBytes: Data, userLocation: CLLocation?) -> String {
         if let match = RepeaterResolver.bestMatch(for: hashBytes, in: repeaters, userLocation: userLocation) {
             return match.displayName
+        }
+        if let match = RepeaterResolver.bestMatch(for: hashBytes, in: discoveredRepeaters, userLocation: userLocation) {
+            return match.name
         }
         return L10n.Chats.Chats.Path.Hop.unknown
     }
