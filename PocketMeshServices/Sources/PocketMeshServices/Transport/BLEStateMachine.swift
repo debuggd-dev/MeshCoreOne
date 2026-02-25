@@ -500,6 +500,12 @@ public actor BLEStateMachine: BLEStateMachineProtocol {
     /// - Throws: BLEError if not connected or write fails
     public func send(_ data: Data) async throws {
         logger.info("[BLE] send: \(data.count) bytes")
+        try await claimWriteSlot(data: data)
+    }
+
+    /// Serializes concurrent writes by waiting for any pending write to complete,
+    /// then claims the write slot and issues the BLE write.
+    private func claimWriteSlot(data: Data) async throws {
         while true {
             try Task.checkCancellation()
 
@@ -512,7 +518,7 @@ public actor BLEStateMachine: BLEStateMachineProtocol {
             }
 
             // Wait for any pending write to complete (serializes concurrent sends).
-            // IMPORTANT: after waking, loop and re-check slot ownership to avoid
+            // After waking, loop and re-check slot ownership to avoid
             // continuation overwrite if multiple waiters are resumed together.
             if pendingWriteContinuation != nil {
                 consecutiveQueuedWrites += 1
@@ -859,30 +865,10 @@ extension BLEStateMachine {
             }
 
         case .unauthorized:
-            isCurrentlyScanning = false
-            pendingScanRequest = false
-            if case .waitingForBluetooth(let continuation) = phase {
-                transition(to: .idle)
-                continuation.resume(throwing: BLEError.bluetoothUnauthorized)
-            }
-            // Handle restoration failure
-            if case .restoringState(let peripheral) = phase {
-                transition(to: .idle)
-                onDisconnection?(peripheral.identifier, nil)
-            }
+            handleBluetoothBecomingUnavailable(error: .bluetoothUnauthorized)
 
         case .unsupported:
-            isCurrentlyScanning = false
-            pendingScanRequest = false
-            if case .waitingForBluetooth(let continuation) = phase {
-                transition(to: .idle)
-                continuation.resume(throwing: BLEError.bluetoothUnavailable)
-            }
-            // Handle restoration failure
-            if case .restoringState(let peripheral) = phase {
-                transition(to: .idle)
-                onDisconnection?(peripheral.identifier, nil)
-            }
+            handleBluetoothBecomingUnavailable(error: .bluetoothUnavailable)
 
         default:
             break
@@ -898,6 +884,20 @@ extension BLEStateMachine {
         cancelCurrentOperation(with: BLEError.bluetoothPoweredOff)
         if let deviceID {
             onDisconnection?(deviceID, nil)
+        }
+    }
+
+    /// Handles Bluetooth becoming permanently unavailable (unauthorized or unsupported).
+    private func handleBluetoothBecomingUnavailable(error: BLEError) {
+        isCurrentlyScanning = false
+        pendingScanRequest = false
+        if case .waitingForBluetooth(let continuation) = phase {
+            transition(to: .idle)
+            continuation.resume(throwing: error)
+        }
+        if case .restoringState(let peripheral) = phase {
+            transition(to: .idle)
+            onDisconnection?(peripheral.identifier, nil)
         }
     }
 
@@ -1076,47 +1076,55 @@ extension BLEStateMachine {
 
         let deviceID = peripheral.identifier
 
-        // If iOS is auto-reconnecting, track that
         if isReconnecting {
-            logger.info("[BLE] iOS auto-reconnect started: \(deviceID.uuidString.prefix(8)), will attempt automatic reconnection")
+            handleAutoReconnectDisconnect(peripheral: peripheral, errorInfo: errorInfo)
+        } else {
+            handleFullDisconnect(deviceID: deviceID, error: error)
+        }
+    }
 
-            // C1/C2: Clean up pending operations before transitioning.
-            // This ensures any pending setup continuations and write waiters are properly
-            // resumed/failed, preventing orphaned continuations and waiter starvation.
-            cancelPendingWriteOperations()
+    /// Handles a disconnect where iOS is auto-reconnecting the peripheral.
+    private func handleAutoReconnectDisconnect(peripheral: CBPeripheral, errorInfo: String) {
+        let deviceID = peripheral.identifier
+        logger.info("[BLE] iOS auto-reconnect started: \(deviceID.uuidString.prefix(8)), will attempt automatic reconnection")
 
-            // Clean up current state but preserve peripheral for reconnection.
-            // transition() handles dataContinuation cleanup when leaving .connected.
-            // Note: We handle phase continuations manually below since cancelCurrentOperation
-            // would transition to .idle, but we need to go to .autoReconnecting.
-            switch phase {
-            case .connecting(_, let continuation, let timeoutTask):
-                timeoutTask.cancel()
-                continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
-            case .discoveringServices(_, let continuation):
-                continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
-            case .discoveringCharacteristics(_, _, let continuation):
-                continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
-            case .subscribingToNotifications(_, _, _, let continuation):
-                continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
-            default:
-                break
-            }
+        // C1/C2: Clean up pending operations before transitioning.
+        // This ensures any pending setup continuations and write waiters are properly
+        // resumed/failed, preventing orphaned continuations and waiter starvation.
+        cancelPendingWriteOperations()
 
-            // Advance generation for the auto-reconnect cycle
-            advanceConnectionGeneration()
-
-            transition(to: .autoReconnecting(peripheral: peripheral, tx: nil, rx: nil))
-
-            // C5: Arm the auto-reconnect discovery timeout (same as restoration path)
-            armAutoReconnectDiscoveryTimeout(for: peripheral, generation: connectionGeneration)
-
-            // Notify handler so UI can show "connecting" state
-            onAutoReconnecting?(deviceID, errorInfo)
-            return
+        // Clean up current state but preserve peripheral for reconnection.
+        // transition() handles dataContinuation cleanup when leaving .connected.
+        // Note: We handle phase continuations manually below since cancelCurrentOperation
+        // would transition to .idle, but we need to go to .autoReconnecting.
+        switch phase {
+        case .connecting(_, let continuation, let timeoutTask):
+            timeoutTask.cancel()
+            continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
+        case .discoveringServices(_, let continuation):
+            continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
+        case .discoveringCharacteristics(_, _, let continuation):
+            continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
+        case .subscribingToNotifications(_, _, _, let continuation):
+            continuation.resume(throwing: BLEError.connectionFailed("Disconnected during setup"))
+        default:
+            break
         }
 
-        // Full disconnection
+        // Advance generation for the auto-reconnect cycle
+        advanceConnectionGeneration()
+
+        transition(to: .autoReconnecting(peripheral: peripheral, tx: nil, rx: nil))
+
+        // C5: Arm the auto-reconnect discovery timeout (same as restoration path)
+        armAutoReconnectDiscoveryTimeout(for: peripheral, generation: connectionGeneration)
+
+        // Notify handler so UI can show "connecting" state
+        onAutoReconnecting?(deviceID, errorInfo)
+    }
+
+    /// Handles a full (non-reconnecting) disconnection.
+    private func handleFullDisconnect(deviceID: UUID, error: Error?) {
         switch phase {
         case .disconnecting:
             // Expected disconnection, transition handled by disconnect()
