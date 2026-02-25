@@ -105,7 +105,6 @@ final class RepeaterSettingsViewModel {
     var errorMessage: String?
     var successMessage: String?
     var showSuccessAlert = false
-    var showErrorAlert = false
     var identityApplySuccess = false
     var behaviorApplySuccess = false
 
@@ -787,14 +786,13 @@ final class RepeaterSettingsViewModel {
                     let cleanMessage = message.replacing("ERR: ", with: "")
                     errorMessage = cleanMessage.isEmpty ? L10n.RemoteNodes.RemoteNodes.Settings.syncTimeFailed : cleanMessage
                 }
-                showErrorAlert = true
+
             default:
                 errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.unexpectedResponse(response)
-                showErrorAlert = true
+
             }
         } catch {
             errorMessage = error.localizedDescription
-            showErrorAlert = true
         }
 
         isApplying = false

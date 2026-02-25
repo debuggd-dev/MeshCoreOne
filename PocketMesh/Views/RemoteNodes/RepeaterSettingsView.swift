@@ -48,7 +48,6 @@ struct RepeaterSettingsView: View {
         }
         .task {
             await viewModel.configure(appState: appState, session: session)
-            // Device Info auto-loads because isDeviceInfoExpanded = true by default
         }
         .onDisappear {
             Task {
@@ -297,18 +296,7 @@ struct RepeaterSettingsView: View {
             onLoad: { await viewModel.fetchIdentity() },
             footer: L10n.RemoteNodes.RemoteNodes.Settings.identityFooter
         ) {
-            if let name = viewModel.name {
-                TextField(L10n.RemoteNodes.RemoteNodes.name, text: Binding(
-                    get: { name },
-                    set: { viewModel.name = $0 }
-                ))
-                    .textContentType(.name)
-                    .submitLabel(.done)
-                    .focused($focusedField, equals: .identityName)
-                    .onSubmit {
-                        focusedField = nil
-                    }
-            } else if viewModel.isLoadingIdentity {
+            if viewModel.isLoadingIdentity && viewModel.name == nil {
                 HStack {
                     Text(L10n.RemoteNodes.RemoteNodes.name)
                         .foregroundStyle(.secondary)
@@ -319,7 +307,7 @@ struct RepeaterSettingsView: View {
                 }
             } else {
                 TextField(L10n.RemoteNodes.RemoteNodes.name, text: Binding(
-                    get: { "" },
+                    get: { viewModel.name ?? "" },
                     set: { viewModel.name = $0 }
                 ))
                     .textContentType(.name)
