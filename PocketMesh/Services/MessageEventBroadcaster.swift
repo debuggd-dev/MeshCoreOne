@@ -39,7 +39,7 @@ public final class MessageEventBroadcaster {
     var newMessageCount: Int = 0
 
     /// Count of session state changes (triggers view updates for connection status)
-    var sessionStateChanged: Int = 0
+    var sessionStateChangeCount: Int = 0
 
     /// Reference to message service for handling send confirmations
     var messageService: MessageService?
@@ -160,7 +160,7 @@ public final class MessageEventBroadcaster {
     /// Handle session connection state change
     func handleSessionStateChanged(sessionID: UUID, isConnected: Bool) {
         logger.info("dispatch: sessionStateChanged for \(sessionID), isConnected: \(isConnected)")
-        self.sessionStateChanged += 1
+        self.sessionStateChangeCount += 1
     }
 
     // MARK: - Service Wiring

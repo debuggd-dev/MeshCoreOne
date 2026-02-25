@@ -75,7 +75,7 @@ struct RoomConversationView: View {
                     }
                 }
             }
-            .onChange(of: appState.messageEventBroadcaster.sessionStateChanged) { _, _ in
+            .onChange(of: appState.messageEventBroadcaster.sessionStateChangeCount) { _, _ in
                 Task {
                     await viewModel.refreshSession()
                     if let updated = viewModel.session {

@@ -16,14 +16,14 @@ struct NoiseFloorStatistics {
     let average: Double
 }
 
-enum SignalQuality: Equatable {
+enum NoiseFloorQuality: Equatable {
     case excellent
     case good
     case fair
     case poor
     case unknown
 
-    static func from(noiseFloor: Int16) -> SignalQuality {
+    static func from(noiseFloor: Int16) -> NoiseFloorQuality {
         switch noiseFloor {
         case ...(-100): return .excellent
         case ...(-90): return .good
@@ -91,9 +91,9 @@ final class NoiseFloorViewModel {
         return computed
     }
 
-    var qualityLevel: SignalQuality {
+    var qualityLevel: NoiseFloorQuality {
         guard let reading = currentReading else { return .unknown }
-        return SignalQuality.from(noiseFloor: reading.noiseFloor)
+        return NoiseFloorQuality.from(noiseFloor: reading.noiseFloor)
     }
 
     func appendReading(_ reading: NoiseFloorReading) {

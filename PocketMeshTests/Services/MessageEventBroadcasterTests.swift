@@ -30,7 +30,7 @@ struct MessageEventBroadcasterTests {
         #expect(broadcaster.latestEvent == nil)
         #expect(broadcaster.latestMessage == nil)
         #expect(broadcaster.newMessageCount == 0)
-        #expect(broadcaster.sessionStateChanged == 0)
+        #expect(broadcaster.sessionStateChangeCount == 0)
         #expect(broadcaster.messageService == nil)
         #expect(broadcaster.remoteNodeService == nil)
         #expect(broadcaster.dataStore == nil)
@@ -171,7 +171,7 @@ struct MessageEventBroadcasterTests {
 
         broadcaster.handleSessionStateChanged(sessionID: sessionID, isConnected: true)
 
-        #expect(broadcaster.sessionStateChanged == 1)
+        #expect(broadcaster.sessionStateChangeCount == 1)
     }
 
     @Test("handleUnknownSender sets event without incrementing message count")
@@ -218,7 +218,7 @@ struct MessageEventBroadcasterTests {
         broadcaster.handleSessionStateChanged(sessionID: UUID(), isConnected: false)
         broadcaster.handleSessionStateChanged(sessionID: UUID(), isConnected: true)
 
-        #expect(broadcaster.sessionStateChanged == 3)
+        #expect(broadcaster.sessionStateChangeCount == 3)
     }
 
     // MARK: - wireServices Integration
