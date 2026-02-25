@@ -202,10 +202,12 @@ struct RoomConversationView: View {
             placeholder: L10n.RemoteNodes.RemoteNodes.Room.publicMessage,
             maxBytes: ProtocolLimits.maxDirectMessageLength
         ) {
-            // Force scroll to bottom on user send (before message is added)
+            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            viewModel.composingText = ""
             scrollToBottomRequest += 1
             Task {
-                await viewModel.sendMessage()
+                await viewModel.sendMessage(text: text)
             }
         }
     }

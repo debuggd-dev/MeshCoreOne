@@ -107,13 +107,11 @@ final class ChatViewModelQueueTests: XCTestCase {
 
         let contactDTO = try await dataStore.fetchContact(id: contact.id)!
         viewModel.currentContact = contactDTO
-        viewModel.composingText = "Hello world"
 
         // Send message
-        await viewModel.sendMessage()
+        await viewModel.sendMessage(text: "Hello world")
 
-        // Input should be cleared
-        XCTAssertTrue(viewModel.composingText.isEmpty)
+        // Message should be queued
         XCTAssertEqual(viewModel.sendQueueCount, 1)
     }
 

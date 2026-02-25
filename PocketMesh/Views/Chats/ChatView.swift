@@ -356,10 +356,12 @@ struct ChatView: View {
             maxBytes: ProtocolLimits.maxDirectMessageLength,
             contacts: viewModel.allContacts
         ) {
-            // Force scroll to bottom on user send (before message is added)
+            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            viewModel.composingText = ""
             scrollToBottomRequest += 1
             Task {
-                await viewModel.sendMessage()
+                await viewModel.sendMessage(text: text)
             }
         }
     }

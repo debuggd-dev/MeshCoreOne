@@ -562,15 +562,14 @@ extension ChatViewModel {
 
     /// Send a message to the current contact
     /// This is non-blocking - message is created and shown immediately, sent in background
-    func sendMessage() async {
+    func sendMessage(text: String) async {
         guard let contact = currentContact,
               let messageService,
-              !composingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !text.isEmpty else {
+            composingText = text
             return
         }
 
-        let text = composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        composingText = ""
         errorMessage = nil
 
         do {
@@ -905,9 +904,8 @@ extension ChatViewModel {
                 logger.error("Failed to resend message: \(error)")
             }
         } else {
-            // Direct messages: keep existing behavior (copy to compose field)
-            composingText = message.text
-            await sendMessage()
+            // Direct messages: send the failed message text directly
+            await sendMessage(text: message.text)
         }
     }
 

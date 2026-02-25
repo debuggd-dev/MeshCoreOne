@@ -82,15 +82,14 @@ final class RoomConversationViewModel {
     }
 
     /// Send a message to the current room
-    func sendMessage() async {
+    func sendMessage(text: String) async {
         guard let session,
               let roomServerService,
-              !composingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !text.isEmpty else {
+            composingText = text
             return
         }
 
-        let text = composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        composingText = ""
         isSending = true
         errorMessage = nil
 

@@ -138,15 +138,14 @@ extension ChatViewModel {
     // MARK: - Channel Actions
 
     /// Send a channel message
-    func sendChannelMessage() async {
+    func sendChannelMessage(text: String) async {
         guard let channel = currentChannel,
               let messageService,
-              !composingText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+              !text.isEmpty else {
+            composingText = text
             return
         }
 
-        let text = composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-        composingText = ""
         errorMessage = nil
 
         do {

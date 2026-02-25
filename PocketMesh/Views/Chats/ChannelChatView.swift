@@ -613,10 +613,12 @@ struct ChannelChatView: View {
             maxBytes: maxChannelMessageLength,
             contacts: viewModel.allContacts
         ) {
-            // Force scroll to bottom on user send (before message is added)
+            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !text.isEmpty else { return }
+            viewModel.composingText = ""
             scrollToBottomRequest += 1
             Task {
-                await viewModel.sendChannelMessage()
+                await viewModel.sendChannelMessage(text: text)
             }
         }
     }
