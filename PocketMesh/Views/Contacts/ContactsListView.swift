@@ -56,35 +56,13 @@ struct ContactsListView: View {
         if shouldUseSplitView {
             NavigationSplitView {
                 NavigationStack {
-                    ContactsSidebarContent(
-                        viewModel: viewModel,
-                        filteredContacts: filteredContacts,
-                        isSearching: isSearching,
-                        searchPrompt: searchPrompt,
-                        shouldUseSplitView: shouldUseSplitView,
-                        selectedSegment: $selectedSegment,
-                        selectedContact: $selectedContact,
-                        searchText: $searchText,
-                        sortOrder: $sortOrder,
-                        showDiscovery: $showDiscovery,
-                        syncSuccessTrigger: $syncSuccessTrigger,
-                        showShareMyContact: $showShareMyContact,
-                        showAddContact: $showAddContact,
-                        showLocationDeniedAlert: $showLocationDeniedAlert,
-                        showOfflineRefreshAlert: $showOfflineRefreshAlert,
-                        navigationPath: $navigationPath,
-                        showErrorBinding: showErrorBinding,
-                        onLoadContacts: loadContacts,
-                        onSyncContacts: syncContacts,
-                        onAnnounceOfflineStateIfNeeded: announceOfflineStateIfNeeded
-                    )
-                    .navigationDestination(isPresented: $showDiscovery) {
-                        DiscoveryView()
-                    }
+                    sidebarContent
                 }
             } detail: {
                 NavigationStack {
-                    if let selectedContact {
+                    if showDiscovery {
+                        DiscoveryView()
+                    } else if let selectedContact {
                         ContactDetailView(contact: selectedContact)
                             .id(selectedContact.id)
                     } else {
@@ -92,38 +70,47 @@ struct ContactsListView: View {
                     }
                 }
             }
-        } else {
-            NavigationStack(path: $navigationPath) {
-                ContactsSidebarContent(
-                    viewModel: viewModel,
-                    filteredContacts: filteredContacts,
-                    isSearching: isSearching,
-                    searchPrompt: searchPrompt,
-                    shouldUseSplitView: shouldUseSplitView,
-                    selectedSegment: $selectedSegment,
-                    selectedContact: $selectedContact,
-                    searchText: $searchText,
-                    sortOrder: $sortOrder,
-                    showDiscovery: $showDiscovery,
-                    syncSuccessTrigger: $syncSuccessTrigger,
-                    showShareMyContact: $showShareMyContact,
-                    showAddContact: $showAddContact,
-                    showLocationDeniedAlert: $showLocationDeniedAlert,
-                    showOfflineRefreshAlert: $showOfflineRefreshAlert,
-                    navigationPath: $navigationPath,
-                    showErrorBinding: showErrorBinding,
-                    onLoadContacts: loadContacts,
-                    onSyncContacts: syncContacts,
-                    onAnnounceOfflineStateIfNeeded: announceOfflineStateIfNeeded
-                )
-                .navigationDestination(isPresented: $showDiscovery) {
-                    DiscoveryView()
-                }
-                .navigationDestination(for: ContactDTO.self) { contact in
-                    ContactDetailView(contact: contact)
+            .onChange(of: selectedContact) { _, newContact in
+                if newContact != nil {
+                    showDiscovery = false
                 }
             }
+        } else {
+            NavigationStack(path: $navigationPath) {
+                sidebarContent
+                    .navigationDestination(isPresented: $showDiscovery) {
+                        DiscoveryView()
+                    }
+                    .navigationDestination(for: ContactDTO.self) { contact in
+                        ContactDetailView(contact: contact)
+                    }
+            }
         }
+    }
+
+    private var sidebarContent: some View {
+        ContactsSidebarContent(
+            viewModel: viewModel,
+            filteredContacts: filteredContacts,
+            isSearching: isSearching,
+            searchPrompt: searchPrompt,
+            shouldUseSplitView: shouldUseSplitView,
+            selectedSegment: $selectedSegment,
+            selectedContact: $selectedContact,
+            searchText: $searchText,
+            sortOrder: $sortOrder,
+            showDiscovery: $showDiscovery,
+            syncSuccessTrigger: $syncSuccessTrigger,
+            showShareMyContact: $showShareMyContact,
+            showAddContact: $showAddContact,
+            showLocationDeniedAlert: $showLocationDeniedAlert,
+            showOfflineRefreshAlert: $showOfflineRefreshAlert,
+            navigationPath: $navigationPath,
+            showErrorBinding: showErrorBinding,
+            onLoadContacts: loadContacts,
+            onSyncContacts: syncContacts,
+            onAnnounceOfflineStateIfNeeded: announceOfflineStateIfNeeded
+        )
     }
 
     private var showErrorBinding: Binding<Bool> {
