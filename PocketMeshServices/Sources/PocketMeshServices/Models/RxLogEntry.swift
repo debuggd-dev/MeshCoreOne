@@ -188,6 +188,12 @@ public struct RxLogEntryDTO: Sendable, Identifiable, Equatable, Hashable {
         decodePathLen(pathLength)?.hashSize ?? 1
     }
 
+    /// Hop count decoded from pathLength (lower 6 bits), for non-TRACE packets.
+    /// For TRACE packets, pathLength is a raw byte count of SNR values, not encoded.
+    public var hopCount: Int {
+        decodePathLen(pathLength)?.hopCount ?? 0
+    }
+
     /// Path nodes as hex strings for display, chunked by hash size
     public var pathNodesHex: [String] {
         let size = pathHashSize

@@ -150,6 +150,12 @@
 /* Location: RxLogViewModel.swift - Decrypt filter: failed */
 "tools.rxLog.filter.failed" = "Неудачные";
 
+/* Location: RxLogRowView - Label for local device in path display */
+"tools.rxLog.pathYou" = "Вы";
+
+/* Location: RxLogRowView - Per-hop SNR detail label for TRACE packets */
+"tools.rxLog.perHopSnrLabel" = "SNR на ретрансляцию:";
+
 // MARK: - Noise Floor View
 
 /* Location: NoiseFloorView.swift - Disconnected state description */

@@ -29,6 +29,10 @@ struct RxLogView: View {
         .task(id: appState.servicesVersion) {
             guard let service = appState.services?.rxLogService else { return }
             await viewModel.subscribe(to: service)
+            await loadNodeNames()
+        }
+        .onChange(of: appState.contactsVersion) {
+            Task { await loadNodeNames() }
         }
         .onDisappear {
             viewModel.unsubscribe()
@@ -63,7 +67,8 @@ struct RxLogView: View {
                         entry: entry,
                         isExpanded: expandedBinding(for: entry.packetHash),
                         groupCount: groupDuplicates ? viewModel.groupCounts[entry.packetHash, default: 1] : 1,
-                        localPublicKeyPrefix: appState.connectedDevice?.publicKeyPrefix
+                        localPublicKeyPrefix: appState.connectedDevice?.publicKeyPrefix,
+                        nodeNames: viewModel.nodeNames
                     )
                 }
             } header: {
@@ -227,6 +232,12 @@ struct RxLogView: View {
         }
         expandedHashes.removeAll()
     }
+
+    private func loadNodeNames() async {
+        guard let dataStore = appState.services?.dataStore,
+              let deviceID = appState.currentDeviceID else { return }
+        await viewModel.loadNodeNames(from: dataStore, deviceID: deviceID)
+    }
 }
 
 // MARK: - Row View
@@ -236,6 +247,7 @@ struct RxLogRowView: View {
     @Binding var isExpanded: Bool
     let groupCount: Int
     let localPublicKeyPrefix: Data?
+    let nodeNames: [Data: String]
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
@@ -320,41 +332,81 @@ struct RxLogRowView: View {
 
     // MARK: - Path Display
 
+    private var isTrace: Bool {
+        entry.payloadType == .trace
+    }
+
     private var pathDisplayString: String {
-        if entry.pathLength == 0 {
+        if entry.pathNodes.isEmpty {
             return L10n.Tools.Tools.RxLog.direct
         }
 
-        var parts: [String] = []
-        for byte in entry.pathNodes {
-            let hex = String(format: "%02X", byte)
-            // Check if this is the local device
-            if let prefix = localPublicKeyPrefix, prefix.first == byte {
-                parts.append("YOU")
-            } else {
-                parts.append(hex)
-            }
+        if isTrace {
+            return truncatedJoin(traceSnrParts, separator: " → ")
         }
 
-        // Truncate long paths: show first 3 + ellipsis + last 3
-        if parts.count > 6 {
-            let first = parts.prefix(3).joined(separator: " → ")
-            let last = parts.suffix(3).joined(separator: " → ")
-            return "\(first) → … → \(last)"
-        }
-
-        return parts.joined(separator: " → ")
+        return truncatedJoin(hopNameParts, separator: " → ")
     }
 
     private var pathDetailString: String {
-        if entry.pathLength == 0 {
+        if entry.pathNodes.isEmpty {
             return L10n.Tools.Tools.RxLog.direct
         }
 
-        let hopCount = Int(entry.pathLength)
+        if isTrace {
+            let count = entry.pathNodes.count
+            let hopLabel = count == 1 ? L10n.Tools.Tools.RxLog.hopSingular : L10n.Tools.Tools.RxLog.hopPlural
+            let snrList = traceSnrParts.joined(separator: ", ")
+            return "\(count) \(hopLabel) [\(snrList)]"
+        }
+
+        let hopCount = entry.hopCount
         let hopLabel = hopCount == 1 ? L10n.Tools.Tools.RxLog.hopSingular : L10n.Tools.Tools.RxLog.hopPlural
-        let nodes = entry.pathNodes.map { String(format: "%02X", $0) }.joined(separator: ", ")
+        let hashSize = entry.pathHashSize
+        let nodes = stride(from: 0, to: entry.pathNodes.count, by: hashSize).map { start in
+            let end = min(start + hashSize, entry.pathNodes.count)
+            return entry.pathNodes[start..<end].map { String(format: "%02X", $0) }.joined()
+        }.joined(separator: ", ")
         return "\(hopCount) \(hopLabel) [\(nodes)]"
+    }
+
+    /// For TRACE packets: each path byte is int8_t(snr * 4), decode to dB strings.
+    private var traceSnrParts: [String] {
+        entry.pathNodes.map { byte in
+            let snr = Double(Int8(bitPattern: byte)) / 4.0
+            return snr.formatted(.number.precision(.fractionLength(1))) + " dB"
+        }
+    }
+
+    /// For non-TRACE packets: chunk pathNodes by hashSize, resolve to names.
+    private var hopNameParts: [String] {
+        let hashSize = entry.pathHashSize
+        return stride(from: 0, to: entry.pathNodes.count, by: hashSize).map { start in
+            let end = min(start + hashSize, entry.pathNodes.count)
+            let chunk = entry.pathNodes[start..<end]
+
+            // Check if this hop is the local device
+            if let prefix = localPublicKeyPrefix, prefix.prefix(chunk.count) == chunk {
+                return L10n.Tools.Tools.RxLog.pathYou
+            }
+
+            // Check resolved contact name
+            if let name = nodeNames[Data(chunk)] {
+                return name
+            }
+
+            return chunk.map { String(format: "%02X", $0) }.joined()
+        }
+    }
+
+    /// Join parts with separator, truncating to first 3 … last 3 if > 6 elements.
+    private func truncatedJoin(_ parts: [String], separator: String) -> String {
+        if parts.count > 6 {
+            let first = parts.prefix(3).joined(separator: separator)
+            let last = parts.suffix(3).joined(separator: separator)
+            return "\(first) \(separator) … \(separator) \(last)"
+        }
+        return parts.joined(separator: separator)
     }
 
     private var isDirectTextMessage: Bool {
@@ -374,7 +426,13 @@ struct RxLogRowView: View {
 
             DetailRow(label: L10n.Tools.Tools.RxLog.typeLabel, value: entry.payloadType.displayName)
             DetailRow(label: L10n.Tools.Tools.RxLog.sizeLabel, value: "\(entry.rawPayload.count) \(L10n.Tools.Tools.RxLog.bytes)")
-            DetailRow(label: L10n.Tools.Tools.RxLog.pathLabel, value: pathDetailString, wrapping: true)
+
+            if isTrace && !entry.pathNodes.isEmpty {
+                DetailRow(label: L10n.Tools.Tools.RxLog.perHopSnrLabel, value: traceSnrParts.joined(separator: ", "), wrapping: true)
+            } else {
+                DetailRow(label: L10n.Tools.Tools.RxLog.pathLabel, value: pathDetailString, wrapping: true)
+            }
+
             DetailRow(label: L10n.Tools.Tools.RxLog.hashLabel, value: entry.packetHash, truncate: true)
 
             // Direct message: show sender and recipient

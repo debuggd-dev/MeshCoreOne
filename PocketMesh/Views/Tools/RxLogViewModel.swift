@@ -38,6 +38,10 @@ final class RxLogViewModel {
     private(set) var routeFilter: RouteFilter = .all
     private(set) var decryptFilter: DecryptFilter = .all
 
+    /// Maps path hash bytes (1, 2, or 3 byte prefixes) to contact display names.
+    /// Only populated for prefixes that uniquely identify a single contact.
+    private(set) var nodeNames: [Data: String] = [:]
+
     private var streamTask: Task<Void, Never>?
     private var rxLogService: RxLogService?
 
@@ -130,5 +134,44 @@ final class RxLogViewModel {
     private func rebuildGroupCounts() {
         groupCounts = Dictionary(grouping: entries, by: \.packetHash)
             .mapValues(\.count)
+    }
+
+    // MARK: - Node Name Resolution
+
+    /// Load contact names for path hop resolution.
+    func loadNodeNames(from dataStore: some PersistenceStoreProtocol, deviceID: UUID) async {
+        do {
+            let contacts = try await dataStore.fetchContacts(deviceID: deviceID)
+            nodeNames = Self.buildNodeNameMap(from: contacts)
+        } catch {
+            nodeNames = [:]
+        }
+    }
+
+    /// Build a map from public key prefixes (1, 2, 3 bytes) to display names.
+    /// Only stores entries where the prefix uniquely identifies a single contact.
+    static func buildNodeNameMap(from contacts: [ContactDTO]) -> [Data: String] {
+        var map: [Data: String] = [:]
+
+        for prefixLength in 1...3 {
+            var prefixCounts: [Data: (name: String, count: Int)] = [:]
+
+            for contact in contacts {
+                guard contact.publicKey.count >= prefixLength else { continue }
+                let prefix = contact.publicKey.prefix(prefixLength)
+
+                if let existing = prefixCounts[prefix] {
+                    prefixCounts[prefix] = (existing.name, existing.count + 1)
+                } else {
+                    prefixCounts[prefix] = (contact.displayName, 1)
+                }
+            }
+
+            for (prefix, entry) in prefixCounts where entry.count == 1 {
+                map[prefix] = entry.name
+            }
+        }
+
+        return map
     }
 }

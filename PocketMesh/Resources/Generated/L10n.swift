@@ -4083,6 +4083,10 @@ public enum L10n {
         }
         /// Location: RxLogView.swift - Path label
         public static let pathLabel = L10n.tr("Tools", "tools.rxLog.pathLabel", fallback: "Path:")
+        /// Location: RxLogRowView - Label for local device in path display
+        public static let pathYou = L10n.tr("Tools", "tools.rxLog.pathYou", fallback: "You")
+        /// Location: RxLogRowView - Per-hop SNR detail label for TRACE packets
+        public static let perHopSnrLabel = L10n.tr("Tools", "tools.rxLog.perHopSnrLabel", fallback: "Per-hop SNR:")
         /// Location: RxLogView.swift - Raw payload section title
         public static let rawPayload = L10n.tr("Tools", "tools.rxLog.rawPayload", fallback: "Raw Payload")
         /// Location: RxLogView.swift - Duplicate count accessibility label, %lld is count
