@@ -222,6 +222,28 @@ struct MessageServiceSendTests {
         }
     }
 
+    @Test("sendChannelMessage saves message to dataStore before send attempt")
+    func sendChannelMessageSavesFirst() async throws {
+        let (service, dataStore) = try await MessageService.createForTesting()
+        do {
+            _ = try await service.sendChannelMessage(
+                text: "Hello channel",
+                channelIndex: 0,
+                deviceID: testDeviceID
+            )
+        } catch {
+            // Expected — session not started
+        }
+
+        let messages = try await dataStore.fetchMessages(
+            deviceID: testDeviceID, channelIndex: 0, limit: 10, offset: 0
+        )
+        #expect(!messages.isEmpty, "Message should be saved before send attempt")
+        #expect(messages.first?.text == "Hello channel")
+        #expect(messages.first?.direction == .outgoing)
+        #expect(messages.first?.status == .failed, "Message should be marked failed after send error")
+    }
+
     // MARK: - resendChannelMessage
 
     @Test("resendChannelMessage throws when message not found")

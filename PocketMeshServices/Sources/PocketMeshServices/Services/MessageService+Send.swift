@@ -525,33 +525,37 @@ extension MessageService {
         let messageID = UUID()
         let timestamp = UInt32(Date().timeIntervalSince1970)
 
+        // Save message to store as pending FIRST
+        let messageDTO = createOutgoingChannelMessage(
+            id: messageID,
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            text: text,
+            timestamp: timestamp,
+            textType: textType
+        )
+        try await dataStore.saveMessage(messageDTO)
+
         do {
             try await session.sendChannelMessage(
                 channel: channelIndex,
                 text: text,
                 timestamp: Date(timeIntervalSince1970: TimeInterval(timestamp))
             )
-
-            // Save message (channel messages are immediately "sent" - no ACK for broadcasts)
-            let messageDTO = createOutgoingChannelMessage(
-                id: messageID,
-                deviceID: deviceID,
-                channelIndex: channelIndex,
-                text: text,
-                timestamp: timestamp,
-                textType: textType
-            )
-            try await dataStore.saveMessage(messageDTO)
-
-            // Update channel's last message date
-            if let channel = try await dataStore.fetchChannel(deviceID: deviceID, index: channelIndex) {
-                try await dataStore.updateChannelLastMessage(channelID: channel.id, date: Date())
-            }
-
-            return (id: messageID, timestamp: timestamp)
-        } catch let error as MeshCoreError {
-            throw MessageServiceError.sessionError(error)
+        } catch {
+            try await failMessageAndRethrow(error, messageID: messageID)
         }
+
+        // Broadcast succeeded — update status and channel metadata.
+        // These throw to the caller if they fail, but don't mark the message as
+        // .failed since the broadcast already went out.
+        try await dataStore.updateMessageStatus(id: messageID, status: .sent)
+
+        if let channel = try await dataStore.fetchChannel(deviceID: deviceID, index: channelIndex) {
+            try await dataStore.updateChannelLastMessage(channelID: channel.id, date: Date())
+        }
+
+        return (id: messageID, timestamp: timestamp)
     }
 
     /// Resend an existing channel message, incrementing its send count.
@@ -682,7 +686,7 @@ extension MessageService {
             text: text,
             timestamp: timestamp,
             directionRawValue: MessageDirection.outgoing.rawValue,
-            statusRawValue: MessageStatus.sent.rawValue,
+            statusRawValue: MessageStatus.pending.rawValue,
             textTypeRawValue: textType.rawValue
         )
         return MessageDTO(from: message)

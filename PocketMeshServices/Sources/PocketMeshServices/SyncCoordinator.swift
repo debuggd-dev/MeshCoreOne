@@ -114,18 +114,13 @@ public actor SyncCoordinator {
     private var suppressionWatchdogTask: Task<Void, Never>?
 
     /// Callback when sync phase changes (for SwiftUI observation).
-    /// Set once during wiring (actor-isolated), read from @MainActor methods (setState).
-    /// nonisolated(unsafe) bridges this cross-isolation boundary; safe because writes
-    /// complete before any reads begin.
-    nonisolated(unsafe) private var onPhaseChanged: (@Sendable @MainActor (_ phase: SyncPhase?) -> Void)?
+    @MainActor private var onPhaseChanged: (@Sendable @MainActor (_ phase: SyncPhase?) -> Void)?
 
     /// Callback when contacts data changes (for SwiftUI observation).
-    /// Same cross-isolation invariant as onPhaseChanged.
-    nonisolated(unsafe) private var onContactsChanged: (@Sendable @MainActor () -> Void)?
+    @MainActor private var onContactsChanged: (@Sendable @MainActor () -> Void)?
 
     /// Callback when conversations data changes (for SwiftUI observation).
-    /// Same cross-isolation invariant as onPhaseChanged.
-    nonisolated(unsafe) private var onConversationsChanged: (@Sendable @MainActor () -> Void)?
+    @MainActor private var onConversationsChanged: (@Sendable @MainActor () -> Void)?
 
     /// Callback when a direct message is received (for MessageEventBroadcaster)
     var onDirectMessageReceived: (@Sendable (_ message: MessageDTO, _ contact: ContactDTO) async -> Void)?
@@ -166,19 +161,21 @@ public actor SyncCoordinator {
         onStarted: @escaping @Sendable () async -> Void,
         onEnded: @escaping @Sendable () async -> Void,
         onPhaseChanged: @escaping @Sendable @MainActor (_ phase: SyncPhase?) -> Void
-    ) {
+    ) async {
         onSyncActivityStarted = onStarted
         onSyncActivityEnded = onEnded
-        self.onPhaseChanged = onPhaseChanged
+        await MainActor.run { self.onPhaseChanged = onPhaseChanged }
     }
 
     /// Sets callbacks for data change notifications (used by AppState for SwiftUI observation)
     public func setDataChangeCallbacks(
         onContactsChanged: @escaping @Sendable @MainActor () -> Void,
         onConversationsChanged: @escaping @Sendable @MainActor () -> Void
-    ) {
-        self.onContactsChanged = onContactsChanged
-        self.onConversationsChanged = onConversationsChanged
+    ) async {
+        await MainActor.run {
+            self.onContactsChanged = onContactsChanged
+            self.onConversationsChanged = onConversationsChanged
+        }
     }
 
     /// Sets callbacks for message events (used by AppState for MessageEventBroadcaster)
