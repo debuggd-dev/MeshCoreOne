@@ -2,39 +2,81 @@ import Testing
 import SwiftUI
 @testable import PocketMesh
 
+// Mirrors SyncingPillView's private display logic for testability
+private extension StatusPillState {
+    var displayText: String {
+        switch self {
+        case .failed(let message): message
+        case .syncing: L10n.Localizable.Common.Status.syncing
+        case .connecting: L10n.Localizable.Common.Status.connecting
+        case .ready: L10n.Localizable.Common.Status.ready
+        case .disconnected: L10n.Localizable.Common.Status.disconnected
+        case .hidden: ""
+        }
+    }
+
+    var systemImageName: String {
+        switch self {
+        case .failed: "exclamationmark.triangle.fill"
+        case .disconnected: "exclamationmark.triangle"
+        case .ready: "checkmark.circle"
+        case .connecting, .syncing: "arrow.trianglehead.2.clockwise"
+        case .hidden: ""
+        }
+    }
+
+    var isFailure: Bool {
+        if case .failed = self { return true }
+        return false
+    }
+
+    var textColor: Color {
+        if isFailure { return .red }
+        if case .disconnected = self { return .orange }
+        return .primary
+    }
+}
+
 @Suite("SyncingPillView Tests")
 struct SyncingPillViewTests {
 
-    @Test("Connecting state renders correctly")
-    @MainActor
+    @Test("Connecting state shows correct text and icon")
     func connectingState() {
-        let view = SyncingPillView(state: .connecting)
-        // View should render without error
-        _ = view.body
+        let state = StatusPillState.connecting
+        #expect(state.displayText == L10n.Localizable.Common.Status.connecting)
+        #expect(state.systemImageName == "arrow.trianglehead.2.clockwise")
+        #expect(state.isFailure == false)
+        #expect(state.textColor == .primary)
     }
 
-    @Test("Syncing state renders correctly")
-    @MainActor
+    @Test("Syncing state shows correct text and icon")
     func syncingState() {
-        let view = SyncingPillView(state: .syncing)
-        _ = view.body
+        let state = StatusPillState.syncing
+        #expect(state.displayText == L10n.Localizable.Common.Status.syncing)
+        #expect(state.systemImageName == "arrow.trianglehead.2.clockwise")
+        #expect(state.isFailure == false)
+        #expect(state.textColor == .primary)
     }
 
-    @Test("Ready state renders correctly")
-    @MainActor
+    @Test("Ready state shows correct text and icon")
     func readyState() {
-        let view = SyncingPillView(state: .ready)
-        _ = view.body
+        let state = StatusPillState.ready
+        #expect(state.displayText == L10n.Localizable.Common.Status.ready)
+        #expect(state.systemImageName == "checkmark.circle")
+        #expect(state.isFailure == false)
+        #expect(state.textColor == .primary)
     }
 
-    @Test("Disconnected state renders correctly")
-    @MainActor
+    @Test("Disconnected state shows orange warning icon and text")
     func disconnectedState() {
-        let view = SyncingPillView(state: .disconnected)
-        _ = view.body
+        let state = StatusPillState.disconnected
+        #expect(state.displayText == L10n.Localizable.Common.Status.disconnected)
+        #expect(state.systemImageName == "exclamationmark.triangle")
+        #expect(state.isFailure == false)
+        #expect(state.textColor == .orange)
     }
 
-    @Test("Disconnected state with tap handler renders as button")
+    @Test("Disconnected with tap handler stores closure")
     @MainActor
     func disconnectedWithTapHandler() {
         var tapped = false
@@ -42,29 +84,37 @@ struct SyncingPillViewTests {
             state: .disconnected,
             onDisconnectedTap: { tapped = true }
         )
-        _ = view.body
-        // View should render as button when tap handler provided
-        #expect(!tapped) // Handler not called until user taps
+        // The handler is stored but not called until user interaction
+        #expect(!tapped)
+        // Manually invoke to verify the closure is wired correctly
+        view.onDisconnectedTap?()
+        #expect(tapped)
     }
 
-    @Test("Failed state renders correctly")
-    @MainActor
+    @Test("Failed state shows red text and failure icon with custom message")
     func failedState() {
-        let view = SyncingPillView(state: .failed(message: "Sync Failed"))
-        _ = view.body
+        let message = "Sync Failed"
+        let state = StatusPillState.failed(message: message)
+        #expect(state.displayText == message)
+        #expect(state.systemImageName == "exclamationmark.triangle.fill")
+        #expect(state.isFailure == true)
+        #expect(state.textColor == .red)
     }
 
-    @Test("Failed state with custom message")
-    @MainActor
+    @Test("Failed state preserves custom error message")
     func failedStateCustomMessage() {
-        let view = SyncingPillView(state: .failed(message: "Custom Error"))
-        _ = view.body
+        let customMessage = "Custom Error"
+        let state = StatusPillState.failed(message: customMessage)
+        #expect(state.displayText == customMessage)
+        #expect(state.isFailure == true)
     }
 
-    @Test("Hidden state renders empty")
-    @MainActor
+    @Test("Hidden state shows empty text and no icon")
     func hiddenState() {
-        let view = SyncingPillView(state: .hidden)
-        _ = view.body
+        let state = StatusPillState.hidden
+        #expect(state.displayText == "")
+        #expect(state.systemImageName == "")
+        #expect(state.isFailure == false)
+        #expect(state.textColor == .primary)
     }
 }

@@ -36,7 +36,6 @@ extension SyncCoordinator {
         return true
     }
 
-    // swiftlint:disable:next function_body_length
     func wireMessageHandlers(services: ServiceContainer, deviceID: UUID) async {
         logger.info("Wiring message handlers for device \(deviceID)")
 
@@ -47,7 +46,17 @@ extension SyncCoordinator {
         let device = try? await services.dataStore.fetchDevice(id: deviceID)
         let selfNodeName = device?.nodeName ?? ""
 
-        // Contact message handler (direct messages)
+        await wireContactMessageHandler(services: services, deviceID: deviceID, selfNodeName: selfNodeName)
+        await wireChannelMessageHandler(services: services, deviceID: deviceID, selfNodeName: selfNodeName)
+        await wireSignedMessageHandler(services: services)
+        await wireCLIMessageHandler(services: services)
+
+        logger.info("Message handlers wired successfully")
+    }
+
+    // MARK: - Contact Message Handler
+
+    private func wireContactMessageHandler(services: ServiceContainer, deviceID: UUID, selfNodeName: String) async {
         await services.messagePollingService.setContactMessageHandler { [weak self] message, contact in
             guard let self else { return }
 
@@ -180,8 +189,11 @@ extension SyncCoordinator {
                 self.logger.error("Failed to save contact message: \(error)")
             }
         }
+    }
 
-        // Channel message handler
+    // MARK: - Channel Message Handler
+
+    private func wireChannelMessageHandler(services: ServiceContainer, deviceID: UUID, selfNodeName: String) async {
         await services.messagePollingService.setChannelMessageHandler { [weak self] message, channel in
             guard let self else { return }
 
@@ -319,8 +331,11 @@ extension SyncCoordinator {
                 self.logger.error("Failed to save channel message: \(error)")
             }
         }
+    }
 
-        // Signed message handler (room server messages)
+    // MARK: - Signed Message Handler
+
+    private func wireSignedMessageHandler(services: ServiceContainer) async {
         await services.messagePollingService.setSignedMessageHandler { [weak self] message, _ in
             guard let self else { return }
 
@@ -362,8 +377,11 @@ extension SyncCoordinator {
                 self.logger.error("Failed to handle room message: \(error)")
             }
         }
+    }
 
-        // CLI message handler (repeater admin responses)
+    // MARK: - CLI Message Handler
+
+    private func wireCLIMessageHandler(services: ServiceContainer) async {
         await services.messagePollingService.setCLIMessageHandler { [weak self] message, contact in
             guard let self else { return }
 
@@ -373,8 +391,6 @@ extension SyncCoordinator {
                 self.logger.warning("Dropping CLI response: no contact found for sender")
             }
         }
-
-        logger.info("Message handlers wired successfully")
     }
 
     // MARK: - Discovery Handler Wiring

@@ -159,15 +159,26 @@ struct ChatViewModelTests {
         #expect(ChatViewModel.computeDisplayFlags(for: messages[5], previous: messages[4]).showTimestamp == false)
     }
 
-    @Test("Empty messages array handled gracefully")
-    func emptyMessagesArrayHandledGracefully() {
-        let messages: [MessageDTO] = []
+    @Test("buildDisplayItems with empty messages produces empty output")
+    func buildDisplayItemsEmptyMessages() {
+        let viewModel = ChatViewModel()
+        viewModel.messages = []
+        viewModel.buildDisplayItems()
 
-        // Index 0 on empty array would typically crash, but guard index > 0 returns true
-        // This is an edge case - in practice we wouldn't call this with index 0 on empty array
-        // The function assumes valid indices are passed
-        // Let's verify the function handles the first message case correctly
-        #expect(messages.isEmpty)
+        #expect(viewModel.displayItems.isEmpty)
+        #expect(viewModel.messagesByID.isEmpty)
+        #expect(viewModel.displayItemIndexByID.isEmpty)
+    }
+
+    @Test("computeDisplayFlags with same timestamp messages")
+    func computeDisplayFlagsSameTimestamp() {
+        let baseTime: UInt32 = 1000
+        let first = createTestMessage(timestamp: baseTime, text: "Hello")
+        let second = createTestMessage(timestamp: baseTime, text: "World")
+
+        let flags = ChatViewModel.computeDisplayFlags(for: second, previous: first)
+        #expect(flags.showTimestamp == false)
+        #expect(flags.showDirectionGap == false)
     }
 
     @Test("Single message array shows timestamp")

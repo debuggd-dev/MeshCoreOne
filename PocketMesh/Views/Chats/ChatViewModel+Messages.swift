@@ -832,13 +832,20 @@ extension ChatViewModel {
         }
     }
 
+    /// Maximum messages to fetch when deleting a conversation
+    private static let deleteConversationFetchLimit = 10_000
+
     /// Delete all messages for a contact (conversation deletion)
     func deleteConversation(for contact: ContactDTO) async throws {
         guard appState?.connectionState == .ready else { return }
         guard let dataStore else { return }
 
         // Fetch all messages for this contact
-        let messages = try await dataStore.fetchMessages(contactID: contact.id, limit: 10000)
+        let messages = try await dataStore.fetchMessages(contactID: contact.id, limit: Self.deleteConversationFetchLimit)
+
+        if messages.count == Self.deleteConversationFetchLimit {
+            logger.warning("deleteConversation hit fetch limit of \(Self.deleteConversationFetchLimit) for contact \(contact.id) — some messages may remain")
+        }
 
         // Delete each message
         for message in messages {
