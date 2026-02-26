@@ -534,6 +534,9 @@
 /* Location: RoomConversationView.swift - Accessibility hint for disconnected banner */
 "remoteNodes.room.disconnectedHint" = "Tap to reconnect";
 
+/* Location: RoomConversationView.swift - Room reconnected status */
+"remoteNodes.room.reconnected" = "Sala reconectada";
+
 // MARK: - Room Message Bubble
 
 /* Location: RoomMessageBubble.swift - Accessibility hint for retry button */

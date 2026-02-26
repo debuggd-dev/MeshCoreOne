@@ -513,6 +513,9 @@
 /* Location: RoomConversationView.swift - Connected status */
 "remoteNodes.room.connected" = "Подключено";
 
+/* Location: RoomConversationView.swift - Reconnected status */
+"remoteNodes.room.reconnected" = "Комната переподключена";
+
 /* Location: RoomConversationView.swift - Activity section header */
 "remoteNodes.room.activity" = "Активность";
 

@@ -934,3 +934,52 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Sleutel: %@";
+
+// MARK: - Message Actions & Notification Level
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Bericht";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Label for notification level */
+"chats.notificationLevel.label" = "Meldingsniveau";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Accessibility hint for notification level */
+"chats.notificationLevel.hint" = "Kies wanneer je meldingen wilt ontvangen";
+
+/* Location: ConversationRow.swift - Purpose: Mentions-only indicator */
+"chats.row.mentionsOnly" = "Alleen vermeldingen";
+
+// MARK: - Reaction Badges & Actions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji + count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Badge accessibility hint */
+"reactions.badge_hint" = "Tik twee keer om te reageren, houd ingedrukt voor details";
+
+/* Location: ReactionBadgeView.swift - More badge showing additional reaction types */
+"reactions.more_badge" = "%d meer reactietypes";
+
+/* Location: ReactionBadgeView.swift - More badge accessibility hint */
+"reactions.more_badge_hint" = "Tik twee keer om alle reacties te bekijken";
+
+/* Location: EmojiPickerSheet.swift - More emojis button */
+"reactions.more_emojis" = "Meer emoji's";
+
+/* Location: ReactionBadgeView.swift - View details button */
+"reactions.view_details" = "Reactiedetails bekijken";
+
+/* Location: ReactionDetailsSheet.swift - Details sheet title */
+"reactions.details_title" = "Reacties";
+
+/* Location: ReactionSendError.swift - Send failed message */
+"reactions.send_failed" = "Reactie kon niet worden verzonden";
+
+/* Location: MessageActionsSheet.swift - Reply action */
+"reactions.reply" = "Beantwoorden";
+
+/* Location: MessageActionsSheet.swift - Copy action */
+"reactions.copy" = "Kopiëren";
+
+/* Location: MessageActionsSheet.swift - Delete action */
+"reactions.delete" = "Verwijderen";

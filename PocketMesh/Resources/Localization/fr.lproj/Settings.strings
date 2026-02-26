@@ -454,100 +454,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Nœuds";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Mode d'ajout automatique";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Manuel";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Examiner tous les nœuds dans Découvrir avant d'ajouter";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Types sélectionnés";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Ajouter automatiquement uniquement les types activés ci-dessous";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Tous";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Ajouter automatiquement chaque nœud découvert";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Types d'ajout automatique";
 
 /* Toggle label for auto-add contacts */
 "nodes.autoAddContacts" = "Contacts";
 
 /* Toggle label for auto-add repeaters */
-"nodes.autoAddRepeaters" = "Repeaters";
+"nodes.autoAddRepeaters" = "Répéteurs";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Serveurs de salle";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Stockage";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Écraser le plus ancien";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Lorsque le stockage est plein, remplacer le nœud non favori le plus ancien";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Supprimer automatiquement les anciens nœuds";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Supprimer les nœuds de plus de";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Sélectionner";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d jours";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Les nœuds non favoris non détectés depuis %d jours sont automatiquement supprimés lors de la connexion.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Supprime automatiquement les nœuds non favoris non détectés après une période définie. Les favoris ne sont jamais supprimés.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Choisissez combien de temps garder les nœuds. Les favoris ne sont jamais supprimés.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Vérifiera les anciens nœuds lors de la prochaine connexion. Les favoris ne sont jamais supprimés.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Dernière vérification %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Appareil";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Redémarrer l'appareil";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Redémarrage…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Redémarrer l'appareil ?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Redémarrer";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "L'appareil va redémarrer et se déconnecter temporairement.";
 
 
 // MARK: - Danger Zone Section
@@ -719,6 +719,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Avertissements de batterie faible";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Réactions";
 
 /* Button to enable notifications */
 "notifications.enable" = "Activer les notifications";

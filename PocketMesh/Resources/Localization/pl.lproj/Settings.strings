@@ -454,100 +454,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Węzły";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Tryb automatycznego dodawania";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Ręczny";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Przejrzyj wszystkie węzły w Odkrywaniu przed dodaniem";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Wybrane typy";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Automatycznie dodawaj tylko typy włączone poniżej";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Wszystkie";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Automatycznie dodawaj każdy odkryty węzeł";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Typy automatycznego dodawania";
 
 /* Toggle label for auto-add contacts */
-"nodes.autoAddContacts" = "Contacts";
+"nodes.autoAddContacts" = "Kontakty";
 
 /* Toggle label for auto-add repeaters */
-"nodes.autoAddRepeaters" = "Repeaters";
+"nodes.autoAddRepeaters" = "Przekaźniki";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Serwery pokojów";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Pamięć";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Nadpisz najstarsze";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Gdy pamięć jest pełna, zastąp najstarszy nieulubiony węzeł";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Automatyczne usuwanie starych węzłów";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Usuń węzły starsze niż";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Wybierz";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d dni";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Nieulubione węzły, od których nie było sygnału przez %d dni, są automatycznie usuwane przy połączeniu.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Automatycznie usuwa nieulubione węzły, od których nie było sygnału po ustalonym okresie. Ulubione nigdy nie są usuwane.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Wybierz, jak długo przechowywać węzły. Ulubione nigdy nie są usuwane.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Sprawdzi stare węzły przy następnym połączeniu. Ulubione nigdy nie są usuwane.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Ostatnio sprawdzono %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Urządzenie";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Uruchom ponownie";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Ponowne uruchamianie…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Uruchomić ponownie?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Uruchom ponownie";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "Urządzenie zostanie ponownie uruchomione i tymczasowo rozłączone.";
 
 
 // MARK: - Danger Zone Section
@@ -719,6 +719,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Ostrzeżenia o niskim stanie baterii";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Reakcje";
 
 /* Button to enable notifications */
 "notifications.enable" = "Włącz powiadomienia";

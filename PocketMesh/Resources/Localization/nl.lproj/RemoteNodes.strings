@@ -516,6 +516,9 @@
 /* Location: RoomConversationView.swift - Connected status */
 "remoteNodes.room.connected" = "Verbonden";
 
+/* Location: RoomConversationView.swift - Room reconnected status */
+"remoteNodes.room.reconnected" = "Ruimte opnieuw verbonden";
+
 /* Location: RoomConversationView.swift - Activity section header */
 "remoteNodes.room.activity" = "Activiteit";
 

@@ -934,3 +934,53 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Clé : %@";
+
+
+// MARK: - Message Actions & Notification Level
+
+/* Location: MessageActionsSheet.swift - Sheet title */
+"chats.messageActions.title" = "Message";
+
+/* Location: NotificationLevelPicker.swift - Label for notification level picker */
+"chats.notificationLevel.label" = "Niveau de notification";
+
+/* Location: NotificationLevelPicker.swift - Hint for notification level picker */
+"chats.notificationLevel.hint" = "Choisissez quand recevoir des notifications";
+
+/* Location: ConversationRow.swift - Mentions only indicator */
+"chats.row.mentionsOnly" = "Mentions uniquement";
+
+// MARK: - Reaction Badges & Actions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji + count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Badge accessibility hint */
+"reactions.badge_hint" = "Touchez deux fois pour réagir, appui long pour les détails";
+
+/* Location: ReactionBadgeView.swift - More badge: additional reaction types count */
+"reactions.more_badge" = "%d autres types de réaction";
+
+/* Location: ReactionBadgeView.swift - More badge accessibility hint */
+"reactions.more_badge_hint" = "Touchez deux fois pour voir toutes les réactions";
+
+/* Location: EmojiPickerSheet.swift - More emojis button */
+"reactions.more_emojis" = "Plus d'émojis";
+
+/* Location: ReactionBadgeView.swift - View details button */
+"reactions.view_details" = "Voir les détails des réactions";
+
+/* Location: ReactionDetailsSheet.swift - Details sheet title */
+"reactions.details_title" = "Réactions";
+
+/* Location: ReactionViewModel.swift - Send failed error */
+"reactions.send_failed" = "Impossible d'envoyer la réaction";
+
+/* Location: MessageActionsSheet.swift - Reply action */
+"reactions.reply" = "Répondre";
+
+/* Location: MessageActionsSheet.swift - Copy action */
+"reactions.copy" = "Copier";
+
+/* Location: MessageActionsSheet.swift - Delete action */
+"reactions.delete" = "Supprimer";

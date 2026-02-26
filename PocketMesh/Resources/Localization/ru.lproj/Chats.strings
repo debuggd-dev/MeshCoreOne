@@ -925,3 +925,52 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Ключ: %@";
+
+// MARK: - Message Actions & Notification Level
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Сообщение";
+
+/* Location: NotificationLevelPicker - Purpose: Label for notification level picker */
+"chats.notificationLevel.label" = "Уровень уведомлений";
+
+/* Location: NotificationLevelPicker - Purpose: Accessibility hint */
+"chats.notificationLevel.hint" = "Выберите, когда получать уведомления";
+
+/* Location: ConversationRow.swift - Purpose: Mentions only indicator */
+"chats.row.mentionsOnly" = "Только упоминания";
+
+// MARK: - Reactions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji and count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Badge accessibility hint */
+"reactions.badge_hint" = "Нажмите дважды, чтобы отреагировать, удерживайте для подробностей";
+
+/* Location: ReactionBadgeView.swift - More reactions badge */
+"reactions.more_badge" = "Ещё %d типов реакций";
+
+/* Location: ReactionBadgeView.swift - More reactions badge accessibility hint */
+"reactions.more_badge_hint" = "Нажмите дважды, чтобы увидеть все реакции";
+
+/* Location: EmojiPickerSheet.swift - More emojis button */
+"reactions.more_emojis" = "Больше эмодзи";
+
+/* Location: ReactionDetailsSheet.swift - View details button */
+"reactions.view_details" = "Подробности реакций";
+
+/* Location: ReactionDetailsSheet.swift - Details sheet title */
+"reactions.details_title" = "Реакции";
+
+/* Location: ReactionViewModel.swift - Send failed error */
+"reactions.send_failed" = "Не удалось отправить реакцию";
+
+/* Location: ReactionContextMenu.swift - Reply action */
+"reactions.reply" = "Ответить";
+
+/* Location: ReactionContextMenu.swift - Copy action */
+"reactions.copy" = "Копировать";
+
+/* Location: ReactionContextMenu.swift - Delete action */
+"reactions.delete" = "Удалить";

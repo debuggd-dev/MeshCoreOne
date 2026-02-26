@@ -24,7 +24,7 @@
 "tools.noiseFloor" = "Grundrauschen";
 
 /* Location: ToolsView.swift - Tool selection label */
-"tools.nodeDiscovery" = "Discover Nodes";
+"tools.nodeDiscovery" = "Knoten entdecken";
 
 /* Location: ToolsView.swift - Empty state when no tool selected */
 "tools.selectTool" = "Wähle ein Werkzeug";
@@ -235,46 +235,46 @@
 // MARK: - Node Discovery View
 
 /* Location: NodeDiscoveryView.swift - Disconnected state description */
-"tools.nodeDiscovery.notConnectedDescription" = "Connect to a mesh radio to discover %@.";
+"tools.nodeDiscovery.notConnectedDescription" = "Verbinde dich mit einem Mesh-Radio, um %@ zu entdecken.";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state title */
-"tools.nodeDiscovery.scanPrompt" = "Scan for %@";
+"tools.nodeDiscovery.scanPrompt" = "Nach %@ suchen";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state description */
-"tools.nodeDiscovery.scanPromptDescription" = "Tap the button below to discover nearby %@.";
+"tools.nodeDiscovery.scanPromptDescription" = "Tippe auf die Schaltfläche unten, um %@ in der Nähe zu entdecken.";
 
 /* Location: NodeDiscoveryView.swift - No results empty state title */
-"tools.nodeDiscovery.noResults" = "No %@ Found";
+"tools.nodeDiscovery.noResults" = "Keine %@ gefunden";
 
 /* Location: NodeDiscoveryView.swift - No results empty state description */
-"tools.nodeDiscovery.noResultsDescription" = "No %@ responded to the discovery ping. Try again or move closer to the mesh.";
+"tools.nodeDiscovery.noResultsDescription" = "Keine %@ haben auf den Erkennungspingpfad geantwortet. Versuche es erneut oder gehe näher an das Mesh.";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (idle) */
-"tools.nodeDiscovery.scanButton" = "Scan for %@";
+"tools.nodeDiscovery.scanButton" = "Nach %@ suchen";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (scanning) */
-"tools.nodeDiscovery.stopButton" = "Stop Scanning";
+"tools.nodeDiscovery.stopButton" = "Suche stoppen";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.repeaters" = "Repeaters";
+"tools.nodeDiscovery.repeaters" = "Repeater";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.sensors" = "Sensors";
+"tools.nodeDiscovery.sensors" = "Sensoren";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortSignal" = "Signal Strength";
+"tools.nodeDiscovery.sortSignal" = "Signalstärke";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
 "tools.nodeDiscovery.sortName" = "Name";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility label */
-"tools.nodeDiscovery.sortMenu" = "Sort nodes";
+"tools.nodeDiscovery.sortMenu" = "Knoten sortieren";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility hint */
-"tools.nodeDiscovery.sortMenuHint" = "Changes the sort order of discovered nodes";
+"tools.nodeDiscovery.sortMenuHint" = "Ändert die Sortierreihenfolge der entdeckten Knoten";
 
 /* Location: NodeDiscoveryRowView.swift - Unknown node name fallback */
-"tools.nodeDiscovery.unknownNode" = "Unknown";
+"tools.nodeDiscovery.unknownNode" = "Unbekannt";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: repeater */
 "tools.nodeDiscovery.typeRepeater" = "Repeater";
@@ -292,7 +292,7 @@
 "tools.nodeDiscovery.rssi" = "RSSI %@ dBm";
 
 /* Location: NodeDiscoveryView.swift - Error alert title */
-"tools.nodeDiscovery.errorTitle" = "Scan Failed";
+"tools.nodeDiscovery.errorTitle" = "Suche fehlgeschlagen";
 
 // MARK: - Line of Sight View
 
@@ -427,6 +427,15 @@
 
 /* Location: LineOfSightViewModel.swift - Dropped pin display name */
 "tools.lineOfSight.droppedPin" = "Gesetzte Stecknadel";
+
+/* Location: LOSRepeaterPinView.swift - Accessibility hint for repeater pins */
+"tools.lineOfSight.repeaterPin.accessibilityHint" = "Doppeltippen, um als Analysepunkt auszuwählen";
+
+/* Location: LOSPointPinView.swift - Accessibility hint for point pins */
+"tools.lineOfSight.pointPin.accessibilityHint" = "Sichtlinien-Analysepunkt";
+
+/* Location: LOSRepeaterTargetPinView.swift - Accessibility hint for repeater target */
+"tools.lineOfSight.repeaterTarget.accessibilityHint" = "Repeater-Platzierungsmarker";
 
 // MARK: - Terrain Profile Canvas
 

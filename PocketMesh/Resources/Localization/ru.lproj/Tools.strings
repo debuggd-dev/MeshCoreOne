@@ -24,7 +24,7 @@
 "tools.noiseFloor" = "Уровень шума";
 
 /* Location: ToolsView.swift - Tool selection label */
-"tools.nodeDiscovery" = "Discover Nodes";
+"tools.nodeDiscovery" = "Обнаружение узлов";
 
 /* Location: ToolsView.swift - Empty state when no tool selected */
 "tools.selectTool" = "Выберите инструмент";
@@ -235,52 +235,52 @@
 // MARK: - Node Discovery View
 
 /* Location: NodeDiscoveryView.swift - Disconnected state description */
-"tools.nodeDiscovery.notConnectedDescription" = "Connect to a mesh radio to discover %@.";
+"tools.nodeDiscovery.notConnectedDescription" = "Подключитесь к mesh-радио, чтобы обнаружить %@.";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state title */
-"tools.nodeDiscovery.scanPrompt" = "Scan for %@";
+"tools.nodeDiscovery.scanPrompt" = "Поиск %@";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state description */
-"tools.nodeDiscovery.scanPromptDescription" = "Tap the button below to discover nearby %@.";
+"tools.nodeDiscovery.scanPromptDescription" = "Нажмите кнопку ниже, чтобы обнаружить ближайшие %@.";
 
 /* Location: NodeDiscoveryView.swift - No results empty state title */
-"tools.nodeDiscovery.noResults" = "No %@ Found";
+"tools.nodeDiscovery.noResults" = "%@ не найдены";
 
 /* Location: NodeDiscoveryView.swift - No results empty state description */
-"tools.nodeDiscovery.noResultsDescription" = "No %@ responded to the discovery ping. Try again or move closer to the mesh.";
+"tools.nodeDiscovery.noResultsDescription" = "Ни один %@ не ответил на пинг обнаружения. Попробуйте снова или подойдите ближе к сети mesh.";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (idle) */
-"tools.nodeDiscovery.scanButton" = "Scan for %@";
+"tools.nodeDiscovery.scanButton" = "Поиск %@";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (scanning) */
-"tools.nodeDiscovery.stopButton" = "Stop Scanning";
+"tools.nodeDiscovery.stopButton" = "Остановить поиск";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.repeaters" = "Repeaters";
+"tools.nodeDiscovery.repeaters" = "Ретрансляторы";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.sensors" = "Sensors";
+"tools.nodeDiscovery.sensors" = "Датчики";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortSignal" = "Signal Strength";
+"tools.nodeDiscovery.sortSignal" = "Уровень сигнала";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortName" = "Name";
+"tools.nodeDiscovery.sortName" = "Имя";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility label */
-"tools.nodeDiscovery.sortMenu" = "Sort nodes";
+"tools.nodeDiscovery.sortMenu" = "Сортировать узлы";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility hint */
-"tools.nodeDiscovery.sortMenuHint" = "Changes the sort order of discovered nodes";
+"tools.nodeDiscovery.sortMenuHint" = "Изменяет порядок сортировки обнаруженных узлов";
 
 /* Location: NodeDiscoveryRowView.swift - Unknown node name fallback */
-"tools.nodeDiscovery.unknownNode" = "Unknown";
+"tools.nodeDiscovery.unknownNode" = "Неизвестно";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: repeater */
-"tools.nodeDiscovery.typeRepeater" = "Repeater";
+"tools.nodeDiscovery.typeRepeater" = "Ретранслятор";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: sensor */
-"tools.nodeDiscovery.typeSensor" = "Sensor";
+"tools.nodeDiscovery.typeSensor" = "Датчик";
 
 /* Location: NodeDiscoveryRowView.swift - SNR label (local receive) */
 "tools.nodeDiscovery.snrDown" = "↓ %@ dB";
@@ -292,7 +292,7 @@
 "tools.nodeDiscovery.rssi" = "RSSI %@ dBm";
 
 /* Location: NodeDiscoveryView.swift - Error alert title */
-"tools.nodeDiscovery.errorTitle" = "Scan Failed";
+"tools.nodeDiscovery.errorTitle" = "Поиск не удался";
 
 // MARK: - Line of Sight View
 
@@ -427,6 +427,15 @@
 
 /* Location: LineOfSightViewModel.swift - Dropped pin display name */
 "tools.lineOfSight.droppedPin" = "Установленная метка";
+
+/* Accessibility hint for repeater pin */
+"tools.lineOfSight.repeaterPin.accessibilityHint" = "Нажмите дважды, чтобы выбрать как точку анализа";
+
+/* Accessibility hint for point pin */
+"tools.lineOfSight.pointPin.accessibilityHint" = "Точка анализа прямой видимости";
+
+/* Accessibility hint for repeater target */
+"tools.lineOfSight.repeaterTarget.accessibilityHint" = "Маркер размещения ретранслятора";
 
 // MARK: - Terrain Profile Canvas
 

@@ -51,6 +51,8 @@
 /* No data returned from API */
 "common.error.noElevationData" = "Keine Höhendaten zurückgegeben";
 
+"common.error.rateLimited" = "Zu viele Anfragen. Bitte versuche es in Kürze erneut.";
+
 /* Standard remove button for removing items from a list or group */
 "common.remove" = "Entfernen";
 
@@ -114,6 +116,10 @@
 /* VoiceOver announcement when viewing cached data while disconnected from device */
 "accessibility.viewingCachedData" = "Zwischengespeicherte Daten werden angezeigt. Gerät verbinden für Aktualisierungen.";
 
+"accessibility.off" = "Aus";
+
+"accessibility.on" = "Ein";
+
 
 // MARK: - Node Types
 
@@ -173,6 +179,8 @@
 
 /* Notification body for low battery warning - %1$@ is device name, %2$d is battery percentage */
 "notifications.lowBattery.body" = "%1$@ Akku bei %2$d%%";
+
+"notifications.reaction.body" = "%1$@ hat auf deine Nachricht reagiert: \"%2$@\"";
 
 
 // MARK: - Connection VoiceOver Announcements

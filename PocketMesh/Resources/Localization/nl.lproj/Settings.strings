@@ -454,100 +454,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Knooppunten";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Automatisch toevoegen";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Handmatig";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Alle knooppunten in Ontdekken bekijken voordat ze worden toegevoegd";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Geselecteerde typen";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Alleen de hieronder ingeschakelde typen automatisch toevoegen";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Alle";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Elk ontdekt knooppunt automatisch toevoegen";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Automatisch toevoegen";
 
 /* Toggle label for auto-add contacts */
-"nodes.autoAddContacts" = "Contacts";
+"nodes.autoAddContacts" = "Contacten";
 
 /* Toggle label for auto-add repeaters */
 "nodes.autoAddRepeaters" = "Repeaters";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Ruimteservers";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Opslag";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Oudste overschrijven";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Wanneer de opslag vol is, het oudste niet-favoriete knooppunt vervangen";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Oude knooppunten automatisch verwijderen";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Knooppunten ouder dan verwijderen";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Selecteer";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d dagen";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Niet-favoriete knooppunten die %d dagen niet zijn gehoord, worden automatisch verwijderd bij verbinding.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Verwijdert automatisch niet-favoriete knooppunten die na een ingestelde periode niet zijn gehoord. Favorieten worden nooit verwijderd.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Kies hoe lang knooppunten bewaard worden. Favorieten worden nooit verwijderd.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Controleert op oude knooppunten bij de volgende verbinding. Favorieten worden nooit verwijderd.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Laatst gecontroleerd %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Apparaat";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Apparaat herstarten";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Herstarten…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Apparaat herstarten?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Herstarten";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "Het apparaat wordt herstart en tijdelijk losgekoppeld.";
 
 
 // MARK: - Danger Zone Section
@@ -719,6 +719,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Waarschuwingen lage batterij";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Reacties";
 
 /* Button to enable notifications */
 "notifications.enable" = "Meldingen inschakelen";

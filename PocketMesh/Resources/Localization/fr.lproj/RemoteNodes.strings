@@ -558,3 +558,8 @@
 
 /* Location: Multiple files - Name label */
 "remoteNodes.name" = "Nom";
+
+// MARK: - Room Reconnection
+
+/* Location: RoomConversationView.swift - Status when room reconnects */
+"remoteNodes.room.reconnected" = "Salle reconnectée";

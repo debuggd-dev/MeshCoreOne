@@ -519,22 +519,22 @@
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "设备";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "重启设备";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "正在重启…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "重启设备？";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "重启";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "设备将重新启动并暂时断开连接。";
 
 
 // MARK: - Danger Zone Section

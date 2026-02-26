@@ -934,3 +934,52 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Clave: %@";
+
+// MARK: - Message Actions & Notification Level
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Mensaje";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Label for notification level */
+"chats.notificationLevel.label" = "Nivel de notificación";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Accessibility hint */
+"chats.notificationLevel.hint" = "Elige cuándo recibir notificaciones";
+
+/* Location: ConversationRow.swift - Purpose: Mentions only indicator */
+"chats.row.mentionsOnly" = "Solo menciones";
+
+// MARK: - Reactions
+
+/* Location: ReactionBadgeView.swift - Purpose: Badge format (emoji + count) */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Purpose: Accessibility hint for reaction badge */
+"reactions.badge_hint" = "Toca dos veces para reaccionar, mantén presionado para ver detalles";
+
+/* Location: ReactionBadgeView.swift - Purpose: Overflow badge showing additional reaction types */
+"reactions.more_badge" = "%d tipos de reacción más";
+
+/* Location: ReactionBadgeView.swift - Purpose: Accessibility hint for overflow badge */
+"reactions.more_badge_hint" = "Toca dos veces para ver todas las reacciones";
+
+/* Location: EmojiPickerSheet.swift - Purpose: More emojis button */
+"reactions.more_emojis" = "Más emojis";
+
+/* Location: ReactionBadgeView.swift - Purpose: View details button */
+"reactions.view_details" = "Ver detalles de reacciones";
+
+/* Location: ReactionDetailsSheet.swift - Purpose: Details sheet title */
+"reactions.details_title" = "Reacciones";
+
+/* Location: ReactionService.swift - Purpose: Error when sending reaction fails */
+"reactions.send_failed" = "No se pudo enviar la reacción";
+
+/* Location: MessageActionsSheet.swift - Purpose: Reply action */
+"reactions.reply" = "Responder";
+
+/* Location: MessageActionsSheet.swift - Purpose: Copy action */
+"reactions.copy" = "Copiar";
+
+/* Location: MessageActionsSheet.swift - Purpose: Delete action */
+"reactions.delete" = "Eliminar";

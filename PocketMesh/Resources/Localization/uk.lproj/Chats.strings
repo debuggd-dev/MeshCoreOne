@@ -925,3 +925,54 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Ключ: %@";
+
+// MARK: - Message Actions Sheet
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Повідомлення";
+
+// MARK: - Notification Level
+
+/* Location: NotificationLevelPicker.swift - Purpose: Label for notification level */
+"chats.notificationLevel.label" = "Рівень сповіщень";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Hint for notification level picker */
+"chats.notificationLevel.hint" = "Оберіть, коли отримувати сповіщення";
+
+/* Location: ConversationRow.swift - Purpose: Mentions-only indicator */
+"chats.row.mentionsOnly" = "Лише згадки";
+
+// MARK: - Reactions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji + count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Accessibility hint for reaction badge */
+"reactions.badge_hint" = "Натисніть двічі, щоб відреагувати, утримуйте для деталей";
+
+/* Location: ReactionBadgeView.swift - More reaction types badge */
+"reactions.more_badge" = "Ще %d типів реакцій";
+
+/* Location: ReactionBadgeView.swift - Accessibility hint for more badge */
+"reactions.more_badge_hint" = "Натисніть двічі, щоб побачити всі реакції";
+
+/* Location: ReactionBadgeView.swift - More emojis button */
+"reactions.more_emojis" = "Більше емодзі";
+
+/* Location: ReactionBadgeView.swift - View details button */
+"reactions.view_details" = "Деталі реакцій";
+
+/* Location: ReactionDetailsSheet.swift - Details title */
+"reactions.details_title" = "Реакції";
+
+/* Location: ReactionBadgeView.swift - Send failed error */
+"reactions.send_failed" = "Не вдалося надіслати реакцію";
+
+/* Location: MessageActionsSheet.swift - Reply action */
+"reactions.reply" = "Відповісти";
+
+/* Location: MessageActionsSheet.swift - Copy action */
+"reactions.copy" = "Копіювати";
+
+/* Location: MessageActionsSheet.swift - Delete action */
+"reactions.delete" = "Видалити";

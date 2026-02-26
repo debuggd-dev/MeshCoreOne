@@ -525,6 +525,9 @@
 /* Location: RoomConversationView.swift - Public key label */
 "remoteNodes.room.publicKey" = "Публічний ключ";
 
+/* Location: RoomConversationView.swift - Room reconnected status */
+"remoteNodes.room.reconnected" = "Кімнату перепідключено";
+
 /* Location: RoomConversationView.swift - Disconnected banner text */
 "remoteNodes.room.disconnectedBanner" = "Disconnected";
 
