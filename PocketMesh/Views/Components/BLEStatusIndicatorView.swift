@@ -200,7 +200,7 @@ private struct ConnectedMenu: View {
     let onDisconnect: () -> Void
 
     var body: some View {
-        Menu {
+        ToolbarMenu {
             if let device = appState.connectedDevice {
                 Section {
                     if device.clientRepeat {

@@ -71,6 +71,35 @@ extension View {
     }
 }
 
+/// Drop-in replacement for `Menu` that works around an iPadOS 26 Liquid Glass bug
+/// where toolbar Menus leave a ghost box after dismissal.
+///
+/// On iOS 26+, renders the label as a plain view with an invisible interactive `Menu`
+/// overlay, so the glass morph animation has nothing visible to ghost.
+/// On earlier iOS versions, uses a standard `Menu`.
+struct ToolbarMenu<Content: View, LabelView: View>: View {
+    let content: Content
+    let label: LabelView
+
+    init(@ViewBuilder content: () -> Content, @ViewBuilder label: () -> LabelView) {
+        self.content = content()
+        self.label = label()
+    }
+
+    var body: some View {
+        if #available(iOS 26, *) {
+            label
+                .accessibilityHidden(true)
+                .overlay {
+                    Menu { content } label: { label }
+                        .colorMultiply(.clear)
+                }
+        } else {
+            Menu { content } label: { label }
+        }
+    }
+}
+
 /// A container that uses GlassEffectContainer on iOS 26+, passes through content on earlier versions
 struct LiquidGlassContainer<Content: View>: View {
     let spacing: CGFloat
