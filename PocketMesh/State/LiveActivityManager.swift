@@ -20,8 +20,14 @@ public final class LiveActivityManager {
     private var recentPacketTimestamps: [Date] = []
 
     static let decayInterval: TimeInterval = 5
-    static let packetWindowSeconds: TimeInterval = 60
+    static let packetWindowSeconds: TimeInterval = 15
+    static let secondsPerMinute: TimeInterval = 60
     static let disconnectGracePeriod: TimeInterval = 300
+
+    /// Projects the short-window packet count to a per-minute rate.
+    private var projectedPacketsPerMinute: Int {
+        Int((Double(recentPacketTimestamps.count) * Self.secondsPerMinute / Self.packetWindowSeconds).rounded())
+    }
 
     var isEnabled: Bool {
         UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
@@ -103,7 +109,7 @@ public final class LiveActivityManager {
         recentPacketTimestamps.append(now)
         let cutoff = now.addingTimeInterval(-Self.packetWindowSeconds)
         recentPacketTimestamps.removeAll { $0 < cutoff }
-        await updateActivity(packetsPerMinute: recentPacketTimestamps.count)
+        await updateActivity(packetsPerMinute: projectedPacketsPerMinute)
     }
 
     func handleBatteryChanged(battery: BatteryInfo) async {
@@ -157,7 +163,7 @@ public final class LiveActivityManager {
                 guard !Task.isCancelled, let self else { return }
                 let cutoff = Date.now.addingTimeInterval(-Self.packetWindowSeconds)
                 self.recentPacketTimestamps.removeAll { $0 < cutoff }
-                await self.updateActivity(packetsPerMinute: self.recentPacketTimestamps.count)
+                await self.updateActivity(packetsPerMinute: self.projectedPacketsPerMinute)
             }
         }
     }
