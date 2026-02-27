@@ -6,9 +6,7 @@ struct MeshStatusLiveActivity: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: MeshStatusAttributes.self) { context in
             LockScreenView(context: context)
-                .activityBackgroundTint(
-                    context.state.isConnected ? .green.opacity(0.15) : .orange.opacity(0.2)
-                )
+                .activityBackgroundTint(Color(red: 51 / 255, green: 102 / 255, blue: 136 / 255).opacity(0.2)) // slate blue (#336688)
         } dynamicIsland: { context in
             DynamicIsland {
                 DynamicIslandExpandedRegion(.leading) {
