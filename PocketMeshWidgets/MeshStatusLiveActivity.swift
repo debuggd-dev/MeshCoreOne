@@ -14,6 +14,7 @@ struct MeshStatusLiveActivity: Widget {
                 DynamicIslandExpandedRegion(.leading) {
                     HStack {
                         Image(systemName: context.state.antennaIconName)
+                            .foregroundStyle(context.state.isConnected ? .green : .orange)
                             .accessibilityHidden(true)
                         Text(context.attributes.deviceName)
                             .bold()
@@ -27,7 +28,7 @@ struct MeshStatusLiveActivity: Widget {
                 }
                 DynamicIslandExpandedRegion(.center) {
                     if context.state.isConnected {
-                        RXFreshnessLabel(lastRXDate: context.state.lastRXDate)
+                        PacketRateLabel(packetsPerMinute: context.state.packetsPerMinute)
                     } else {
                         Text("Disconnected")
                             .foregroundStyle(.orange)
@@ -55,16 +56,19 @@ struct MeshStatusLiveActivity: Widget {
                 }
             } compactLeading: {
                 Image(systemName: context.state.antennaIconName)
+                    .foregroundStyle(context.state.isConnected ? .green : .orange)
             } compactTrailing: {
-                if context.state.isConnected, let lastRX = context.state.lastRXDate {
-                    Text(lastRX, style: .relative)
+                if context.state.isConnected {
+                    Text("↓\(context.state.packetsPerMinute)/m")
                         .monospacedDigit()
                         .fixedSize()
+                        .contentTransition(.numericText())
                 } else {
                     Text("—")
                 }
             } minimal: {
                 Image(systemName: context.state.antennaIconName)
+                    .foregroundStyle(context.state.isConnected ? .green : .orange)
             }
             .widgetURL(URL(string: "pocketmesh://status"))
         }

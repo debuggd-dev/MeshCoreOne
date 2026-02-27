@@ -2,6 +2,5 @@
 
 "Disconnected" = "Від'єднано";
 "Disconnected %@ ago" = "Від'єднано %@ тому";
-"Last received %@ ago" = "Останній прийом %@ тому";
-"No data received" = "Немає отриманих даних";
+"%lld packets per minute" = "%lld пакетів за хвилину";
 "Battery %lld percent" = "Батарея %lld відсотків";

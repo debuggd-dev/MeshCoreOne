@@ -2,6 +2,5 @@
 
 "Disconnected" = "Desconectado";
 "Disconnected %@ ago" = "Desconectado hace %@";
-"Last received %@ ago" = "Último recibido hace %@";
-"No data received" = "Sin datos recibidos";
+"%lld packets per minute" = "%lld paquetes por minuto";
 "Battery %lld percent" = "Batería %lld por ciento";

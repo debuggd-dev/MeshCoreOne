@@ -16,6 +16,10 @@ public final class LiveActivityManager {
     private var disconnectTimer: Task<Void, Never>?
     private var enablementTask: Task<Void, Never>?
     private var ocvArray: [Int] = []
+    private var recentPacketTimestamps: [Date] = []
+
+    static let packetWindowSeconds: TimeInterval = 60
+    static let disconnectGracePeriod: TimeInterval = 300
 
     var isEnabled: Bool {
         UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
@@ -47,10 +51,11 @@ public final class LiveActivityManager {
            activity.attributes.deviceName == device.nodeName {
             disconnectTimer?.cancel()
             disconnectTimer = nil
+            recentPacketTimestamps = []
             await updateActivity(
                 isConnected: true,
                 battery: .some(nil),
-                lastRXDate: .some(nil),
+                packetsPerMinute: 0,
                 unreadCount: unreadCount,
                 disconnectedDate: .some(nil)
             )
@@ -71,24 +76,29 @@ public final class LiveActivityManager {
     func handleConnectionLost() async {
         guard currentActivity != nil else { return }
 
+        recentPacketTimestamps = []
         await updateActivity(
             isConnected: false,
             battery: .some(nil),
-            lastRXDate: .some(nil),
+            packetsPerMinute: 0,
             unreadCount: 0,
             disconnectedDate: .some(.now)
         )
 
         disconnectTimer?.cancel()
         disconnectTimer = Task { [weak self] in
-            try? await Task.sleep(for: .seconds(300))
+            try? await Task.sleep(for: .seconds(Self.disconnectGracePeriod))
             guard !Task.isCancelled else { return }
             await self?.endActivity()
         }
     }
 
     func handlePacketReceived() async {
-        await updateActivity(lastRXDate: .some(.now))
+        let now = Date.now
+        recentPacketTimestamps.append(now)
+        let cutoff = now.addingTimeInterval(-Self.packetWindowSeconds)
+        recentPacketTimestamps.removeAll { $0 < cutoff }
+        await updateActivity(packetsPerMinute: recentPacketTimestamps.count)
     }
 
     func handleBatteryChanged(battery: BatteryInfo) async {
@@ -119,7 +129,7 @@ public final class LiveActivityManager {
         }
 
         let elapsed = Date.now.timeIntervalSince(disconnectedDate)
-        let remaining = 300 - elapsed
+        let remaining = Self.disconnectGracePeriod - elapsed
 
         if remaining > 0 {
             disconnectTimer = Task { [weak self] in
@@ -149,7 +159,7 @@ public final class LiveActivityManager {
         let state = MeshStatusAttributes.ContentState(
             isConnected: true,
             batteryPercent: nil,
-            lastRXDate: nil,
+            packetsPerMinute: 0,
             unreadCount: unreadCount,
             disconnectedDate: nil
         )
@@ -173,7 +183,7 @@ public final class LiveActivityManager {
     private func updateActivity(
         isConnected: Bool? = nil,
         battery: Int?? = nil,
-        lastRXDate: Date?? = nil,
+        packetsPerMinute: Int? = nil,
         unreadCount: Int? = nil,
         disconnectedDate: Date?? = nil
     ) async {
@@ -181,7 +191,7 @@ public final class LiveActivityManager {
         let state = MeshStatusAttributes.ContentState(
             isConnected: isConnected ?? current.isConnected,
             batteryPercent: battery ?? current.batteryPercent,
-            lastRXDate: lastRXDate ?? current.lastRXDate,
+            packetsPerMinute: packetsPerMinute ?? current.packetsPerMinute,
             unreadCount: unreadCount ?? current.unreadCount,
             disconnectedDate: disconnectedDate ?? current.disconnectedDate
         )
@@ -193,6 +203,7 @@ public final class LiveActivityManager {
     func endActivity() async {
         disconnectTimer?.cancel()
         disconnectTimer = nil
+        recentPacketTimestamps = []
         for activity in Activity<MeshStatusAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }

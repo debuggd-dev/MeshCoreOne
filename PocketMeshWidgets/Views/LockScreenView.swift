@@ -9,6 +9,7 @@ struct LockScreenView: View {
         VStack(alignment: .leading) {
             HStack {
                 Image(systemName: context.state.antennaIconName)
+                    .foregroundStyle(context.state.isConnected ? .green : .orange)
                     .accessibilityHidden(true)
 
                 Text(context.attributes.deviceName)
@@ -19,13 +20,12 @@ struct LockScreenView: View {
                 Spacer()
 
                 if context.state.isConnected {
-                    RXFreshnessLabel(lastRXDate: context.state.lastRXDate)
+                    PacketRateLabel(packetsPerMinute: context.state.packetsPerMinute)
+                    BatteryLabel(percent: context.state.batteryPercent)
                 } else {
                     Text("Disconnected")
                         .foregroundStyle(.orange)
                 }
-
-                BatteryLabel(percent: context.state.batteryPercent)
             }
 
             if context.state.isConnected, context.state.unreadCount > 0 {
@@ -60,25 +60,22 @@ struct LockScreenView: View {
 
 // MARK: - Subviews
 
-struct RXFreshnessLabel: View {
-    let lastRXDate: Date?
+struct PacketRateLabel: View {
+    let packetsPerMinute: Int
 
     var body: some View {
         HStack(spacing: 2) {
             Image(systemName: "arrow.down")
                 .font(.caption2)
                 .accessibilityHidden(true)
-            if let lastRXDate {
-                Text(lastRXDate, style: .relative)
-                    .monospacedDigit()
-            } else {
-                Text("—")
-            }
+            Text("\(packetsPerMinute)/m")
+                .monospacedDigit()
+                .contentTransition(.numericText())
         }
         .font(.caption)
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(lastRXDate.map { "Last received \(Text($0, style: .relative)) ago" } ?? "No data received")
+        .accessibilityLabel("\(packetsPerMinute) packets per minute")
     }
 }
 
@@ -87,8 +84,15 @@ struct BatteryLabel: View {
 
     var body: some View {
         if let percent {
-            Image(systemName: batteryIconName(for: percent))
-                .accessibilityLabel("Battery \(percent) percent")
+            HStack(spacing: 2) {
+                Image(systemName: batteryIconName(for: percent))
+                    .accessibilityHidden(true)
+                Text("\(percent)%")
+                    .monospacedDigit()
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Battery \(percent) percent")
         }
     }
 

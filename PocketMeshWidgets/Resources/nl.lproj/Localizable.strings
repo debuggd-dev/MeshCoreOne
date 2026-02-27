@@ -2,6 +2,5 @@
 
 "Disconnected" = "Niet verbonden";
 "Disconnected %@ ago" = "Niet verbonden sinds %@";
-"Last received %@ ago" = "Laatst ontvangen %@ geleden";
-"No data received" = "Geen gegevens ontvangen";
+"%lld packets per minute" = "%lld pakketten per minuut";
 "Battery %lld percent" = "Batterij %lld procent";

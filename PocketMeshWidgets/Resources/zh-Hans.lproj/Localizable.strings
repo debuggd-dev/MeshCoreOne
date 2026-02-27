@@ -2,6 +2,5 @@
 
 "Disconnected" = "已断开";
 "Disconnected %@ ago" = "已断开 %@";
-"Last received %@ ago" = "%@前最后接收";
-"No data received" = "未收到数据";
+"%lld packets per minute" = "每分钟 %lld 个数据包";
 "Battery %lld percent" = "电量 %lld%%";

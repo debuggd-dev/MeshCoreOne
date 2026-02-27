@@ -7,7 +7,7 @@ struct MeshStatusAttributes: ActivityAttributes, Sendable {
     struct ContentState: Codable, Hashable, Sendable {
         var isConnected: Bool
         var batteryPercent: Int?
-        var lastRXDate: Date?
+        var packetsPerMinute: Int
         var unreadCount: Int
         var disconnectedDate: Date?
 

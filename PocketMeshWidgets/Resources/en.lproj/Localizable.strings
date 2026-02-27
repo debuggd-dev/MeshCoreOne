@@ -6,11 +6,8 @@
 /* Accessibility: disconnected duration on Lock Screen */
 "Disconnected %@ ago" = "Disconnected %@ ago";
 
-/* Accessibility: last packet received relative time */
-"Last received %@ ago" = "Last received %@ ago";
-
-/* Accessibility: no packets received yet */
-"No data received" = "No data received";
+/* Accessibility: packet rate */
+"%lld packets per minute" = "%lld packets per minute";
 
 /* Accessibility: battery level */
 "Battery %lld percent" = "Battery %lld percent";
