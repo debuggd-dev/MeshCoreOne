@@ -288,11 +288,16 @@ extension SyncCoordinator {
         let device = try await dataStore.fetchDevice(id: deviceID)
 
         // Phase 1: Contacts (incremental unless forced full)
-        logger.info("[Sync] Phase start: contacts")
         let lastContactSync: Date? = forceFullSync ? nil : {
             guard let timestamp = device?.lastContactSync, timestamp > 0 else { return nil }
             return Date(timeIntervalSince1970: Double(timestamp))
         }()
+        if let watermark = lastContactSync {
+            logger.info("[Sync] Phase start: contacts (incremental, watermark=\(watermark.formatted(.iso8601)))")
+        } else {
+            let reason = forceFullSync ? "forceFullSync" : "no watermark"
+            logger.notice("[Sync] Phase start: contacts (FULL sync, reason=\(reason)) — local contacts not on device will be pruned")
+        }
 
         let contactResult = try await contactService.syncContacts(deviceID: deviceID, since: lastContactSync)
         let syncType = contactResult.isIncremental ? "incremental" : "full"

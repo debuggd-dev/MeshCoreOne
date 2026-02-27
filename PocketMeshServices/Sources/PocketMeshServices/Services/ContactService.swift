@@ -149,7 +149,13 @@ public actor ContactService {
             // On full sync, remove local contacts that no longer exist on device
             if since == nil {
                 let localContacts = try await dataStore.fetchContacts(deviceID: deviceID)
-                for localContact in localContacts where !devicePublicKeys.contains(localContact.publicKey) {
+                let orphans = localContacts.filter { !devicePublicKeys.contains($0.publicKey) }
+                if !orphans.isEmpty {
+                    logger.notice("Full sync prune: \(orphans.count) local contact(s) not found on device (device has \(devicePublicKeys.count), local has \(localContacts.count))")
+                }
+                for localContact in orphans {
+                    let keyPrefix = localContact.publicKey.prefix(4).map { String(format: "%02x", $0) }.joined()
+                    logger.notice("Full sync prune: deleting '\(localContact.name)' [\(keyPrefix)…] (favorite=\(localContact.isFavorite), type=\(localContact.typeRawValue), lastModified=\(localContact.lastModified))")
                     try await dataStore.deleteMessagesForContact(contactID: localContact.id)
                     try await dataStore.deleteContact(id: localContact.id)
                     await cleanupHandler?(localContact.id, .deleted, localContact.publicKey)
