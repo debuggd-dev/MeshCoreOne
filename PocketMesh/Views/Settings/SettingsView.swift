@@ -35,8 +35,9 @@ struct SettingsView: View {
 
 private struct SettingsListContent: View {
     @Environment(\.appState) private var appState
+    @Environment(\.openURL) private var openURL
     @Binding var showingDeviceSelection: Bool
-    let demoModeManager: DemoModeManager
+    @Bindable var demoModeManager: DemoModeManager
     private let liveActivityTip = LiveActivityTip()
 
     var body: some View {
@@ -60,9 +61,25 @@ private struct SettingsListContent: View {
                     TintedLabel(L10n.Settings.ChatSettings.title, systemImage: "bubble.left.and.bubble.right")
                 }
 
+                TipView(liveActivityTip, arrowEdge: .bottom)
+
+                Toggle(isOn: Binding(
+                    get: { appState.liveActivityManager.isEnabled },
+                    set: { newValue in
+                        Task {
+                            await appState.liveActivityManager.setEnabled(newValue)
+                            if newValue, appState.connectionState == .ready || appState.connectionState == .connected {
+                                await appState.wireServicesIfConnected()
+                            }
+                        }
+                    }
+                )) {
+                    TintedLabel(L10n.Settings.LiveActivity.title, systemImage: "antenna.radiowaves.left.and.right")
+                }
+
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
-                        UIApplication.shared.open(url)
+                        openURL(url)
                     }
                 } label: {
                     SettingsRow(
@@ -71,26 +88,6 @@ private struct SettingsListContent: View {
                         detail: currentLanguageDisplayName
                     )
                 }
-
-                TipView(liveActivityTip, arrowEdge: .bottom)
-
-                HStack {
-                    TintedLabel(L10n.Settings.LiveActivity.title, systemImage: "antenna.radiowaves.left.and.right")
-                    Spacer()
-                    Toggle("", isOn: Binding(
-                        get: { appState.liveActivityManager.isEnabled },
-                        set: { newValue in
-                            Task {
-                                await appState.liveActivityManager.setEnabled(newValue)
-                                if newValue, appState.connectionState == .ready || appState.connectionState == .connected {
-                                    await appState.wireServicesIfConnected()
-                                }
-                            }
-                        }
-                    ))
-                    .labelsHidden()
-                }
-                .accessibilityElement(children: .combine)
             } header: {
                 Text(L10n.Settings.AppSettings.header)
             } footer: {
@@ -103,10 +100,7 @@ private struct SettingsListContent: View {
 
             if demoModeManager.isUnlocked {
                 Section {
-                    Toggle(L10n.Settings.DemoMode.enabled, isOn: Binding(
-                        get: { demoModeManager.isEnabled },
-                        set: { demoModeManager.isEnabled = $0 }
-                    ))
+                    Toggle(L10n.Settings.DemoMode.enabled, isOn: $demoModeManager.isEnabled)
                 } header: {
                     Text(L10n.Settings.DemoMode.header)
                 } footer: {
@@ -208,21 +202,19 @@ private struct MyDeviceSection: View {
     }
 
     private var radioDetailText: String {
-        if device.clientRepeat {
-            let preset = RadioPresets.matchingRepeatPreset(
+        let preset = device.clientRepeat
+            ? RadioPresets.matchingRepeatPreset(
                 frequencyKHz: device.frequency,
                 bandwidthKHz: device.bandwidth,
                 spreadingFactor: device.spreadingFactor,
                 codingRate: device.codingRate
             )
-            return preset?.name ?? L10n.Settings.BatteryCurve.custom
-        }
-        let preset = RadioPresets.matchingPreset(
-            frequencyKHz: device.frequency,
-            bandwidthKHz: device.bandwidth,
-            spreadingFactor: device.spreadingFactor,
-            codingRate: device.codingRate
-        )
+            : RadioPresets.matchingPreset(
+                frequencyKHz: device.frequency,
+                bandwidthKHz: device.bandwidth,
+                spreadingFactor: device.spreadingFactor,
+                codingRate: device.codingRate
+            )
         return preset?.name ?? L10n.Settings.BatteryCurve.custom
     }
 
