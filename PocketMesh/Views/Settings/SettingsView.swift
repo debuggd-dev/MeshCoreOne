@@ -66,9 +66,11 @@ private struct SettingsListContent: View {
                 Toggle(isOn: Binding(
                     get: { appState.liveActivityManager.isEnabled },
                     set: { newValue in
+                        appState.liveActivityManager.isEnabled = newValue
                         Task {
-                            await appState.liveActivityManager.setEnabled(newValue)
-                            if newValue, appState.connectionState == .ready || appState.connectionState == .connected {
+                            if !newValue {
+                                await appState.liveActivityManager.endActivity()
+                            } else if appState.connectionState == .ready || appState.connectionState == .connected {
                                 await appState.wireServicesIfConnected()
                             }
                         }

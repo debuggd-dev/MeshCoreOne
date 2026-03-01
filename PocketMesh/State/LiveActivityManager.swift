@@ -37,7 +37,11 @@ public final class LiveActivityManager {
     var hasActiveActivity: Bool { currentActivity != nil }
 
     var isEnabled: Bool {
-        UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
+        didSet { UserDefaults.standard.set(isEnabled, forKey: Self.enabledKey) }
+    }
+
+    init() {
+        isEnabled = UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
     }
 
     // MARK: - Pending Update
@@ -142,7 +146,7 @@ public final class LiveActivityManager {
     }
 
     func setEnabled(_ enabled: Bool) async {
-        UserDefaults.standard.set(enabled, forKey: Self.enabledKey)
+        isEnabled = enabled
         if !enabled {
             await endActivity()
         }
