@@ -151,6 +151,12 @@
 "publicKey.copy" = "Копировать в буфер обмена";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-байтный закрытый ключ Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Подключение, батарея и сообщения остаются видимыми — даже без открытия приложения.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Идентификация";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Перегенерировать ключ";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Перегенерировать ключ";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Сгенерируйте новую пару ключей Ed25519 для замены текущей идентификации устройства. Все контакты должны будут заново обнаружить ваше устройство.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Сгенерировать ключ";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Сгенерировать другой";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Генерация…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Использовать этот ключ";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Импорт…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Пользовательский префикс";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "напр. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Опционально укажите до 4 шестнадцатеричных символов, с которых должен начинаться ваш открытый ключ. Более длинные префиксы занимают больше времени.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Префикс должен содержать от 1 до 4 шестнадцатеричных символов";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 и FF зарезервированы и не могут использоваться";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Заменить идентификацию?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Заменить";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Идентификация вашего устройства будет безвозвратно заменена. Другие устройства увидят вас как новый контакт.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Импорт ключей не поддерживается этой версией прошивки";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Устройство отклонило ключ. Пожалуйста, попробуйте снова.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Импортировать ключ";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Импортировать ключ";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Вставьте существующий закрытый ключ Ed25519 (128 шестнадцатеричных символов) для замены текущей идентификации устройства.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Закрытый ключ";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Вставьте 128-символьный шестнадцатеричный ключ";
+
+/* Button to import the key */
+"importKey.import" = "Импортировать ключ";
+
+/* Progress label while importing */
+"importKey.importing" = "Импорт…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Ключ должен содержать ровно 128 шестнадцатеричных символов";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Недействительный закрытый ключ Ed25519";

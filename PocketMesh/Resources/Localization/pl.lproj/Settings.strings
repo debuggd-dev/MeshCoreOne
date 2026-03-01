@@ -151,6 +151,12 @@
 "publicKey.copy" = "Kopiuj do schowka";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-bajtowy klucz prywatny Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Połączenie, bateria i wiadomości są widoczne — nawet bez otwierania aplikacji.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Tożsamość";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Regeneruj klucz";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Regeneruj klucz";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Wygeneruj nową parę kluczy Ed25519, aby zastąpić obecną tożsamość urządzenia. Wszystkie kontakty będą musiały ponownie odkryć Twoje urządzenie.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Generuj klucz";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Generuj kolejny";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Generowanie…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Użyj tego klucza";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importowanie…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Własny prefiks";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "np. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Opcjonalnie podaj do 4 znaków szesnastkowych, od których powinien zaczynać się twój klucz publiczny. Dłuższe prefiksy wymagają więcej czasu.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Prefiks musi mieć od 1 do 4 znaków szesnastkowych";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 i FF są zarezerwowane i nie mogą być używane";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Zastąpić tożsamość?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Zastąp";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Tożsamość urządzenia zostanie trwale zastąpiona. Inne urządzenia zobaczą Cię jako nowy kontakt.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Import kluczy nie jest obsługiwany przez tę wersję firmware";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Urządzenie odrzuciło klucz. Spróbuj ponownie.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Importuj klucz";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Importuj klucz";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Wklej istniejący klucz prywatny Ed25519 (128 znaków szesnastkowych), aby zastąpić obecną tożsamość urządzenia.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Klucz prywatny";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Wklej 128-znakowy klucz szesnastkowy";
+
+/* Button to import the key */
+"importKey.import" = "Importuj klucz";
+
+/* Progress label while importing */
+"importKey.importing" = "Importowanie…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Klucz musi mieć dokładnie 128 znaków szesnastkowych";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "To nie jest prawidłowy klucz prywatny Ed25519";

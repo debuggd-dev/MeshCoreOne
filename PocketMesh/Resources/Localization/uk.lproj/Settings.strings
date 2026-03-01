@@ -151,6 +151,12 @@
 "publicKey.copy" = "Копіювати в буфер обміну";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-байтний закритий ключ Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Ваше з'єднання, батарея та повідомлення залишаються видимими — навіть без відкриття застосунку.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Ідентифікація";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Перегенерувати ключ";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Перегенерувати ключ";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Згенеруйте нову пару ключів Ed25519 для заміни поточної ідентифікації пристрою. Усі контакти повинні будуть заново виявити ваш пристрій.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Згенерувати ключ";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Згенерувати інший";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Генерація…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Використати цей ключ";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Імпорт…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Власний префікс";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "напр. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "За бажанням вкажіть до 4 шістнадцяткових символів, з яких має починатися ваш відкритий ключ. Довші префікси займають більше часу.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Префікс повинен містити від 1 до 4 шістнадцяткових символів";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 та FF зарезервовані і не можуть використовуватися";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Замінити ідентифікацію?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Замінити";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Ідентифікацію вашого пристрою буде безповоротно замінено. Інші пристрої бачитимуть вас як новий контакт.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Імпорт ключів не підтримується цією версією прошивки";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Пристрій відхилив ключ. Будь ласка, спробуйте ще раз.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Імпортувати ключ";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Імпортувати ключ";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Вставте наявний закритий ключ Ed25519 (128 шістнадцяткових символів) для заміни поточної ідентифікації пристрою.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Закритий ключ";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Вставте 128-символьний шістнадцятковий ключ";
+
+/* Button to import the key */
+"importKey.import" = "Імпортувати ключ";
+
+/* Progress label while importing */
+"importKey.importing" = "Імпорт…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Ключ повинен містити рівно 128 шістнадцяткових символів";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Недійсний закритий ключ Ed25519";

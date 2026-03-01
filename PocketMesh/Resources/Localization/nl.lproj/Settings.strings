@@ -151,6 +151,12 @@
 "publicKey.copy" = "Kopieer naar klembord";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-byte Ed25519 privésleutel";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Je verbinding, batterij en berichten blijven zichtbaar — ook zonder de app te openen.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Identiteit";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Sleutel opnieuw genereren";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Sleutel opnieuw genereren";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Genereer een nieuw Ed25519-sleutelpaar om de huidige identiteit van je apparaat te vervangen. Alle contacten moeten je apparaat opnieuw ontdekken.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Sleutel genereren";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Nog een genereren";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Genereren…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Deze sleutel gebruiken";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importeren…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Aangepast voorvoegsel";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "bijv. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Geef optioneel maximaal 4 hexadecimale tekens op waarmee je publieke sleutel moet beginnen. Langere voorvoegsels duren langer.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Voorvoegsel moet 1–4 hexadecimale tekens zijn";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 en FF zijn gereserveerd en kunnen niet worden gebruikt";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Identiteit vervangen?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Vervangen";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "De identiteit van je apparaat wordt permanent vervangen. Andere apparaten zien je als een nieuw contact.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Sleutelimport wordt niet ondersteund door deze firmwareversie";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Het apparaat heeft de sleutel geweigerd. Probeer het opnieuw.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Sleutel importeren";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Sleutel importeren";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Plak een bestaande Ed25519-privésleutel (128 hexadecimale tekens) om de huidige identiteit van je apparaat te vervangen.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Privésleutel";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Plak 128-tekens hexadecimale sleutel";
+
+/* Button to import the key */
+"importKey.import" = "Sleutel importeren";
+
+/* Progress label while importing */
+"importKey.importing" = "Importeren…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Sleutel moet precies 128 hexadecimale tekens zijn";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Geen geldige Ed25519-privésleutel";

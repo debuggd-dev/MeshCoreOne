@@ -151,6 +151,12 @@
 "publicKey.copy" = "Copier dans le presse-papiers";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "Clé privée Ed25519 de 64 octets";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Votre connexion, batterie et messages restent visibles — même sans ouvrir l'app.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Identité";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Régénérer la clé";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Régénérer la clé";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Générez une nouvelle paire de clés Ed25519 pour remplacer l'identité actuelle de votre appareil. Tous les contacts devront redécouvrir votre appareil.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Générer une clé";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Générer une autre";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Génération…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Utiliser cette clé";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importation…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Préfixe personnalisé";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "ex. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Spécifiez optionnellement jusqu'à 4 caractères hexadécimaux par lesquels votre clé publique doit commencer. Les préfixes plus longs prennent plus de temps.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Le préfixe doit comporter de 1 à 4 caractères hexadécimaux";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 et FF sont réservés et ne peuvent pas être utilisés";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Remplacer l'identité ?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Remplacer";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "L'identité de votre appareil sera définitivement remplacée. Les autres appareils vous verront comme un nouveau contact.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "L'importation de clés n'est pas prise en charge par cette version du firmware";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "L'appareil a rejeté la clé. Veuillez réessayer.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Importer une clé";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Importer une clé";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Collez une clé privée Ed25519 existante (128 caractères hexadécimaux) pour remplacer l'identité actuelle de votre appareil.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Clé privée";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Coller la clé hexadécimale de 128 caractères";
+
+/* Button to import the key */
+"importKey.import" = "Importer la clé";
+
+/* Progress label while importing */
+"importKey.importing" = "Importation…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "La clé doit comporter exactement 128 caractères hexadécimaux";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Ce n'est pas une clé privée Ed25519 valide";

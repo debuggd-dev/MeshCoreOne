@@ -151,6 +151,12 @@
 "publicKey.copy" = "In Zwischenablage kopieren";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-Byte Ed25519 Private Key";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Verbindung, Akku und Nachrichten bleiben sichtbar — auch ohne die App zu öffnen.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Identität";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Schlüssel neu generieren";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Schlüssel neu generieren";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Generiere ein neues Ed25519-Schlüsselpaar, um die aktuelle Identität deines Geräts zu ersetzen. Alle Kontakte müssen dein Gerät neu entdecken.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Schlüssel generieren";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Weiteren generieren";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Wird generiert …";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Diesen Schlüssel verwenden";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Wird importiert …";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Benutzerdefiniertes Präfix";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "z. B. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Optional bis zu 4 Hex-Zeichen angeben, mit denen dein öffentlicher Schlüssel beginnen soll. Längere Präfixe dauern länger.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Präfix muss 1–4 Hex-Zeichen lang sein";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 und FF sind reserviert und können nicht verwendet werden";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Identität ersetzen?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Ersetzen";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Die Identität deines Geräts wird dauerhaft ersetzt. Andere Geräte sehen dich als neuen Kontakt.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Schlüsselimport wird von dieser Firmware-Version nicht unterstützt";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Das Gerät hat den Schlüssel abgelehnt. Bitte versuche es erneut.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Schlüssel importieren";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Schlüssel importieren";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Füge einen vorhandenen privaten Ed25519-Schlüssel (128 Hex-Zeichen) ein, um die aktuelle Identität deines Geräts zu ersetzen.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Privater Schlüssel";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "128-stelligen Hex-Schlüssel einfügen";
+
+/* Button to import the key */
+"importKey.import" = "Schlüssel importieren";
+
+/* Progress label while importing */
+"importKey.importing" = "Wird importiert …";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Schlüssel muss genau 128 Hex-Zeichen lang sein";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Kein gültiger privater Ed25519-Schlüssel";

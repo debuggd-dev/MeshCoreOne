@@ -3277,6 +3277,32 @@ public enum L10n {
         public static let exportFailed = L10n.tr("Settings", "diagnostics.error.exportFailed", fallback: "Failed to create export file")
       }
     }
+    public enum ImportKey {
+      /// Button to import the key
+      public static let `import` = L10n.tr("Settings", "importKey.import", fallback: "Import Key")
+      /// Progress label while importing
+      public static let importing = L10n.tr("Settings", "importKey.importing", fallback: "Importing…")
+      /// Button label to open import key sheet
+      public static let title = L10n.tr("Settings", "importKey.title", fallback: "Import Key")
+      public enum Error {
+        /// Error when hex input is wrong length or invalid
+        public static let invalidHex = L10n.tr("Settings", "importKey.error.invalidHex", fallback: "Key must be exactly 128 hex characters")
+        /// Error when key fails Ed25519 validation
+        public static let invalidKey = L10n.tr("Settings", "importKey.error.invalidKey", fallback: "Not a valid Ed25519 private key")
+      }
+      public enum KeyInput {
+        /// Label for the private key input field
+        public static let label = L10n.tr("Settings", "importKey.keyInput.label", fallback: "Private Key")
+        /// Placeholder for the key input field
+        public static let placeholder = L10n.tr("Settings", "importKey.keyInput.placeholder", fallback: "Paste 128-character hex key")
+      }
+      public enum Sheet {
+        /// Explanation of what importing a key does
+        public static let explanation = L10n.tr("Settings", "importKey.sheet.explanation", fallback: "Paste an existing Ed25519 private key (128 hex characters) to replace your device's current identity.")
+        /// Navigation title for the import key sheet
+        public static let title = L10n.tr("Settings", "importKey.sheet.title", fallback: "Import Key")
+      }
+    }
     public enum InlineImages {
       /// Toggle label for auto-play GIFs
       public static let autoPlayGifs = L10n.tr("Settings", "inlineImages.autoPlayGifs", fallback: "Auto-play GIFs")
@@ -3491,6 +3517,10 @@ public enum L10n {
       /// Path hash mode option: 2 bytes
       public static let twoBytes = L10n.tr("Settings", "pathHashMode.twoBytes", fallback: "2 Bytes")
     }
+    public enum PrivateKey {
+      /// Section header describing the key type
+      public static let header = L10n.tr("Settings", "privateKey.header", fallback: "64-byte Ed25519 Private Key")
+    }
     public enum PublicKey {
       /// Button to copy key to clipboard
       public static let copy = L10n.tr("Settings", "publicKey.copy", fallback: "Copy to Clipboard")
@@ -3527,6 +3557,58 @@ public enum L10n {
           /// Confirmation dialog title for enabling repeat mode
           public static let title = L10n.tr("Settings", "radio.repeatMode.confirm.title", fallback: "Enable Repeat Mode?")
         }
+      }
+    }
+    public enum RegenerateIdentity {
+      /// Button to generate a new key
+      public static let generate = L10n.tr("Settings", "regenerateIdentity.generate", fallback: "Generate Key")
+      /// Button to generate another key after the first
+      public static let generateAnother = L10n.tr("Settings", "regenerateIdentity.generateAnother", fallback: "Generate Another")
+      /// Progress label while generating
+      public static let generating = L10n.tr("Settings", "regenerateIdentity.generating", fallback: "Generating…")
+      /// Section header for regenerate identity
+      public static let header = L10n.tr("Settings", "regenerateIdentity.header", fallback: "Identity")
+      /// Progress label while importing key to device
+      public static let importing = L10n.tr("Settings", "regenerateIdentity.importing", fallback: "Importing…")
+      /// Button to apply the generated key to the device
+      public static let replace = L10n.tr("Settings", "regenerateIdentity.replace", fallback: "Use This Key")
+      /// Button label to open regenerate identity sheet
+      public static let title = L10n.tr("Settings", "regenerateIdentity.title", fallback: "Regenerate Key")
+      public enum Alert {
+        public enum Replace {
+          /// Alert confirm button for replace identity
+          public static let confirm = L10n.tr("Settings", "regenerateIdentity.alert.replace.confirm", fallback: "Replace")
+          /// Alert message for replace identity
+          public static let message = L10n.tr("Settings", "regenerateIdentity.alert.replace.message", fallback: "This will permanently replace your device's identity. Other devices will see you as a new contact.")
+          /// Alert title for replace identity confirmation
+          public static let title = L10n.tr("Settings", "regenerateIdentity.alert.replace.title", fallback: "Replace Identity?")
+        }
+      }
+      public enum Error {
+        /// Error when device rejects the key
+        public static let deviceRejected = L10n.tr("Settings", "regenerateIdentity.error.deviceRejected", fallback: "The device rejected the key. Please try again.")
+        /// Error when firmware does not support key import
+        public static let featureDisabled = L10n.tr("Settings", "regenerateIdentity.error.featureDisabled", fallback: "Key import is not supported by this firmware version")
+      }
+      public enum Prefix {
+        /// Footer explaining vanity prefix
+        public static let footer = L10n.tr("Settings", "regenerateIdentity.prefix.footer", fallback: "Optionally specify up to 4 hex characters your public key should start with. Longer prefixes take more time.")
+        /// Disclosure group label for custom prefix
+        public static let label = L10n.tr("Settings", "regenerateIdentity.prefix.label", fallback: "Custom Prefix")
+        /// Placeholder for prefix text field
+        public static let placeholder = L10n.tr("Settings", "regenerateIdentity.prefix.placeholder", fallback: "e.g. 2BA1")
+        public enum Error {
+          /// Error when prefix is not 1–4 hex characters
+          public static let invalidLength = L10n.tr("Settings", "regenerateIdentity.prefix.error.invalidLength", fallback: "Prefix must be 1–4 hex characters")
+          /// Error when prefix is 00 or FF
+          public static let reserved = L10n.tr("Settings", "regenerateIdentity.prefix.error.reserved", fallback: "00 and FF are reserved and cannot be used")
+        }
+      }
+      public enum Sheet {
+        /// Explanation of what regenerating identity does
+        public static let explanation = L10n.tr("Settings", "regenerateIdentity.sheet.explanation", fallback: "Generate a new Ed25519 keypair to replace your device's current identity. All contacts will need to re-discover your device.")
+        /// Navigation title for the regenerate identity sheet
+        public static let title = L10n.tr("Settings", "regenerateIdentity.sheet.title", fallback: "Regenerate Key")
       }
     }
     public enum Telemetry {

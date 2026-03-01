@@ -151,6 +151,12 @@
 "publicKey.copy" = "Copiar al portapapeles";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "Clave privada Ed25519 de 64 bytes";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1139,3 +1145,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Tu conexión, batería y mensajes se mantienen visibles, incluso sin abrir la app.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Identidad";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Regenerar clave";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Regenerar clave";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Genera un nuevo par de claves Ed25519 para reemplazar la identidad actual de tu dispositivo. Todos los contactos deberán redescubrir tu dispositivo.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Generar clave";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Generar otra";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Generando…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Usar esta clave";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importando…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Prefijo personalizado";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "p. ej. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Opcionalmente, especifica hasta 4 caracteres hexadecimales con los que debe comenzar tu clave pública. Los prefijos más largos tardan más.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "El prefijo debe tener de 1 a 4 caracteres hexadecimales";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 y FF están reservados y no se pueden usar";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "¿Reemplazar identidad?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Reemplazar";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Esto reemplazará permanentemente la identidad de tu dispositivo. Otros dispositivos te verán como un contacto nuevo.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "La importación de claves no es compatible con esta versión de firmware";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "El dispositivo rechazó la clave. Inténtalo de nuevo.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Importar clave";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Importar clave";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Pega una clave privada Ed25519 existente (128 caracteres hexadecimales) para reemplazar la identidad actual de tu dispositivo.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Clave privada";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Pegar clave hexadecimal de 128 caracteres";
+
+/* Button to import the key */
+"importKey.import" = "Importar clave";
+
+/* Progress label while importing */
+"importKey.importing" = "Importando…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "La clave debe tener exactamente 128 caracteres hexadecimales";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "No es una clave privada Ed25519 válida";

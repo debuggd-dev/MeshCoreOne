@@ -146,6 +146,12 @@
 /* Button to copy key to clipboard */
 "publicKey.copy" = "复制到剪贴板";
 
+
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64 字节 Ed25519 私钥";
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -1112,3 +1118,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "即使不打开应用，您的连接、电池和消息也清晰可见。";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "身份";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "重新生成密钥";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "重新生成密钥";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "生成新的 Ed25519 密钥对以替换设备当前的身份。所有联系人需要重新发现你的设备。";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "生成密钥";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "再次生成";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "生成中…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "使用此密钥";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "导入中…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "自定义前缀";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "例如 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "可选择指定公钥开头的 1–4 个十六进制字符。前缀越长，生成时间越久。";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "前缀必须为 1–4 个十六进制字符";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 和 FF 为保留值，不可使用";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "替换身份？";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "替换";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "这将永久替换你设备的身份。其他设备会将你视为新联系人。";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "此固件版本不支持密钥导入";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "设备拒绝了密钥，请重试。";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "导入密钥";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "导入密钥";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "粘贴现有的 Ed25519 私钥（128 个十六进制字符）以替换设备当前的身份。";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "私钥";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "粘贴 128 位十六进制密钥";
+
+/* Button to import the key */
+"importKey.import" = "导入密钥";
+
+/* Progress label while importing */
+"importKey.importing" = "导入中…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "密钥必须恰好为 128 个十六进制字符";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "不是有效的 Ed25519 私钥";

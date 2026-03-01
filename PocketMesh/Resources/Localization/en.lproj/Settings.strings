@@ -144,6 +144,12 @@
 /* Footer explaining the public key's purpose */
 "publicKey.footer" = "This key uniquely identifies your device on the mesh network";
 
+
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-byte Ed25519 Private Key";
+
 /* Section header for base64 representation */
 "publicKey.base64.header" = "Base64";
 
@@ -1144,3 +1150,93 @@
 
 /* Message for the Live Activity tip */
 "liveActivity.tip.message" = "Your connection, battery, and messages stay visible — even without opening the app.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Identity";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Regenerate Key";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Regenerate Key";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Generate a new Ed25519 keypair to replace your device's current identity. All contacts will need to re-discover your device.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Generate Key";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Generate Another";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Generating…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Use This Key";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importing…";
+
+/* Disclosure group label for custom prefix */
+"regenerateIdentity.prefix.label" = "Custom Prefix";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "e.g. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Optionally specify up to 4 hex characters your public key should start with. Longer prefixes take more time.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Prefix must be 1–4 hex characters";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 and FF are reserved and cannot be used";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Replace Identity?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Replace";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "This will permanently replace your device's identity. Other devices will see you as a new contact.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Key import is not supported by this firmware version";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "The device rejected the key. Please try again.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Import Key";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Import Key";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Paste an existing Ed25519 private key (128 hex characters) to replace your device's current identity.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Private Key";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Paste 128-character hex key";
+
+/* Button to import the key */
+"importKey.import" = "Import Key";
+
+/* Progress label while importing */
+"importKey.importing" = "Importing…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Key must be exactly 128 hex characters";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Not a valid Ed25519 private key";
