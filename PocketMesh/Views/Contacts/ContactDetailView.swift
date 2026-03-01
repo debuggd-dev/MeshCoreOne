@@ -705,6 +705,7 @@ private struct ContactLocationSection: View {
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
             .padding(.bottom, 8)
+            .listRowSeparator(.hidden)
 
             // Coordinates
             HStack {
