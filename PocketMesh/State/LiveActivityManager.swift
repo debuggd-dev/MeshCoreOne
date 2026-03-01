@@ -34,6 +34,8 @@ public final class LiveActivityManager {
         Int((Double(recentPacketTimestamps.count) * Self.secondsPerMinute / Self.packetWindowSeconds).rounded())
     }
 
+    var hasActiveActivity: Bool { currentActivity != nil }
+
     var isEnabled: Bool {
         UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
     }

@@ -571,8 +571,10 @@ public final class AppState {
         activeRecoveryFallbackTask?.cancel()
         activeRecoveryFallbackTask = nil
 
-        // Stop battery refresh - don't poll while UI isn't visible
-        batteryMonitor.stop()
+        // Keep battery polling alive when the live activity is visible on the lock screen
+        if !liveActivityManager.hasActiveActivity {
+            batteryMonitor.stop()
+        }
 
         // Stop room keepalives to save battery/bandwidth
         Task {
