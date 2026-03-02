@@ -175,8 +175,6 @@ extension ChatViewModel {
             await loadChannels(deviceID: channel.deviceID)
         } catch {
             errorMessage = error.localizedDescription
-            // Restore the text so user can retry
-            composingText = text
         }
     }
 

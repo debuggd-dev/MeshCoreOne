@@ -100,8 +100,6 @@ final class RoomConversationViewModel {
             messages.append(message)
         } catch {
             errorMessage = error.localizedDescription
-            // Restore the text so user can retry
-            composingText = text
         }
 
         isSending = false

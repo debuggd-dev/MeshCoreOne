@@ -352,14 +352,9 @@ struct ChatView: View {
             isFocused: $isInputFocused,
             placeholder: L10n.Chats.Chats.Input.Placeholder.directMessage,
             maxBytes: ProtocolLimits.maxDirectMessageLength
-        ) {
-            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return }
-            viewModel.composingText = ""
+        ) { text in
             scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendMessage(text: text)
-            }
+            Task { await viewModel.sendMessage(text: text) }
         }
     }
 

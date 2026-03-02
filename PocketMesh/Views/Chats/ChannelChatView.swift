@@ -614,14 +614,9 @@ struct ChannelChatView: View {
             isFocused: $isInputFocused,
             placeholder: channel.isPublicChannel || channel.name.hasPrefix("#") ? L10n.Chats.Chats.Channel.typePublic : L10n.Chats.Chats.Channel.typePrivate,
             maxBytes: maxChannelMessageLength
-        ) {
-            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return }
-            viewModel.composingText = ""
+        ) { text in
             scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendChannelMessage(text: text)
-            }
+            Task { await viewModel.sendChannelMessage(text: text) }
         }
     }
 

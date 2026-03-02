@@ -8,7 +8,7 @@ struct ChatInputBar: View {
     @FocusState.Binding var isFocused: Bool
     let placeholder: String
     let maxBytes: Int
-    let onSend: () -> Void
+    let onSend: (String) -> Void
 
     @State private var isCoolingDown = false
 
@@ -71,8 +71,11 @@ struct ChatInputBar: View {
     }
 
     private func send() {
+        let captured = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !captured.isEmpty else { return }
         isCoolingDown = true
-        onSend()
+        text = ""
+        onSend(captured)
         Task {
             try? await Task.sleep(for: .seconds(1))
             isCoolingDown = false

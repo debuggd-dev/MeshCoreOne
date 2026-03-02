@@ -162,14 +162,9 @@ struct RoomConversationView: View {
             isFocused: $isInputFocused,
             placeholder: L10n.RemoteNodes.RemoteNodes.Room.publicMessage,
             maxBytes: ProtocolLimits.maxDirectMessageLength
-        ) {
-            let text = viewModel.composingText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !text.isEmpty else { return }
-            viewModel.composingText = ""
+        ) { text in
             scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendMessage(text: text)
-            }
+            Task { await viewModel.sendMessage(text: text) }
         }
     }
 
