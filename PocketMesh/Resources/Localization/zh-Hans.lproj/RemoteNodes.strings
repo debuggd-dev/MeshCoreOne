@@ -160,6 +160,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "应用身份设置";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "联系信息";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "频率、操作员姓名、网站...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "其他节点可见的公开联系信息。使用换行符分隔各字段。";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "应用联系信息";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "行为";
 

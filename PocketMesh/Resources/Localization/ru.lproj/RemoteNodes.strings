@@ -157,6 +157,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "Применить настройки идентификации";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "Контактная информация";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "Частота, имя оператора, сайт...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "Публичные контактные данные, видимые другим узлам. Используйте переносы строк для разделения полей.";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "Применить контактную информацию";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "Поведение";
 

@@ -226,6 +226,34 @@ struct CLIResponseTests {
         #expect(result == .deviceTime("14:30 - 25/12/2025 UTC"))
     }
 
+    // MARK: - Owner Info
+
+    @Test func parse_ownerInfo_plainText() {
+        let result = CLIResponse.parse("some|pipe|text", forQuery: "get owner.info")
+        #expect(result == .ownerInfo("some|pipe|text"))
+    }
+
+    @Test func parse_ownerInfo_withPromptPrefix() {
+        let result = CLIResponse.parse("> 915MHz|KD7ABC|example.com", forQuery: "get owner.info")
+        #expect(result == .ownerInfo("915MHz|KD7ABC|example.com"))
+    }
+
+    @Test func parse_ownerInfo_empty() {
+        let result = CLIResponse.parse("", forQuery: "get owner.info")
+        #expect(result == .ownerInfo(""))
+    }
+
+    @Test func parse_ownerInfo_barePrompt() {
+        // Firmware returns just "> " when owner.info is empty
+        let result = CLIResponse.parse("> ", forQuery: "get owner.info")
+        #expect(result == .ownerInfo(""))
+    }
+
+    @Test func parse_ownerInfo_singleLine() {
+        let result = CLIResponse.parse("just a name", forQuery: "get owner.info")
+        #expect(result == .ownerInfo("just a name"))
+    }
+
     // MARK: - Edge Cases
 
     @Test func parse_greaterThanInContent_notStripped() {

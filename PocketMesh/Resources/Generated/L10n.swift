@@ -2429,6 +2429,8 @@ public enum L10n {
         public static let advertSent = L10n.tr("RemoteNodes", "remoteNodes.settings.advertSent", fallback: "Advertisement sent")
         /// Location: RepeaterSettingsView.swift - Apply behavior settings button
         public static let applyBehaviorSettings = L10n.tr("RemoteNodes", "remoteNodes.settings.applyBehaviorSettings", fallback: "Apply Behavior Settings")
+        /// Location: RepeaterSettingsView.swift - Apply contact info button
+        public static let applyContactInfo = L10n.tr("RemoteNodes", "remoteNodes.settings.applyContactInfo", fallback: "Apply Contact Info")
         /// Location: RepeaterSettingsView.swift - Apply identity settings button
         public static let applyIdentitySettings = L10n.tr("RemoteNodes", "remoteNodes.settings.applyIdentitySettings", fallback: "Apply Identity Settings")
         /// Location: RepeaterSettingsView.swift - Apply radio settings button
@@ -2451,6 +2453,16 @@ public enum L10n {
         public static let codingRateHint = L10n.tr("RemoteNodes", "remoteNodes.settings.codingRateHint", fallback: "Higher values add error correction but decrease speed")
         /// Location: RepeaterSettingsView.swift - Confirm password placeholder
         public static let confirmPassword = L10n.tr("RemoteNodes", "remoteNodes.settings.confirmPassword", fallback: "Confirm Password")
+        /// Location: RepeaterSettingsView.swift - Contact info section title
+        public static let contactInfo = L10n.tr("RemoteNodes", "remoteNodes.settings.contactInfo", fallback: "Contact Info")
+        /// Location: RepeaterSettingsView.swift - Contact info character count format
+        public static func contactInfoCharCount(_ p1: Int) -> String {
+          return L10n.tr("RemoteNodes", "remoteNodes.settings.contactInfoCharCount", p1, fallback: "%d/119")
+        }
+        /// Location: RepeaterSettingsView.swift - Contact info footer
+        public static let contactInfoFooter = L10n.tr("RemoteNodes", "remoteNodes.settings.contactInfoFooter", fallback: "Public contact details visible to other nodes. Use line breaks to separate fields.")
+        /// Location: RepeaterSettingsView.swift - Contact info placeholder
+        public static let contactInfoPlaceholder = L10n.tr("RemoteNodes", "remoteNodes.settings.contactInfoPlaceholder", fallback: "Frequency, operator name, website...")
         /// Location: RepeaterSettingsView.swift - dBm placeholder
         public static let dbm = L10n.tr("RemoteNodes", "remoteNodes.settings.dbm", fallback: "dBm")
         /// Location: RepeaterSettingsView.swift - Device actions section header

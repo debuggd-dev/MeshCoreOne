@@ -160,6 +160,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "Identiteitsinstellingen toepassen";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "Contactgegevens";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "Frequentie, operatornaam, website...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "Openbare contactgegevens zichtbaar voor andere nodes. Gebruik regelafbrekingen om velden te scheiden.";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "Contactgegevens toepassen";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "Gedrag";
 

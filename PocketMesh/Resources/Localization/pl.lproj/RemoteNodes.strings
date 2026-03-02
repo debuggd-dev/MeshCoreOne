@@ -157,6 +157,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "Zastosuj ustawienia tożsamości";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "Dane kontaktowe";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "Częstotliwość, nazwa operatora, strona internetowa...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "Publiczne dane kontaktowe widoczne dla innych węzłów. Użyj nowych linii, aby oddzielić pola.";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "Zastosuj dane kontaktowe";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "Zachowanie";
 

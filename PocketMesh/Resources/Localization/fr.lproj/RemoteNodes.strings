@@ -160,6 +160,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "Appliquer les réglages d'identité";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "Coordonnées";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "Fréquence, nom de l'opérateur, site web...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "Coordonnées publiques visibles par les autres nœuds. Utilisez des retours à la ligne pour séparer les champs.";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "Appliquer les coordonnées";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "Comportement";
 

@@ -154,6 +154,7 @@ public enum CLIResponse: Sendable, Equatable {
     case floodMax(Int)
     case latitude(Double)
     case longitude(Double)
+    case ownerInfo(String)
     case raw(String)
 
     /// Parse a CLI response text into a structured type
@@ -165,6 +166,8 @@ public enum CLIResponse: Sendable, Equatable {
         // Firmware prepends "> " to all CLI command responses
         if trimmed.hasPrefix("> ") {
             trimmed = String(trimmed.dropFirst(2))
+        } else if trimmed == ">" {
+            trimmed = ""
         }
 
         // Success responses: "OK" or "OK - clock set: ..." etc.
@@ -241,6 +244,11 @@ public enum CLIResponse: Sendable, Equatable {
         // Name is plain text - use query hint
         if query == "get name" {
             return .name(trimmed)
+        }
+
+        // Owner info: freeform text with pipe-delimited lines
+        if query == "get owner.info" {
+            return .ownerInfo(trimmed)
         }
 
         // Latitude: decimal degrees

@@ -9,6 +9,7 @@ private enum SettingsField: Hashable {
     case floodAdvertInterval
     case floodMaxHops
     case identityName
+    case contactInfo
 }
 
 struct RepeaterSettingsView: View {
@@ -31,6 +32,7 @@ struct RepeaterSettingsView: View {
             SettingsHeaderSection(publicKey: session.publicKey, name: session.name)
             makeRadioSettingsSection()
             makeIdentitySection()
+            makeContactInfoSection()
             makeBehaviorSection()
             makeSecuritySection()
             makeDeviceInfoSection()
@@ -94,6 +96,10 @@ struct RepeaterSettingsView: View {
             focusedField: $focusedField,
             onPickLocation: { showingLocationPicker = true }
         )
+    }
+
+    private func makeContactInfoSection() -> some View {
+        ContactInfoSection(viewModel: viewModel, focusedField: $focusedField)
     }
 
     private func makeBehaviorSection() -> some View {
@@ -436,6 +442,68 @@ private struct IdentitySection: View {
                 .animation(.default, value: viewModel.identityApplySuccess)
             }
             .disabled(viewModel.isApplying || viewModel.identityApplySuccess || !viewModel.identitySettingsModified)
+        }
+    }
+}
+
+// MARK: - Contact Info Section
+
+private struct ContactInfoSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+    var focusedField: FocusState<SettingsField?>.Binding
+
+    private static let maxCharacters = 119
+
+    var body: some View {
+        ExpandableSettingsSection(
+            title: L10n.RemoteNodes.RemoteNodes.Settings.contactInfo,
+            icon: "person.crop.rectangle",
+            isExpanded: $viewModel.isContactInfoExpanded,
+            isLoaded: { viewModel.contactInfoLoaded },
+            isLoading: $viewModel.isLoadingContactInfo,
+            error: $viewModel.contactInfoError,
+            onLoad: { await viewModel.fetchContactInfo() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.contactInfoFooter
+        ) {
+            TextField(
+                L10n.RemoteNodes.RemoteNodes.Settings.contactInfoPlaceholder,
+                text: Binding(
+                    get: { viewModel.ownerInfo ?? "" },
+                    set: { viewModel.ownerInfo = $0 }
+                ),
+                axis: .vertical
+            )
+            .lineLimit(3...6)
+            .focused(focusedField, equals: .contactInfo)
+            .overlay(alignment: .bottomTrailing) {
+                let count = viewModel.ownerInfoCharCount
+                Text(L10n.RemoteNodes.RemoteNodes.Settings.contactInfoCharCount(count))
+                    .font(.caption2)
+                    .foregroundStyle(count > Self.maxCharacters ? Color.red : Color.secondary.opacity(0.6))
+                    .padding(4)
+            }
+
+            Button {
+                Task { await viewModel.applyContactInfoSettings() }
+            } label: {
+                HStack {
+                    Spacer()
+                    if viewModel.isApplying {
+                        ProgressView()
+                    } else if viewModel.contactInfoApplySuccess {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text(L10n.RemoteNodes.RemoteNodes.Settings.applyContactInfo)
+                            .foregroundStyle(viewModel.contactInfoSettingsModified ? Color.accentColor : .secondary)
+                            .transition(.opacity)
+                    }
+                    Spacer()
+                }
+                .animation(.default, value: viewModel.contactInfoApplySuccess)
+            }
+            .disabled(viewModel.isApplying || viewModel.contactInfoApplySuccess || !viewModel.contactInfoSettingsModified || viewModel.ownerInfoCharCount > Self.maxCharacters)
         }
     }
 }
