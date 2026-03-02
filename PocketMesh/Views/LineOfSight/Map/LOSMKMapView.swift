@@ -113,9 +113,10 @@ struct LOSMKMapView: UIViewRepresentable {
             coordinator.lastAppliedRegionVersion = cameraRegionVersion
             coordinator.hasPendingProgrammaticRegion = true
             let animated = coordinator.lastAppliedRegion != nil
-            mapView.setRegion(region, animated: animated)
+            let fittedRegion = mapView.regionThatFits(region)
+            mapView.setRegion(fittedRegion, animated: animated)
 
-            coordinator.lastAppliedRegion = region
+            coordinator.lastAppliedRegion = fittedRegion
         }
     }
 

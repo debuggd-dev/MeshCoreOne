@@ -315,12 +315,17 @@ final class LineOfSightViewModel {
             centerLat -= southExtra / 2
         }
 
+        // Clamp to valid MKCoordinateRegion bounds to prevent MKMapView crash
+        let clampedLatDelta = min(adjustedLatDelta, 180)
+        let clampedLonDelta = min(lonDelta, 360)
+        let clampedCenterLat = centerLat.clamped(to: -90...90)
+
         cameraRegion = MKCoordinateRegion(
             center: CLLocationCoordinate2D(
-                latitude: centerLat,
+                latitude: clampedCenterLat,
                 longitude: (lons.min()! + lons.max()!) / 2
             ),
-            span: MKCoordinateSpan(latitudeDelta: adjustedLatDelta, longitudeDelta: lonDelta)
+            span: MKCoordinateSpan(latitudeDelta: clampedLatDelta, longitudeDelta: clampedLonDelta)
         )
         cameraRegionVersion += 1
     }
