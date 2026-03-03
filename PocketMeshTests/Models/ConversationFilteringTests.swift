@@ -83,7 +83,7 @@ final class ConversationFilteringTests: XCTestCase {
             .room(makeRoom(name: "Room1"))
         ]
 
-        let result = conversations.filtered(by: nil, searchText: "")
+        let result = conversations.filtered(by: .all, searchText: "")
 
         XCTAssertEqual(result.count, 3)
     }
@@ -145,7 +145,7 @@ final class ConversationFilteringTests: XCTestCase {
             .room(makeRoom(name: "OtherRoom", isFavorite: false))
         ]
 
-        let result = conversations.filtered(by: .favorites, searchText: "")
+        let result = conversations.filtered(by: .all, searchText: "")
 
         XCTAssertEqual(result.count, 3)
         XCTAssertTrue(result.allSatisfy { $0.isFavorite })
@@ -171,7 +171,7 @@ final class ConversationFilteringTests: XCTestCase {
             .channel(makeChannel(name: "Alpha"))
         ]
 
-        let result = conversations.filtered(by: nil, searchText: "Al")
+        let result = conversations.filtered(by: .all, searchText: "Al")
 
         XCTAssertEqual(result.count, 2)
     }
@@ -182,7 +182,7 @@ final class ConversationFilteringTests: XCTestCase {
             .direct(makeContact(name: "Bob"))
         ]
 
-        let result = conversations.filtered(by: nil, searchText: "Zzzz")
+        let result = conversations.filtered(by: .all, searchText: "Zzzz")
 
         XCTAssertTrue(result.isEmpty)
     }
