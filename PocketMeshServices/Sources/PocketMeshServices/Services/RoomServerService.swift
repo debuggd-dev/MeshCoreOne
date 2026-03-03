@@ -13,6 +13,19 @@ public enum RoomServerError: Error, Sendable {
     case sessionError(MeshCoreError)
 }
 
+extension RoomServerError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .sessionNotFound: "Room session not found."
+        case .sendFailed(let msg): "Send failed: \(msg)"
+        case .permissionDenied: "Permission denied."
+        case .invalidResponse: "Invalid response from device."
+        case .sessionError(let e): e.localizedDescription
+        }
+    }
+}
+
 // MARK: - Room Server Service
 
 /// Service for room server interactions.

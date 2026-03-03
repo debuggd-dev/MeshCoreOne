@@ -10,6 +10,16 @@ public enum MessagePollingError: Error, Sendable {
     case sessionError(MeshCoreError)
 }
 
+extension MessagePollingError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .pollingFailed: "Message polling failed."
+        case .sessionError(let e): e.localizedDescription
+        }
+    }
+}
+
 // MARK: - Message Polling Service
 
 /// Service for polling messages from the mesh device.

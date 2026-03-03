@@ -15,6 +15,21 @@ public enum PersistenceStoreError: Error, Sendable {
     case invalidData
 }
 
+extension PersistenceStoreError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .deviceNotFound: "Device not found."
+        case .contactNotFound: "Contact not found."
+        case .messageNotFound: "Message not found."
+        case .channelNotFound: "Channel not found."
+        case .remoteNodeSessionNotFound: "Remote node session not found."
+        case .saveFailed(let msg): "Failed to save: \(msg)"
+        case .fetchFailed(let msg): "Failed to fetch: \(msg)"
+        case .invalidData: "Invalid data."
+        }
+    }
+}
+
 // MARK: - PersistenceStore Actor
 
 /// ModelActor for background SwiftData operations.

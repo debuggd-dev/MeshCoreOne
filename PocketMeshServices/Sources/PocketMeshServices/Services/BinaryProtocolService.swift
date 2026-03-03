@@ -12,6 +12,18 @@ public enum BinaryProtocolError: Error, Sendable {
     case sessionError(MeshCoreError)
 }
 
+extension BinaryProtocolError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .sendFailed: "Failed to send request."
+        case .timeout: "Request timed out."
+        case .invalidResponse: "Invalid response from device."
+        case .sessionError(let e): e.localizedDescription
+        }
+    }
+}
+
 // MARK: - Binary Protocol Service
 
 /// Service for binary protocol operations with remote mesh nodes.

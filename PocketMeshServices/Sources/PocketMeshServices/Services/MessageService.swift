@@ -22,6 +22,20 @@ public enum MessageServiceError: Error, Sendable {
     case sessionError(MeshCoreError)
 }
 
+extension MessageServiceError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .contactNotFound: "Contact not found."
+        case .channelNotFound: "Channel not found."
+        case .sendFailed(let msg): "Send failed: \(msg)"
+        case .invalidRecipient: "Cannot send messages to this recipient."
+        case .messageTooLong: "Message exceeds the maximum allowed length."
+        case .sessionError(let e): e.localizedDescription
+        }
+    }
+}
+
 // MARK: - Message Service Configuration
 
 /// Configuration for message retry and routing behavior.

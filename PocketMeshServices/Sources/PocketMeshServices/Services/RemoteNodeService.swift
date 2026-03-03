@@ -46,7 +46,7 @@ public enum RemoteNodeError: Error, LocalizedError, Sendable {
         case .cancelled:
             return "Login cancelled"
         case .sessionError(let error):
-            return "Session error: \(error.localizedDescription)"
+            return error.localizedDescription
         }
     }
 

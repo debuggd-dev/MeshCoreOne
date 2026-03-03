@@ -16,7 +16,7 @@ public enum SettingsServiceError: Error, LocalizedError, Sendable {
         case .notConnected: return "Device not connected"
         case .sendFailed: return "Failed to send command"
         case .invalidResponse: return "Invalid response from device"
-        case .sessionError(let error): return "Session error: \(error.localizedDescription)"
+        case .sessionError(let error): return error.localizedDescription
         case .verificationFailed(let expected, let actual):
             return "Setting was not saved. Expected '\(expected)' but device reports '\(actual)'."
         }

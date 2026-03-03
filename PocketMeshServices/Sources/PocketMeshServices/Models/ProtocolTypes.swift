@@ -134,6 +134,19 @@ public enum ProtocolError: UInt8, Sendable, Error {
     case illegalArgument = 0x06
 }
 
+extension ProtocolError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedCommand: "Command not supported by device firmware."
+        case .notFound: "Item not found on device."
+        case .tableFull: "Device storage is full."
+        case .badState: "Device is in an invalid state for this operation."
+        case .fileIOError: "Device file system error."
+        case .illegalArgument: "Invalid parameter sent to device."
+        }
+    }
+}
+
 /// Protocol size limits and constants
 public enum ProtocolLimits {
     public static let publicKeySize = 32

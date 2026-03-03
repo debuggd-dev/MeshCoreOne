@@ -54,6 +54,16 @@ public enum SyncCoordinatorError: Error, Sendable {
     case alreadySyncing
 }
 
+extension SyncCoordinatorError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .syncFailed(let msg): "Sync failed: \(msg)"
+        case .alreadySyncing: "A sync is already in progress."
+        }
+    }
+}
+
 // MARK: - SyncCoordinator Actor
 
 /// Coordinates data synchronization between MeshCore device and local database.

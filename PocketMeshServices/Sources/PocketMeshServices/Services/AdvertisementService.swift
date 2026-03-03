@@ -11,6 +11,17 @@ public enum AdvertisementError: Error, Sendable {
     case sessionError(MeshCoreError)
 }
 
+extension AdvertisementError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .sendFailed: "Failed to send advertisement."
+        case .invalidResponse: "Invalid response from device."
+        case .sessionError(let e): e.localizedDescription
+        }
+    }
+}
+
 // MARK: - Advertisement Service
 
 /// Service for managing device advertisements and discovery.
