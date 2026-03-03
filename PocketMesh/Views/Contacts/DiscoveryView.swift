@@ -334,7 +334,7 @@ private struct DiscoveryNodeRow: View {
     private var avatarView: some View {
         switch node.nodeType {
         case .chat:
-            DiscoveredNodeAvatar(name: node.name, size: 44)
+            ContactAvatar(name: node.name, size: 44)
         case .repeater:
             NodeAvatar(publicKey: node.publicKey, role: .repeater, size: 44)
         case .room:
