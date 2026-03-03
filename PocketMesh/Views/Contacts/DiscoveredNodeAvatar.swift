@@ -1,4 +1,5 @@
 import SwiftUI
+import PocketMeshServices
 
 struct DiscoveredNodeAvatar: View {
     let name: String
@@ -13,11 +14,14 @@ struct DiscoveredNodeAvatar: View {
     }
 
     private var initials: String {
+        if let emoji = name.first(where: \.isEmoji) {
+            return String(emoji)
+        }
         let words = name.split(separator: " ")
         if words.count >= 2 {
             return String(words[0].prefix(1) + words[1].prefix(1)).uppercased()
         }
-        return String(name.prefix(2)).uppercased()
+        return String(name.prefix(1)).uppercased()
     }
 
     private var avatarColor: Color {
