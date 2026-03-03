@@ -8,6 +8,7 @@ enum PreviewLoadState: Sendable, Hashable {
     case loaded         // Preview data available in loadedPreview
     case noPreview      // Fetch completed, no preview available
     case disabled       // User has previews disabled
+    case malwareWarning // URL flagged as suspicious by malware domain filter
 }
 
 /// Pre-computed display properties for message cells.

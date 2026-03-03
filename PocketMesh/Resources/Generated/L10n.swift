@@ -436,6 +436,14 @@ public enum L10n {
           }
         }
       }
+      public enum MalwareWarning {
+        /// Location: MalwareWarningCard.swift - Accessibility label - %@ is domain
+        public static func accessibility(_ p1: Any) -> String {
+          return L10n.tr("Chats", "chats.malwareWarning.accessibility", String(describing: p1), fallback: "Warning: link to %@ flagged as suspicious")
+        }
+        /// Location: MalwareWarningCard.swift - Warning title for flagged domains
+        public static let title = L10n.tr("Chats", "chats.malwareWarning.title", fallback: "Link flagged as suspicious")
+      }
       public enum Mention {
         public enum Accessibility {
           /// Location: MentionSuggestionRow.swift - Accessibility hint for channel sender mention

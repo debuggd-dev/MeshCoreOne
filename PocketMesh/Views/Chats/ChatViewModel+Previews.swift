@@ -28,6 +28,13 @@ extension ChatViewModel {
     private func fetchPreview(for messageID: UUID, url: URL, isChannelMessage: Bool) async {
         guard let dataStore, let linkPreviewCache else { return }
 
+        // Check malware domain blocklist before fetching
+        if let host = url.host(), await MalwareDomainFilter.shared.isBlocked(host) {
+            previewStates[messageID] = .malwareWarning
+            rebuildDisplayItem(for: messageID)
+            return
+        }
+
         // Update to loading state
         previewStates[messageID] = .loading
         rebuildDisplayItem(for: messageID)
@@ -171,6 +178,7 @@ extension ChatViewModel {
 
     /// Clears the negative cache entry for a failed image and re-triggers the fetch.
     func retryImageFetch(for messageID: UUID) async {
+        guard previewStates[messageID] != .malwareWarning else { return }
         guard let displayItem = displayItems.first(where: { $0.messageID == messageID }),
               let url = displayItem.detectedURL else { return }
 
@@ -198,10 +206,17 @@ extension ChatViewModel {
 
     /// Fetch inline image data and update state
     private func fetchInlineImage(for messageID: UUID, url: URL) async {
+        let directURL = ImageURLDetector.directImageURL(for: url)
+
+        // Check malware domain blocklist before fetching
+        if let host = directURL.host(), await MalwareDomainFilter.shared.isBlocked(host) {
+            previewStates[messageID] = .malwareWarning
+            rebuildDisplayItem(for: messageID)
+            return
+        }
+
         previewStates[messageID] = .loading
         rebuildDisplayItem(for: messageID)
-
-        let directURL = ImageURLDetector.directImageURL(for: url)
         let result = await InlineImageCache.shared.fetchImageData(for: directURL)
 
         guard !Task.isCancelled else {

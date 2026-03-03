@@ -74,6 +74,12 @@ actor InlineImageCache {
 
     /// Performs the HTTP fetch, validates the response, and caches the result.
     private func performFetch(for url: URL, key: String) async -> InlineImageResult {
+        guard await URLSafetyChecker.isSafe(url) else {
+            logger.debug("Blocked fetch to unsafe URL: \(url.host() ?? "unknown")")
+            failedURLs.insert(key)
+            return .failed
+        }
+
         do {
             let (data, response) = try await URLSession.shared.data(from: url)
 

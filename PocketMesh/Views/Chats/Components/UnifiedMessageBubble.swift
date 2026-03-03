@@ -166,6 +166,12 @@ struct UnifiedMessageBubble: View {
                         .padding(.bottom, -6)
                     }
 
+                    // Malware warning (always shown, regardless of preview settings)
+                    if displayState.previewState == .malwareWarning,
+                       let url = LinkPreviewService.extractFirstURL(from: message.text) {
+                        MalwareWarningCard(url: url)
+                    }
+
                     // Link preview (if applicable, skip for image URLs shown in bubble)
                     if previewsEnabled && !(displayState.isImageURL && displayState.showInlineImages) {
                         BubbleLinkPreviewContent(
@@ -349,6 +355,9 @@ private struct BubbleEmbeddedImageContent: View {
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Chats.Chats.InlineImage.retryHint)
             }
+
+        case .malwareWarning:
+            EmptyView()
         }
     }
 }
@@ -412,6 +421,9 @@ private struct BubbleLinkPreviewContent: View {
                 // URL detected, waiting for fetch - show loading
                 LinkPreviewLoadingCard(url: url)
             }
+
+        case .malwareWarning:
+            EmptyView()
         }
     }
 }

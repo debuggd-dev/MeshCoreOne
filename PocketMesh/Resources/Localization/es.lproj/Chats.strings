@@ -968,3 +968,11 @@
 
 /* Location: MessageActionsSheet.swift - Purpose: Delete action */
 "reactions.delete" = "Eliminar";
+
+// MARK: - Malware Warning
+
+/* Location: MalwareWarningCard.swift - Warning title for flagged domains */
+"chats.malwareWarning.title" = "Enlace marcado como sospechoso";
+
+/* Location: MalwareWarningCard.swift - Accessibility label - %@ is domain */
+"chats.malwareWarning.accessibility" = "Advertencia: enlace a %@ marcado como sospechoso";

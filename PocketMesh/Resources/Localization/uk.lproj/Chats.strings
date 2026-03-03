@@ -961,3 +961,11 @@
 
 /* Location: MessageActionsSheet.swift - Delete action */
 "reactions.delete" = "Видалити";
+
+// MARK: - Malware Warning
+
+/* Location: MalwareWarningCard.swift - Warning title for flagged domains */
+"chats.malwareWarning.title" = "Посилання позначено як підозріле";
+
+/* Location: MalwareWarningCard.swift - Accessibility label - %@ is domain */
+"chats.malwareWarning.accessibility" = "Попередження: посилання на %@ позначено як підозріле";
