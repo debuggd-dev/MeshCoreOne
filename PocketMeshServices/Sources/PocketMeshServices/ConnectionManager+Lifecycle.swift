@@ -104,6 +104,10 @@ extension ConnectionManager {
             bleState: \(bleState)
             """)
 
+        // Reset stale room session connections from previous app launch
+        let resetStore = createStandalonePersistenceStore()
+        try? await resetStore.resetAllRemoteNodeSessionConnections()
+
         #if targetEnvironment(simulator)
         // Skip auto-reconnect if user explicitly disconnected
         if connectionIntent.isUserDisconnected {
