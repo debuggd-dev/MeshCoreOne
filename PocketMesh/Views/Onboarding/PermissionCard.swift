@@ -50,7 +50,7 @@ struct PermissionCard: View {
                     .foregroundStyle(.green)
             } else if isDenied {
                 Button(L10n.Onboarding.Permissions.openSettings) {
-                    if let url = URL(string: "app-settings:") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
                         openURL(url)
                     }
                 }
