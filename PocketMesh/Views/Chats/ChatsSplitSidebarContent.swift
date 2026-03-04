@@ -10,12 +10,11 @@ struct ChatsSplitSidebarContent: View {
     let viewModel: ChatViewModel
     let filteredFavorites: [Conversation]
     let filteredOthers: [Conversation]
-    let filteredConversations: [Conversation]
     let emptyStateMessage: (title: String, description: String, systemImage: String)
     let hasLoadedOnce: Bool
 
     @Binding var selectedRoute: ChatRoute?
-    @Binding var selectedFilter: ChatFilter?
+    @Binding var selectedFilter: ChatFilter
     @Binding var searchText: String
     @Binding var showingNewChat: Bool
     @Binding var showingChannelOptions: Bool
@@ -25,7 +24,6 @@ struct ChatsSplitSidebarContent: View {
     @Binding var routeBeingDeleted: ChatRoute?
 
     let onDeleteConversation: (Conversation) -> Void
-    let onRefreshConversations: () async -> Void
     let onLoadConversations: () async -> Void
     let onHandlePendingNavigation: () -> Void
     let onHandlePendingChannelNavigation: () -> Void
@@ -34,15 +32,16 @@ struct ChatsSplitSidebarContent: View {
 
     var body: some View {
         applyChatsListModifiers(
-            to: conversationListState {
-                ConversationListContent(
-                    viewModel: viewModel,
-                    favoriteConversations: filteredFavorites,
-                    otherConversations: filteredOthers,
-                    selection: $selectedRoute,
-                    onDeleteConversation: onDeleteConversation
-                )
-            },
+            to: ConversationListContent(
+                viewModel: viewModel,
+                favoriteConversations: filteredFavorites,
+                otherConversations: filteredOthers,
+                selectedFilter: $selectedFilter,
+                hasLoadedOnce: hasLoadedOnce,
+                emptyStateMessage: emptyStateMessage,
+                selection: $selectedRoute,
+                onDeleteConversation: onDeleteConversation
+            ),
             onTaskStart: {
                 splitSidebarLogger.debug("ChatsView: task started, services=\(appState.services != nil)")
                 viewModel.configure(appState: appState)
@@ -80,7 +79,7 @@ struct ChatsSplitSidebarContent: View {
             }()
 
             // Sync sidebar selection to AppState for detail pane (non-nil only;
-            // nil cases are handled explicitly by deletion methods and disconnected room path)
+            // nil is handled by deletion methods and disconnected room path)
             if let newValue {
                 appState.navigation.chatsSelectedRoute = newValue
             }
@@ -89,30 +88,6 @@ struct ChatsSplitSidebarContent: View {
 
     // MARK: - Helpers
 
-    @ViewBuilder
-    private func conversationListState<Content: View>(
-        @ViewBuilder listContent: () -> Content
-    ) -> some View {
-        if !hasLoadedOnce {
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredConversations.isEmpty {
-            ContentUnavailableView {
-                Label(emptyStateMessage.title, systemImage: emptyStateMessage.systemImage)
-            } description: {
-                Text(emptyStateMessage.description)
-            } actions: {
-                if selectedFilter != nil {
-                    Button(L10n.Chats.Chats.Filter.clear) {
-                        selectedFilter = nil
-                    }
-                }
-            }
-        } else {
-            listContent()
-        }
-    }
-
     private func applyChatsListModifiers<Content: View>(
         to content: Content,
         onTaskStart: @escaping () async -> Void
@@ -120,18 +95,9 @@ struct ChatsSplitSidebarContent: View {
         content
             .navigationTitle(L10n.Chats.Chats.title)
             .searchable(text: $searchText, prompt: L10n.Chats.Chats.Search.placeholder)
-            .searchScopes($selectedFilter, activation: .onSearchPresentation) {
-                Text(L10n.Chats.Chats.Filter.all).tag(nil as ChatFilter?)
-                ForEach(ChatFilter.allCases) { filter in
-                    Text(filter.localizedName).tag(filter as ChatFilter?)
-                }
-            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     BLEStatusIndicatorView()
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    ChatsFilterMenu(selectedFilter: $selectedFilter)
                 }
                 ToolbarItem(placement: .automatic) {
                     Menu {
@@ -155,7 +121,7 @@ struct ChatsSplitSidebarContent: View {
                 if appState.connectionState != .ready {
                     showOfflineRefreshAlert = true
                 } else {
-                    await onRefreshConversations()
+                    await onLoadConversations()
                 }
             }
             .alert(L10n.Chats.Chats.Alert.CannotRefresh.title, isPresented: $showOfflineRefreshAlert) {
@@ -176,11 +142,13 @@ struct ChatsSplitSidebarContent: View {
                 onHandlePendingRoomNavigation()
             }
             .onChange(of: appState.servicesVersion) { _, _ in
+                guard routeBeingDeleted == nil else { return }
                 Task {
                     await onLoadConversations()
                 }
             }
             .onChange(of: appState.conversationsVersion) { _, _ in
+                guard routeBeingDeleted == nil else { return }
                 Task {
                     await onLoadConversations()
                 }

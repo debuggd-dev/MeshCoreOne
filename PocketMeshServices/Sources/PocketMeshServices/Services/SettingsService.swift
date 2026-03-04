@@ -16,7 +16,7 @@ public enum SettingsServiceError: Error, LocalizedError, Sendable {
         case .notConnected: return "Device not connected"
         case .sendFailed: return "Failed to send command"
         case .invalidResponse: return "Invalid response from device"
-        case .sessionError(let error): return "Session error: \(error.localizedDescription)"
+        case .sessionError(let error): return error.localizedDescription
         case .verificationFailed(let expected, let actual):
             return "Setting was not saved. Expected '\(expected)' but device reports '\(actual)'."
         }
@@ -212,6 +212,21 @@ public enum RadioPresets {
             preset.codingRate == codingRate
         }
     }
+
+    /// Find repeat preset matching current device settings (exact match)
+    public static func matchingRepeatPreset(
+        frequencyKHz: UInt32,
+        bandwidthKHz: UInt32,
+        spreadingFactor: UInt8,
+        codingRate: UInt8
+    ) -> RadioPreset? {
+        repeatPresets.first { preset in
+            preset.frequencyKHz == frequencyKHz &&
+            preset.bandwidthHz == bandwidthKHz &&
+            preset.spreadingFactor == spreadingFactor &&
+            preset.codingRate == codingRate
+        }
+    }
 }
 
 // MARK: - Telemetry Modes
@@ -247,6 +262,7 @@ public enum SettingsEvent: Sendable {
     case deviceUpdated(MeshCore.SelfInfo)
     case autoAddConfigUpdated(UInt8)
     case clientRepeatUpdated(Bool)
+    case pathHashModeUpdated(UInt8)
     case allowedRepeatFreqUpdated([MeshCore.FrequencyRange])
 }
 
@@ -670,6 +686,38 @@ public actor SettingsService {
 
         eventContinuation?.yield(.autoAddConfigUpdated(actualConfig))
         return actualConfig
+    }
+
+    // MARK: - Path Hash Mode
+
+    /// Sets the path hash mode on the device.
+    ///
+    /// - Parameter mode: Hash mode (0=1-byte, 1=2-byte, 2=3-byte hashes).
+    public func setPathHashMode(_ mode: UInt8) async throws {
+        do {
+            try await session.setPathHashMode(mode)
+        } catch let error as MeshCoreError {
+            throw SettingsServiceError.sessionError(error)
+        }
+    }
+
+    /// Sets the path hash mode with verification via queryDevice.
+    ///
+    /// - Parameter mode: Hash mode (0=1-byte, 1=2-byte, 2=3-byte hashes).
+    /// - Returns: The verified mode value from the device.
+    public func setPathHashModeVerified(_ mode: UInt8) async throws -> UInt8 {
+        try await setPathHashMode(mode)
+
+        let capabilities = try await queryDevice()
+        guard capabilities.pathHashMode == mode else {
+            throw SettingsServiceError.verificationFailed(
+                expected: "pathHashMode=\(mode)",
+                actual: "pathHashMode=\(capabilities.pathHashMode)"
+            )
+        }
+
+        eventContinuation?.yield(.pathHashModeUpdated(mode))
+        return mode
     }
 
     // MARK: - Stats

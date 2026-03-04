@@ -2,19 +2,20 @@ import SwiftUI
 import PocketMeshServices
 import CoreLocation
 
+private enum SettingsField: Hashable {
+    case frequency
+    case txPower
+    case advertInterval
+    case floodAdvertInterval
+    case floodMaxHops
+    case identityName
+    case contactInfo
+}
+
 struct RepeaterSettingsView: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
-    @FocusState private var focusedField: Field?
-
-    private enum Field: Hashable {
-        case frequency
-        case txPower
-        case advertInterval
-        case floodAdvertInterval
-        case floodMaxHops
-        case identityName
-    }
+    @FocusState private var focusedField: SettingsField?
 
     let session: RemoteNodeSessionDTO
     @State private var viewModel = RepeaterSettingsViewModel()
@@ -28,13 +29,14 @@ struct RepeaterSettingsView: View {
 
     var body: some View {
         Form {
-            headerSection
-            radioSettingsSection
-            identitySection
-            behaviorSection
-            securitySection
-            deviceInfoSection
-            actionsSection
+            SettingsHeaderSection(publicKey: session.publicKey, name: session.name)
+            makeRadioSettingsSection()
+            makeIdentitySection()
+            makeContactInfoSection()
+            makeBehaviorSection()
+            makeSecuritySection()
+            makeDeviceInfoSection()
+            makeActionsSection()
         }
         .navigationTitle(L10n.RemoteNodes.RemoteNodes.Settings.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -48,7 +50,6 @@ struct RepeaterSettingsView: View {
         }
         .task {
             await viewModel.configure(appState: appState, session: session)
-            // Device Info auto-loads because isDeviceInfoExpanded = true by default
         }
         .onDisappear {
             Task {
@@ -75,15 +76,61 @@ struct RepeaterSettingsView: View {
         }
     }
 
-    // MARK: - Header Section
+    // MARK: - Subviews
 
-    private var headerSection: some View {
+    private func makeDeviceInfoSection() -> some View {
+        DeviceInfoSection(viewModel: viewModel)
+    }
+
+    private func makeRadioSettingsSection() -> some View {
+        RadioSettingsSection(
+            viewModel: viewModel,
+            focusedField: $focusedField,
+            bandwidthOptionsKHz: bandwidthOptionsKHz
+        )
+    }
+
+    private func makeIdentitySection() -> some View {
+        IdentitySection(
+            viewModel: viewModel,
+            focusedField: $focusedField,
+            onPickLocation: { showingLocationPicker = true }
+        )
+    }
+
+    private func makeContactInfoSection() -> some View {
+        ContactInfoSection(viewModel: viewModel, focusedField: $focusedField)
+    }
+
+    private func makeBehaviorSection() -> some View {
+        BehaviorSection(viewModel: viewModel, focusedField: $focusedField)
+    }
+
+    private func makeSecuritySection() -> some View {
+        SecuritySection(viewModel: viewModel)
+    }
+
+    private func makeActionsSection() -> some View {
+        ActionsSection(
+            viewModel: viewModel,
+            showRebootConfirmation: $showRebootConfirmation
+        )
+    }
+}
+
+// MARK: - Settings Header Section
+
+private struct SettingsHeaderSection: View {
+    let publicKey: Data
+    let name: String
+
+    var body: some View {
         Section {
             HStack {
                 Spacer()
                 VStack(spacing: 8) {
-                    NodeAvatar(publicKey: session.publicKey, role: .repeater, size: 60)
-                    Text(session.name)
+                    NodeAvatar(publicKey: publicKey, role: .repeater, size: 60)
+                    Text(name)
                         .font(.headline)
                 }
                 Spacer()
@@ -91,10 +138,14 @@ struct RepeaterSettingsView: View {
             .listRowBackground(Color.clear)
         }
     }
+}
 
-    // MARK: - Device Info Section (auto-expands on appear)
+// MARK: - Device Info Section
 
-    private var deviceInfoSection: some View {
+private struct DeviceInfoSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+
+    var body: some View {
         ExpandableSettingsSection(
             title: L10n.RemoteNodes.RemoteNodes.Settings.deviceInfo,
             icon: "info.circle",
@@ -102,16 +153,23 @@ struct RepeaterSettingsView: View {
             isLoaded: { viewModel.deviceInfoLoaded },
             isLoading: $viewModel.isLoadingDeviceInfo,
             error: $viewModel.deviceInfoError,
-            onLoad: { await viewModel.fetchDeviceInfo() }
+            onLoad: { await viewModel.fetchDeviceInfo() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.deviceInfoFooter
         ) {
             LabeledContent(L10n.RemoteNodes.RemoteNodes.Settings.firmware, value: viewModel.firmwareVersion ?? "\u{2014}")
             LabeledContent(L10n.RemoteNodes.RemoteNodes.Settings.deviceTime, value: viewModel.deviceTime ?? "\u{2014}")
         }
     }
+}
 
-    // MARK: - Radio Settings Section (with restart warning banner)
+// MARK: - Radio Settings Section
 
-    private var radioSettingsSection: some View {
+private struct RadioSettingsSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+    var focusedField: FocusState<SettingsField?>.Binding
+    let bandwidthOptionsKHz: [Double]
+
+    var body: some View {
         ExpandableSettingsSection(
             title: L10n.RemoteNodes.RemoteNodes.Settings.radioParameters,
             icon: "antenna.radiowaves.left.and.right",
@@ -119,9 +177,9 @@ struct RepeaterSettingsView: View {
             isLoaded: { viewModel.radioLoaded },
             isLoading: $viewModel.isLoadingRadio,
             error: $viewModel.radioError,
-            onLoad: { await viewModel.fetchRadioSettings() }
+            onLoad: { await viewModel.fetchRadioSettings() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.radioFooter
         ) {
-            // Restart warning banner (prominent, not just caption text)
             if viewModel.radioSettingsModified {
                 HStack {
                     Image(systemName: "exclamationmark.triangle.fill")
@@ -146,7 +204,7 @@ struct RepeaterSettingsView: View {
                         .keyboardType(.decimalPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 100)
-                        .focused($focusedField, equals: .frequency)
+                        .focused(focusedField, equals: .frequency)
                         .onChange(of: viewModel.frequency) { _, _ in
                             viewModel.radioSettingsModified = true
                         }
@@ -250,7 +308,7 @@ struct RepeaterSettingsView: View {
                         .keyboardType(.numbersAndPunctuation)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 60)
-                        .focused($focusedField, equals: .txPower)
+                        .focused(focusedField, equals: .txPower)
                         .onChange(of: viewModel.txPower) { _, _ in
                             viewModel.radioSettingsModified = true
                         }
@@ -262,7 +320,6 @@ struct RepeaterSettingsView: View {
                 }
             }
 
-            // Single Apply button for all radio settings
             Button {
                 Task { await viewModel.applyRadioSettings() }
             } label: {
@@ -281,10 +338,16 @@ struct RepeaterSettingsView: View {
             .alignmentGuide(.listRowSeparatorLeading) { _ in 0 }
         }
     }
+}
 
-    // MARK: - Identity Section
+// MARK: - Identity Section
 
-    private var identitySection: some View {
+private struct IdentitySection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+    var focusedField: FocusState<SettingsField?>.Binding
+    let onPickLocation: () -> Void
+
+    var body: some View {
         ExpandableSettingsSection(
             title: L10n.RemoteNodes.RemoteNodes.Settings.identityLocation,
             icon: "person.text.rectangle",
@@ -292,20 +355,10 @@ struct RepeaterSettingsView: View {
             isLoaded: { viewModel.identityLoaded },
             isLoading: $viewModel.isLoadingIdentity,
             error: $viewModel.identityError,
-            onLoad: { await viewModel.fetchIdentity() }
+            onLoad: { await viewModel.fetchIdentity() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.identityFooter
         ) {
-            if let name = viewModel.name {
-                TextField(L10n.RemoteNodes.RemoteNodes.name, text: Binding(
-                    get: { name },
-                    set: { viewModel.name = $0 }
-                ))
-                    .textContentType(.name)
-                    .submitLabel(.done)
-                    .focused($focusedField, equals: .identityName)
-                    .onSubmit {
-                        focusedField = nil
-                    }
-            } else if viewModel.isLoadingIdentity {
+            if viewModel.isLoadingIdentity && viewModel.name == nil {
                 HStack {
                     Text(L10n.RemoteNodes.RemoteNodes.name)
                         .foregroundStyle(.secondary)
@@ -316,15 +369,12 @@ struct RepeaterSettingsView: View {
                 }
             } else {
                 TextField(L10n.RemoteNodes.RemoteNodes.name, text: Binding(
-                    get: { "" },
+                    get: { viewModel.name ?? "" },
                     set: { viewModel.name = $0 }
                 ))
                     .textContentType(.name)
                     .submitLabel(.done)
-                    .focused($focusedField, equals: .identityName)
-                    .onSubmit {
-                        focusedField = nil
-                    }
+                    .focused(focusedField, equals: .identityName)
             }
 
             HStack {
@@ -366,7 +416,7 @@ struct RepeaterSettingsView: View {
             }
 
             Button {
-                showingLocationPicker = true
+                onPickLocation()
             } label: {
                 Label(L10n.RemoteNodes.RemoteNodes.Settings.pickOnMap, systemImage: "mappin.and.ellipse")
             }
@@ -394,10 +444,77 @@ struct RepeaterSettingsView: View {
             .disabled(viewModel.isApplying || viewModel.identityApplySuccess || !viewModel.identitySettingsModified)
         }
     }
+}
 
-    // MARK: - Behavior Section
+// MARK: - Contact Info Section
 
-    private var behaviorSection: some View {
+private struct ContactInfoSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+    var focusedField: FocusState<SettingsField?>.Binding
+
+    private static let maxCharacters = 119
+
+    var body: some View {
+        ExpandableSettingsSection(
+            title: L10n.RemoteNodes.RemoteNodes.Settings.contactInfo,
+            icon: "person.crop.rectangle",
+            isExpanded: $viewModel.isContactInfoExpanded,
+            isLoaded: { viewModel.contactInfoLoaded },
+            isLoading: $viewModel.isLoadingContactInfo,
+            error: $viewModel.contactInfoError,
+            onLoad: { await viewModel.fetchContactInfo() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.contactInfoFooter
+        ) {
+            TextField(
+                L10n.RemoteNodes.RemoteNodes.Settings.contactInfoPlaceholder,
+                text: Binding(
+                    get: { viewModel.ownerInfo ?? "" },
+                    set: { viewModel.ownerInfo = $0 }
+                ),
+                axis: .vertical
+            )
+            .lineLimit(3...6)
+            .focused(focusedField, equals: .contactInfo)
+            .overlay(alignment: .bottomTrailing) {
+                let count = viewModel.ownerInfoCharCount
+                Text(L10n.RemoteNodes.RemoteNodes.Settings.contactInfoCharCount(count))
+                    .font(.caption2)
+                    .foregroundStyle(count > Self.maxCharacters ? Color.red : Color.secondary.opacity(0.6))
+                    .padding(4)
+            }
+
+            Button {
+                Task { await viewModel.applyContactInfoSettings() }
+            } label: {
+                HStack {
+                    Spacer()
+                    if viewModel.isApplying {
+                        ProgressView()
+                    } else if viewModel.contactInfoApplySuccess {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundStyle(.green)
+                            .transition(.scale.combined(with: .opacity))
+                    } else {
+                        Text(L10n.RemoteNodes.RemoteNodes.Settings.applyContactInfo)
+                            .foregroundStyle(viewModel.contactInfoSettingsModified ? Color.accentColor : .secondary)
+                            .transition(.opacity)
+                    }
+                    Spacer()
+                }
+                .animation(.default, value: viewModel.contactInfoApplySuccess)
+            }
+            .disabled(viewModel.isApplying || viewModel.contactInfoApplySuccess || !viewModel.contactInfoSettingsModified || viewModel.ownerInfoCharCount > Self.maxCharacters)
+        }
+    }
+}
+
+// MARK: - Behavior Section
+
+private struct BehaviorSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+    var focusedField: FocusState<SettingsField?>.Binding
+
+    var body: some View {
         ExpandableSettingsSection(
             title: L10n.RemoteNodes.RemoteNodes.Settings.behavior,
             icon: "slider.horizontal.3",
@@ -405,7 +522,8 @@ struct RepeaterSettingsView: View {
             isLoaded: { viewModel.behaviorLoaded },
             isLoading: $viewModel.isLoadingBehavior,
             error: $viewModel.behaviorError,
-            onLoad: { await viewModel.fetchBehaviorSettings() }
+            onLoad: { await viewModel.fetchBehaviorSettings() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.behaviorFooter
         ) {
             Toggle(L10n.RemoteNodes.RemoteNodes.Settings.repeaterMode, isOn: Binding(
                 get: { viewModel.repeaterEnabled ?? false },
@@ -431,7 +549,7 @@ struct RepeaterSettingsView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 60)
-                        .focused($focusedField, equals: .advertInterval)
+                        .focused(focusedField, equals: .advertInterval)
                     Text(L10n.RemoteNodes.RemoteNodes.Settings.min)
                         .foregroundStyle(.secondary)
                 } else {
@@ -458,7 +576,7 @@ struct RepeaterSettingsView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 60)
-                        .focused($focusedField, equals: .floodAdvertInterval)
+                        .focused(focusedField, equals: .floodAdvertInterval)
                     Text(L10n.RemoteNodes.RemoteNodes.Settings.hrs)
                         .foregroundStyle(.secondary)
                 } else {
@@ -485,7 +603,7 @@ struct RepeaterSettingsView: View {
                         .keyboardType(.numberPad)
                         .multilineTextAlignment(.trailing)
                         .frame(width: 60)
-                        .focused($focusedField, equals: .floodMaxHops)
+                        .focused(focusedField, equals: .floodMaxHops)
                     Text(L10n.RemoteNodes.RemoteNodes.Settings.hops)
                         .foregroundStyle(.secondary)
                 } else {
@@ -524,10 +642,14 @@ struct RepeaterSettingsView: View {
             .disabled(viewModel.isApplying || viewModel.behaviorApplySuccess || !viewModel.behaviorSettingsModified)
         }
     }
+}
 
-    // MARK: - Security Section
+// MARK: - Security Section
 
-    private var securitySection: some View {
+private struct SecuritySection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+
+    var body: some View {
         Section {
             DisclosureGroup(isExpanded: $viewModel.isSecurityExpanded) {
                 SecureField(L10n.RemoteNodes.RemoteNodes.Settings.newPassword, text: $viewModel.newPassword)
@@ -537,19 +659,22 @@ struct RepeaterSettingsView: View {
                     Task { await viewModel.changePassword() }
                 }
                 .disabled(viewModel.isApplying || viewModel.newPassword.isEmpty || viewModel.newPassword != viewModel.confirmPassword)
-
-                Text(L10n.RemoteNodes.RemoteNodes.Settings.securityFooter)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
             } label: {
                 Label(L10n.RemoteNodes.RemoteNodes.Settings.security, systemImage: "lock")
             }
+        } footer: {
+            Text(L10n.RemoteNodes.RemoteNodes.Settings.securityFooter)
         }
     }
+}
 
-    // MARK: - Actions Section
+// MARK: - Actions Section
 
-    private var actionsSection: some View {
+private struct ActionsSection: View {
+    let viewModel: RepeaterSettingsViewModel
+    @Binding var showRebootConfirmation: Bool
+
+    var body: some View {
         Section(L10n.RemoteNodes.RemoteNodes.Settings.deviceActions) {
             Button(L10n.RemoteNodes.RemoteNodes.Settings.sendAdvert) {
                 Task { await viewModel.forceAdvert() }

@@ -89,7 +89,7 @@ public struct ContactFrame: Sendable, Equatable {
     public let publicKey: Data
     public let type: ContactType
     public let flags: UInt8
-    public let outPathLength: Int8
+    public let outPathLength: UInt8
     public let outPath: Data
     public let name: String
     public let lastAdvertTimestamp: UInt32
@@ -101,7 +101,7 @@ public struct ContactFrame: Sendable, Equatable {
         publicKey: Data,
         type: ContactType,
         flags: UInt8,
-        outPathLength: Int8,
+        outPathLength: UInt8,
         outPath: Data,
         name: String,
         lastAdvertTimestamp: UInt32,
@@ -134,6 +134,19 @@ public enum ProtocolError: UInt8, Sendable, Error {
     case illegalArgument = 0x06
 }
 
+extension ProtocolError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .unsupportedCommand: "Command not supported by device firmware."
+        case .notFound: "Item not found on device."
+        case .tableFull: "Device storage is full."
+        case .badState: "Device is in an invalid state for this operation."
+        case .fileIOError: "Device file system error."
+        case .illegalArgument: "Invalid parameter sent to device."
+        }
+    }
+}
+
 /// Protocol size limits and constants
 public enum ProtocolLimits {
     public static let publicKeySize = 32
@@ -143,7 +156,6 @@ public enum ProtocolLimits {
     public static let signatureSize = 64
     public static let maxPacketPayload = 184
     public static let cipherMacSize = 2
-    public static let pathHashSize = 1
     public static let maxHashSize = 8
     public static let cipherKeySize = 16
     public static let maxContacts = 100

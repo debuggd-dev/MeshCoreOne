@@ -24,7 +24,7 @@
 "tools.noiseFloor" = "Próg szumów";
 
 /* Location: ToolsView.swift - Tool selection label */
-"tools.nodeDiscovery" = "Discover Nodes";
+"tools.nodeDiscovery" = "Odkryj węzły";
 
 /* Location: ToolsView.swift - Empty state when no tool selected */
 "tools.selectTool" = "Wybierz narzędzie";
@@ -150,6 +150,12 @@
 /* Location: RxLogViewModel.swift - Decrypt filter: failed */
 "tools.rxLog.filter.failed" = "Nieudane";
 
+/* Location: RxLogRowView - Label for local device in path display */
+"tools.rxLog.pathYou" = "Ty";
+
+/* Location: RxLogRowView - Route label for TRACE target hashes */
+"tools.rxLog.traceRouteLabel" = "Trasa:";
+
 // MARK: - Noise Floor View
 
 /* Location: NoiseFloorView.swift - Disconnected state description */
@@ -229,52 +235,52 @@
 // MARK: - Node Discovery View
 
 /* Location: NodeDiscoveryView.swift - Disconnected state description */
-"tools.nodeDiscovery.notConnectedDescription" = "Connect to a mesh radio to discover %@.";
+"tools.nodeDiscovery.notConnectedDescription" = "Połącz się z radiem mesh, aby odkryć %@.";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state title */
-"tools.nodeDiscovery.scanPrompt" = "Scan for %@";
+"tools.nodeDiscovery.scanPrompt" = "Szukaj %@";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state description */
-"tools.nodeDiscovery.scanPromptDescription" = "Tap the button below to discover nearby %@.";
+"tools.nodeDiscovery.scanPromptDescription" = "Dotknij przycisku poniżej, aby odkryć pobliskie %@.";
 
 /* Location: NodeDiscoveryView.swift - No results empty state title */
-"tools.nodeDiscovery.noResults" = "No %@ Found";
+"tools.nodeDiscovery.noResults" = "Nie znaleziono %@";
 
 /* Location: NodeDiscoveryView.swift - No results empty state description */
-"tools.nodeDiscovery.noResultsDescription" = "No %@ responded to the discovery ping. Try again or move closer to the mesh.";
+"tools.nodeDiscovery.noResultsDescription" = "Żaden %@ nie odpowiedział na ping wykrywania. Spróbuj ponownie lub zbliż się do sieci mesh.";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (idle) */
-"tools.nodeDiscovery.scanButton" = "Scan for %@";
+"tools.nodeDiscovery.scanButton" = "Szukaj %@";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (scanning) */
-"tools.nodeDiscovery.stopButton" = "Stop Scanning";
+"tools.nodeDiscovery.stopButton" = "Zatrzymaj wyszukiwanie";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.repeaters" = "Repeaters";
+"tools.nodeDiscovery.repeaters" = "Przekaźniki";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.sensors" = "Sensors";
+"tools.nodeDiscovery.sensors" = "Czujniki";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortSignal" = "Signal Strength";
+"tools.nodeDiscovery.sortSignal" = "Siła sygnału";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortName" = "Name";
+"tools.nodeDiscovery.sortName" = "Nazwa";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility label */
-"tools.nodeDiscovery.sortMenu" = "Sort nodes";
+"tools.nodeDiscovery.sortMenu" = "Sortuj węzły";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility hint */
-"tools.nodeDiscovery.sortMenuHint" = "Changes the sort order of discovered nodes";
+"tools.nodeDiscovery.sortMenuHint" = "Zmienia kolejność sortowania odkrytych węzłów";
 
 /* Location: NodeDiscoveryRowView.swift - Unknown node name fallback */
-"tools.nodeDiscovery.unknownNode" = "Unknown";
+"tools.nodeDiscovery.unknownNode" = "Nieznany";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: repeater */
-"tools.nodeDiscovery.typeRepeater" = "Repeater";
+"tools.nodeDiscovery.typeRepeater" = "Przekaźnik";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: sensor */
-"tools.nodeDiscovery.typeSensor" = "Sensor";
+"tools.nodeDiscovery.typeSensor" = "Czujnik";
 
 /* Location: NodeDiscoveryRowView.swift - SNR label (local receive) */
 "tools.nodeDiscovery.snrDown" = "↓ %@ dB";
@@ -286,7 +292,7 @@
 "tools.nodeDiscovery.rssi" = "RSSI %@ dBm";
 
 /* Location: NodeDiscoveryView.swift - Error alert title */
-"tools.nodeDiscovery.errorTitle" = "Scan Failed";
+"tools.nodeDiscovery.errorTitle" = "Wyszukiwanie nie powiodło się";
 
 // MARK: - Line of Sight View
 
@@ -421,6 +427,15 @@
 
 /* Location: LineOfSightViewModel.swift - Dropped pin display name */
 "tools.lineOfSight.droppedPin" = "Upuszczona pinezka";
+
+/* Location: LineOfSightView.swift - Repeater pin accessibility hint */
+"tools.lineOfSight.repeaterPin.accessibilityHint" = "Dotknij dwukrotnie, aby wybrać jako punkt analizy";
+
+/* Location: LineOfSightView.swift - Point pin accessibility hint */
+"tools.lineOfSight.pointPin.accessibilityHint" = "Punkt analizy linii wzroku";
+
+/* Location: LineOfSightView.swift - Repeater target accessibility hint */
+"tools.lineOfSight.repeaterTarget.accessibilityHint" = "Znacznik umieszczenia przekaźnika";
 
 // MARK: - Terrain Profile Canvas
 

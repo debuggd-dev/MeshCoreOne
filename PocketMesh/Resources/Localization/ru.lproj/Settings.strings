@@ -151,6 +151,12 @@
 "publicKey.copy" = "Копировать в буфер обмена";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-байтный закрытый ключ Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -190,7 +196,10 @@
 "deviceSelection.accessibility.connectedElsewhereHint" = "Это устройство используется другим приложением. Подключение может вызвать проблемы со связью.";
 
 /* Accessibility hint for selecting a device */
-"deviceSelection.accessibility.selectHint" = "Нажмите дважды для выбора";
+"deviceSelection.accessibility.selectHint" = "Нажмите дважды для подключения";
+
+/* Accessibility hint for a device that is out of Bluetooth range */
+"deviceSelection.accessibility.outOfRangeHint" = "Устройство вне зоны действия Bluetooth";
 
 /* Label shown when device is connected to another app */
 "deviceSelection.connectedElsewhere" = "Подключено к другому приложению";
@@ -331,6 +340,27 @@
 /* Accessibility hint for voltage text field */
 "batteryCurve.accessibility.voltageHint" = "Введите ожидаемое напряжение при этом уровне заряда";
 
+// MARK: - Path Hash Mode Section
+
+/* Section header for path hash mode */
+"pathHashMode.header" = "Размер хеша пути";
+
+/* Label for path hash mode picker */
+"pathHashMode.label" = "Размер хеша";
+
+/* Path hash mode option: 1 byte */
+"pathHashMode.oneByte" = "1 байт";
+
+/* Path hash mode option: 2 bytes */
+"pathHashMode.twoBytes" = "2 байта";
+
+/* Path hash mode option: 3 bytes */
+"pathHashMode.threeBytes" = "3 байта";
+
+/* Footer explaining path hash mode tradeoff */
+"pathHashMode.footer" = "Более крупные хеши уменьшают коллизии маршрутизации, но ограничивают максимальное количество переходов на маршруте.";
+
+
 // MARK: - Battery Curve Section
 
 /* Section header for battery curve */
@@ -430,100 +460,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Узлы";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Режим автодобавления";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Вручную";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Просмотреть все узлы в Обнаружении перед добавлением";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Выбранные типы";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Автоматически добавлять только включённые ниже типы";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Все";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Автоматически добавлять каждый обнаруженный узел";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Типы автодобавления";
 
 /* Toggle label for auto-add contacts */
-"nodes.autoAddContacts" = "Contacts";
+"nodes.autoAddContacts" = "Контакты";
 
 /* Toggle label for auto-add repeaters */
-"nodes.autoAddRepeaters" = "Repeaters";
+"nodes.autoAddRepeaters" = "Ретрансляторы";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Серверы комнат";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Хранилище";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Перезаписать старейший";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Когда хранилище заполнено, заменить старейший неизбранный узел";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Автоудаление старых узлов";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Удалять узлы старше";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Выбрать";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d дн.";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Неизбранные узлы, от которых не было сигнала %d дн., автоматически удаляются при подключении.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Автоматически удаляет неизбранные узлы, от которых не было сигнала после установленного периода. Избранные никогда не удаляются.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Выберите, как долго хранить узлы. Избранные никогда не удаляются.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Проверит старые узлы при следующем подключении. Избранные никогда не удаляются.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Последняя проверка %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Устройство";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Перезагрузить устройство";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Перезагрузка…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Перезагрузить устройство?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Перезагрузить";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "Устройство перезагрузится и временно отключится.";
 
 
 // MARK: - Danger Zone Section
@@ -695,6 +725,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Предупреждения о низком заряде";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Реакции";
 
 /* Button to enable notifications */
 "notifications.enable" = "Включить уведомления";
@@ -1091,3 +1124,112 @@
 
 /* Location: BlockedChannelSendersView.swift - Purpose: Swipe action to unblock */
 "blocking.channelSenders.unblock" = "Разблокировать";
+
+
+// MARK: - Language
+
+/* Location: SettingsView.swift - Purpose: Language row title */
+"language.title" = "Язык";
+
+
+
+// MARK: - Live Activity
+
+/* Label for the Live Status toggle in App Settings */
+"liveActivity.title" = "Live Activity";
+
+/* Title for the Live Activity tip shown after first connection */
+"liveActivity.tip.title" = "Состояние радио с первого взгляда";
+
+/* Message for the Live Activity tip */
+"liveActivity.tip.message" = "Подключение, батарея и сообщения остаются видимыми — даже без открытия приложения.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Идентификация";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Перегенерировать ключ";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Перегенерировать ключ";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Сгенерируйте новую пару ключей Ed25519 для замены текущей идентификации устройства. Все контакты должны будут заново обнаружить ваше устройство.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Сгенерировать ключ";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Сгенерировать другой";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Генерация…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Использовать этот ключ";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Импорт…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Пользовательский префикс";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "напр. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Опционально укажите до 4 шестнадцатеричных символов, с которых должен начинаться ваш открытый ключ. Более длинные префиксы занимают больше времени.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Префикс должен содержать от 1 до 4 шестнадцатеричных символов";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 и FF зарезервированы и не могут использоваться";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Заменить идентификацию?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Заменить";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Идентификация вашего устройства будет безвозвратно заменена. Другие устройства увидят вас как новый контакт.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Импорт ключей не поддерживается этой версией прошивки";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Устройство отклонило ключ. Пожалуйста, попробуйте снова.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Импортировать ключ";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Импортировать ключ";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Вставьте существующий закрытый ключ Ed25519 (128 шестнадцатеричных символов) для замены текущей идентификации устройства.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Закрытый ключ";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Вставьте 128-символьный шестнадцатеричный ключ";
+
+/* Button to import the key */
+"importKey.import" = "Импортировать ключ";
+
+/* Progress label while importing */
+"importKey.importing" = "Импорт…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Ключ должен содержать ровно 128 шестнадцатеричных символов";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Недействительный закрытый ключ Ed25519";

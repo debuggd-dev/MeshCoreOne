@@ -151,6 +151,12 @@
 "publicKey.copy" = "Копіювати в буфер обміну";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-байтний закритий ключ Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -190,7 +196,10 @@
 "deviceSelection.accessibility.connectedElsewhereHint" = "Цей пристрій використовується іншим додатком. Підключення може спричинити проблеми зі зв'язком.";
 
 /* Accessibility hint for selecting a device */
-"deviceSelection.accessibility.selectHint" = "Натисніть двічі, щоб вибрати";
+"deviceSelection.accessibility.selectHint" = "Натисніть двічі, щоб підключити";
+
+/* Accessibility hint for a device that is out of Bluetooth range */
+"deviceSelection.accessibility.outOfRangeHint" = "Пристрій поза зоною дії Bluetooth";
 
 /* Label shown when device is connected to another app */
 "deviceSelection.connectedElsewhere" = "Підключено до іншого застосунку";
@@ -322,6 +331,27 @@
 "advancedRadio.repeatMode.footer" = "Створює локальний ретранслятор на виділеній частоті. Корисно для походів та віддалених місцевостей. Допустимі частоти: 433, 869, 918 МГц.";
 
 
+// MARK: - Path Hash Mode Section
+
+/* Section header for path hash mode */
+"pathHashMode.header" = "Розмір хешу шляху";
+
+/* Label for path hash mode picker */
+"pathHashMode.label" = "Розмір хешу";
+
+/* Path hash mode option: 1 byte */
+"pathHashMode.oneByte" = "1 байт";
+
+/* Path hash mode option: 2 bytes */
+"pathHashMode.twoBytes" = "2 байти";
+
+/* Path hash mode option: 3 bytes */
+"pathHashMode.threeBytes" = "3 байти";
+
+/* Footer explaining path hash mode tradeoff */
+"pathHashMode.footer" = "Більші хеші зменшують колізії маршрутизації, але обмежують максимальну кількість переходів на шляху.";
+
+
 // MARK: - Battery Curve Section
 
 /* Accessibility label for voltage text field - %d is the percentage level */
@@ -430,100 +460,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Вузли";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Режим автододавання";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Вручну";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Переглянути всі вузли у Виявленні перед додаванням";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Вибрані типи";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Автоматично додавати лише увімкнені нижче типи";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Усі";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Автоматично додавати кожен виявлений вузол";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Типи автододавання";
 
 /* Toggle label for auto-add contacts */
-"nodes.autoAddContacts" = "Contacts";
+"nodes.autoAddContacts" = "Контакти";
 
 /* Toggle label for auto-add repeaters */
-"nodes.autoAddRepeaters" = "Repeaters";
+"nodes.autoAddRepeaters" = "Ретранслятори";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Сервери кімнат";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Сховище";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Перезаписати найстаріший";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Коли сховище заповнене, замінити найстаріший необраний вузол";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Автовидалення старих вузлів";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Видаляти вузли старші за";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Вибрати";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d дн.";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Необрані вузли, від яких не було сигналу %d дн., автоматично видаляються при підключенні.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Автоматично видаляє необрані вузли, від яких не було сигналу після встановленого періоду. Обрані ніколи не видаляються.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Оберіть, як довго зберігати вузли. Обрані ніколи не видаляються.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Перевірить старі вузли при наступному підключенні. Обрані ніколи не видаляються.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Остання перевірка %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Пристрій";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Перезавантажити пристрій";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Перезавантаження…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Перезавантажити пристрій?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Перезавантажити";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "Пристрій перезавантажиться і тимчасово відключиться.";
 
 
 // MARK: - Danger Zone Section
@@ -695,6 +725,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Попередження про низький заряд";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Реакції";
 
 /* Button to enable notifications */
 "notifications.enable" = "Увімкнути сповіщення";
@@ -1091,3 +1124,112 @@
 
 /* Location: BlockedChannelSendersView.swift - Purpose: Swipe action to unblock */
 "blocking.channelSenders.unblock" = "Розблокувати";
+
+
+// MARK: - Language
+
+/* Location: SettingsView.swift - Purpose: Language row title */
+"language.title" = "Мова";
+
+
+
+// MARK: - Live Activity
+
+/* Label for the Live Status toggle in App Settings */
+"liveActivity.title" = "Live Activity";
+
+/* Title for the Live Activity tip shown after first connection */
+"liveActivity.tip.title" = "Стан радіо з першого погляду";
+
+/* Message for the Live Activity tip */
+"liveActivity.tip.message" = "Ваше з'єднання, батарея та повідомлення залишаються видимими — навіть без відкриття застосунку.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Ідентифікація";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Перегенерувати ключ";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Перегенерувати ключ";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Згенеруйте нову пару ключів Ed25519 для заміни поточної ідентифікації пристрою. Усі контакти повинні будуть заново виявити ваш пристрій.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Згенерувати ключ";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Згенерувати інший";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Генерація…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Використати цей ключ";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Імпорт…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Власний префікс";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "напр. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "За бажанням вкажіть до 4 шістнадцяткових символів, з яких має починатися ваш відкритий ключ. Довші префікси займають більше часу.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Префікс повинен містити від 1 до 4 шістнадцяткових символів";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 та FF зарезервовані і не можуть використовуватися";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Замінити ідентифікацію?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Замінити";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Ідентифікацію вашого пристрою буде безповоротно замінено. Інші пристрої бачитимуть вас як новий контакт.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Імпорт ключів не підтримується цією версією прошивки";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Пристрій відхилив ключ. Будь ласка, спробуйте ще раз.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Імпортувати ключ";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Імпортувати ключ";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Вставте наявний закритий ключ Ed25519 (128 шістнадцяткових символів) для заміни поточної ідентифікації пристрою.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Закритий ключ";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Вставте 128-символьний шістнадцятковий ключ";
+
+/* Button to import the key */
+"importKey.import" = "Імпортувати ключ";
+
+/* Progress label while importing */
+"importKey.importing" = "Імпорт…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Ключ повинен містити рівно 128 шістнадцяткових символів";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "Недійсний закритий ключ Ed25519";

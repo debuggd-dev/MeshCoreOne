@@ -151,6 +151,12 @@
 "publicKey.copy" = "Kopiuj do schowka";
 
 
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64-bajtowy klucz prywatny Ed25519";
+
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -190,7 +196,10 @@
 "deviceSelection.accessibility.connectedElsewhereHint" = "To urządzenie jest używane przez inną aplikację. Połączenie może powodować problemy z komunikacją.";
 
 /* Accessibility hint for selecting a device */
-"deviceSelection.accessibility.selectHint" = "Stuknij dwukrotnie, aby wybrać";
+"deviceSelection.accessibility.selectHint" = "Stuknij dwukrotnie, aby połączyć";
+
+/* Accessibility hint for a device that is out of Bluetooth range */
+"deviceSelection.accessibility.outOfRangeHint" = "Urządzenie jest poza zasięgiem Bluetooth";
 
 /* Label shown when device is connected to another app */
 "deviceSelection.connectedElsewhere" = "Połączono gdzie indziej";
@@ -322,6 +331,27 @@
 "advancedRadio.repeatMode.footer" = "Tworzy lokalny repeater na wydzielonej częstotliwości. Przydatny podczas pieszych wędrówek i w odległych obszarach. Prawidłowe częstotliwości: 433, 869, 918 MHz.";
 
 
+// MARK: - Path Hash Mode Section
+
+/* Section header for path hash mode */
+"pathHashMode.header" = "Rozmiar hashu ścieżki";
+
+/* Label for path hash mode picker */
+"pathHashMode.label" = "Rozmiar hashu";
+
+/* Path hash mode option: 1 byte */
+"pathHashMode.oneByte" = "1 bajt";
+
+/* Path hash mode option: 2 bytes */
+"pathHashMode.twoBytes" = "2 bajty";
+
+/* Path hash mode option: 3 bytes */
+"pathHashMode.threeBytes" = "3 bajty";
+
+/* Footer explaining path hash mode tradeoff */
+"pathHashMode.footer" = "Większe hashe zmniejszają kolizje routingu, ale ograniczają maksymalną liczbę skoków na ścieżce.";
+
+
 // MARK: - Battery Curve Section
 
 /* Accessibility label for voltage text field - %d is the percentage level */
@@ -430,100 +460,100 @@
 // MARK: - Nodes Settings Section
 
 /* Section header for nodes settings */
-"nodes.header" = "Nodes";
+"nodes.header" = "Węzły";
 
 /* Label for auto-add mode picker */
-"nodes.autoAddMode" = "Auto-Add Mode";
+"nodes.autoAddMode" = "Tryb automatycznego dodawania";
 
 /* Auto-add mode: manual */
-"nodes.autoAddMode.manual" = "Manual";
+"nodes.autoAddMode.manual" = "Ręczny";
 
 /* Auto-add mode: manual description */
-"nodes.autoAddMode.manualDescription" = "Review all nodes in Discover before adding";
+"nodes.autoAddMode.manualDescription" = "Przejrzyj wszystkie węzły w Odkrywaniu przed dodaniem";
 
 /* Auto-add mode: selected types */
-"nodes.autoAddMode.selectedTypes" = "Selected Types";
+"nodes.autoAddMode.selectedTypes" = "Wybrane typy";
 
 /* Auto-add mode: selected types description */
-"nodes.autoAddMode.selectedTypesDescription" = "Auto-add only the types enabled below";
+"nodes.autoAddMode.selectedTypesDescription" = "Automatycznie dodawaj tylko typy włączone poniżej";
 
 /* Auto-add mode: all */
-"nodes.autoAddMode.all" = "All";
+"nodes.autoAddMode.all" = "Wszystkie";
 
 /* Auto-add mode: all description */
-"nodes.autoAddMode.allDescription" = "Auto-add every discovered node";
+"nodes.autoAddMode.allDescription" = "Automatycznie dodawaj każdy odkryty węzeł";
 
 /* Section header for auto-add types */
-"nodes.autoAddTypes.header" = "Auto-Add Types";
+"nodes.autoAddTypes.header" = "Typy automatycznego dodawania";
 
 /* Toggle label for auto-add contacts */
-"nodes.autoAddContacts" = "Contacts";
+"nodes.autoAddContacts" = "Kontakty";
 
 /* Toggle label for auto-add repeaters */
-"nodes.autoAddRepeaters" = "Repeaters";
+"nodes.autoAddRepeaters" = "Przekaźniki";
 
 /* Toggle label for auto-add room servers */
-"nodes.autoAddRoomServers" = "Room Servers";
+"nodes.autoAddRoomServers" = "Serwery pokojów";
 
 /* Section header for storage settings */
-"nodes.storage.header" = "Storage";
+"nodes.storage.header" = "Pamięć";
 
 /* Toggle label for overwrite oldest */
-"nodes.overwriteOldest" = "Overwrite Oldest";
+"nodes.overwriteOldest" = "Nadpisz najstarsze";
 
 /* Description for overwrite oldest toggle */
-"nodes.overwriteOldestDescription" = "When storage is full, replace the oldest non-favorite node";
+"nodes.overwriteOldestDescription" = "Gdy pamięć jest pełna, zastąp najstarszy nieulubiony węzeł";
 
 
 // MARK: - Auto-Remove Old Nodes Section
 
 /* Toggle label / section header for stale node cleanup */
-"nodes.staleCleanup.header" = "Auto-Remove Old Nodes";
+"nodes.staleCleanup.header" = "Automatyczne usuwanie starych węzłów";
 
 /* Label for threshold picker */
-"nodes.staleCleanup.threshold" = "Remove nodes older than";
+"nodes.staleCleanup.threshold" = "Usuń węzły starsze niż";
 
 /* Picker placeholder when no threshold is selected */
-"nodes.staleCleanup.select" = "Select";
+"nodes.staleCleanup.select" = "Wybierz";
 
 /* Threshold option: number of days (%d = day count) */
-"nodes.staleCleanup.days" = "%d days";
+"nodes.staleCleanup.days" = "%d dni";
 
 /* Footer when auto-remove is enabled (%d = day count) */
-"nodes.staleCleanup.footerEnabled" = "Non-favorite nodes not heard from in %d days are automatically removed on connection.";
+"nodes.staleCleanup.footerEnabled" = "Nieulubione węzły, od których nie było sygnału przez %d dni, są automatycznie usuwane przy połączeniu.";
 
 /* Footer describing the auto-remove feature (shown when toggle is off) */
-"nodes.staleCleanup.footerDisabled" = "Automatically removes non-favorite nodes that haven't been heard from after a set period. Favorites are never removed.";
+"nodes.staleCleanup.footerDisabled" = "Automatycznie usuwa nieulubione węzły, od których nie było sygnału po ustalonym okresie. Ulubione nigdy nie są usuwane.";
 
 /* Footer when toggle is on but no threshold selected yet */
-"nodes.staleCleanup.footerSelect" = "Choose how long to keep nodes. Favorites are never removed.";
+"nodes.staleCleanup.footerSelect" = "Wybierz, jak długo przechowywać węzły. Ulubione nigdy nie są usuwane.";
 
 /* Footer when enabled but device is disconnected */
-"nodes.staleCleanup.footerDisconnected" = "Will check for old nodes on next connection. Favorites are never removed.";
+"nodes.staleCleanup.footerDisconnected" = "Sprawdzi stare węzły przy następnym połączeniu. Ulubione nigdy nie są usuwane.";
 
 /* Last cleanup date row (%@ = relative date) */
-"nodes.staleCleanup.lastRun" = "Last checked %@";
+"nodes.staleCleanup.lastRun" = "Ostatnio sprawdzono %@";
 
 
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "Urządzenie";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "Uruchom ponownie";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "Ponowne uruchamianie…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "Uruchomić ponownie?";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "Uruchom ponownie";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "Urządzenie zostanie ponownie uruchomione i tymczasowo rozłączone.";
 
 
 // MARK: - Danger Zone Section
@@ -695,6 +725,9 @@
 
 /* Toggle label for low battery warnings */
 "notifications.lowBattery" = "Ostrzeżenia o niskim stanie baterii";
+
+/* Toggle label for reaction notifications */
+"notifications.reactions" = "Reakcje";
 
 /* Button to enable notifications */
 "notifications.enable" = "Włącz powiadomienia";
@@ -1091,3 +1124,112 @@
 
 /* Location: BlockedChannelSendersView.swift - Purpose: Swipe action to unblock */
 "blocking.channelSenders.unblock" = "Odblokuj";
+
+
+// MARK: - Language
+
+/* Location: SettingsView.swift - Purpose: Language row title */
+"language.title" = "Język";
+
+
+
+// MARK: - Live Activity
+
+/* Label for the Live Status toggle in App Settings */
+"liveActivity.title" = "Live Activity";
+
+/* Title for the Live Activity tip shown after first connection */
+"liveActivity.tip.title" = "Stan radia w jednym rzucie oka";
+
+/* Message for the Live Activity tip */
+"liveActivity.tip.message" = "Połączenie, bateria i wiadomości są widoczne — nawet bez otwierania aplikacji.";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "Tożsamość";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "Regeneruj klucz";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "Regeneruj klucz";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "Wygeneruj nową parę kluczy Ed25519, aby zastąpić obecną tożsamość urządzenia. Wszystkie kontakty będą musiały ponownie odkryć Twoje urządzenie.";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "Generuj klucz";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "Generuj kolejny";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "Generowanie…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "Użyj tego klucza";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "Importowanie…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "Własny prefiks";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "np. 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "Opcjonalnie podaj do 4 znaków szesnastkowych, od których powinien zaczynać się twój klucz publiczny. Dłuższe prefiksy wymagają więcej czasu.";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "Prefiks musi mieć od 1 do 4 znaków szesnastkowych";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 i FF są zarezerwowane i nie mogą być używane";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "Zastąpić tożsamość?";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "Zastąp";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "Tożsamość urządzenia zostanie trwale zastąpiona. Inne urządzenia zobaczą Cię jako nowy kontakt.";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "Import kluczy nie jest obsługiwany przez tę wersję firmware";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "Urządzenie odrzuciło klucz. Spróbuj ponownie.";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "Importuj klucz";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "Importuj klucz";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "Wklej istniejący klucz prywatny Ed25519 (128 znaków szesnastkowych), aby zastąpić obecną tożsamość urządzenia.";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "Klucz prywatny";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "Wklej 128-znakowy klucz szesnastkowy";
+
+/* Button to import the key */
+"importKey.import" = "Importuj klucz";
+
+/* Progress label while importing */
+"importKey.importing" = "Importowanie…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "Klucz musi mieć dokładnie 128 znaków szesnastkowych";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "To nie jest prawidłowy klucz prywatny Ed25519";

@@ -17,6 +17,22 @@ public enum ChannelServiceError: Error, Sendable {
     case circuitBreakerOpen(consecutiveFailures: Int)
 }
 
+extension ChannelServiceError: LocalizedError {
+    public var errorDescription: String? {
+        switch self {
+        case .notConnected: "Not connected to device."
+        case .channelNotFound: "Channel not found."
+        case .invalidChannelIndex: "Invalid channel index."
+        case .secretHashingFailed: "Failed to hash channel secret."
+        case .saveFailed(let msg): "Failed to save channel: \(msg)"
+        case .sendFailed(let msg): "Send failed: \(msg)"
+        case .sessionError(let e): e.localizedDescription
+        case .syncAlreadyInProgress: "Channel sync is already in progress."
+        case .circuitBreakerOpen(let n): "Channel sync suspended after \(n) consecutive failures."
+        }
+    }
+}
+
 // MARK: - Channel Sync Error Details
 
 /// Detailed error information for a failed channel sync
@@ -575,7 +591,7 @@ public actor ChannelService {
                     return ChannelSyncError(
                         index: index,
                         errorType: .deviceError(code: code),
-                        description: "Device error: \(code)"
+                        description: meshError.localizedDescription
                     )
                 default:
                     return ChannelSyncError(

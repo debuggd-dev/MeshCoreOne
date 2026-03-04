@@ -70,6 +70,23 @@ final class RepeaterSettingsViewModel {
     var radioError: String?
     var radioLoaded: Bool { frequency != nil || txPower != nil }
 
+    // Contact info settings (from get owner.info)
+    var ownerInfo: String?
+    private var originalOwnerInfo: String?
+    var isLoadingContactInfo = false
+    var contactInfoError: String?
+    var contactInfoLoaded: Bool { originalOwnerInfo != nil }
+
+    /// Track if contact info has been modified
+    var contactInfoSettingsModified: Bool {
+        ownerInfo != originalOwnerInfo
+    }
+
+    /// Character count (newlines and pipes are both single characters, so count is the same)
+    var ownerInfoCharCount: Int {
+        (ownerInfo ?? "").count
+    }
+
     // Behavior settings (from get repeat, get advert.interval, get flood.max)
     var advertIntervalMinutes: Int?
     var floodAdvertIntervalHours: Int?
@@ -96,6 +113,7 @@ final class RepeaterSettingsViewModel {
     var isDeviceInfoExpanded = false
     var isRadioExpanded = false
     var isIdentityExpanded = false
+    var isContactInfoExpanded = false
     var isBehaviorExpanded = false
     var isSecurityExpanded = false
 
@@ -105,9 +123,9 @@ final class RepeaterSettingsViewModel {
     var errorMessage: String?
     var successMessage: String?
     var showSuccessAlert = false
-    var showErrorAlert = false
     var identityApplySuccess = false
     var behaviorApplySuccess = false
+    var contactInfoApplySuccess = false
 
     /// Track if radio settings have been modified (requires restart)
     var radioSettingsModified = false
@@ -299,6 +317,20 @@ final class RepeaterSettingsViewModel {
                     self.originalFloodMaxHops = hops
                     self.behaviorError = nil
                     logger.info("Late response: received flood max hops")
+                    return
+                }
+            }
+        }
+
+        // Contact info - only process if finished loading with error
+        if !isLoadingContactInfo && contactInfoError != nil {
+            if originalOwnerInfo == nil {
+                if case .ownerInfo(let info) = CLIResponse.parse(response, forQuery: "get owner.info") {
+                    let displayText = info.replacing("|", with: "\n")
+                    self.ownerInfo = displayText
+                    self.originalOwnerInfo = displayText
+                    self.contactInfoError = nil
+                    logger.info("Late response: received owner info")
                     return
                 }
             }
@@ -505,6 +537,29 @@ final class RepeaterSettingsViewModel {
         isLoadingBehavior = false
     }
 
+    /// Fetch contact info (owner.info)
+    func fetchContactInfo() async {
+        isLoadingContactInfo = true
+        contactInfoError = nil
+
+        do {
+            let response = try await sendAndWait("get owner.info")
+            if case .ownerInfo(let info) = CLIResponse.parse(response, forQuery: "get owner.info") {
+                let displayText = info.replacing("|", with: "\n")
+                self.ownerInfo = displayText
+                self.originalOwnerInfo = displayText
+                logger.debug("Received owner info: \(info.prefix(50))")
+            }
+        } catch {
+            if case RemoteNodeError.timeout = error {
+                contactInfoError = "error"
+            }
+            logger.warning("Failed to get owner info: \(error)")
+        }
+
+        isLoadingContactInfo = false
+    }
+
     // MARK: - Settings Actions
 
     /// Apply all radio settings including TX power (requires restart)
@@ -592,6 +647,33 @@ final class RepeaterSettingsViewModel {
                 }
                 try? await Task.sleep(for: .seconds(1.5))
                 withAnimation { identityApplySuccess = false }
+                return
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.someSettingsFailedToApply
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+
+    /// Apply contact info (owner.info)
+    func applyContactInfoSettings() async {
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let pipeText = (ownerInfo ?? "").replacing("\n", with: "|")
+            let response = try await sendAndWait("set owner.info \(pipeText)")
+            if case .ok = CLIResponse.parse(response) {
+                originalOwnerInfo = ownerInfo
+                withAnimation {
+                    isApplying = false
+                    contactInfoApplySuccess = true
+                }
+                try? await Task.sleep(for: .seconds(1.5))
+                withAnimation { contactInfoApplySuccess = false }
                 return
             } else {
                 errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.someSettingsFailedToApply
@@ -787,14 +869,13 @@ final class RepeaterSettingsViewModel {
                     let cleanMessage = message.replacing("ERR: ", with: "")
                     errorMessage = cleanMessage.isEmpty ? L10n.RemoteNodes.RemoteNodes.Settings.syncTimeFailed : cleanMessage
                 }
-                showErrorAlert = true
+
             default:
                 errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.unexpectedResponse(response)
-                showErrorAlert = true
+
             }
         } catch {
             errorMessage = error.localizedDescription
-            showErrorAlert = true
         }
 
         isApplying = false

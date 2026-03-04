@@ -2,8 +2,18 @@ import SwiftUI
 import PocketMeshServices
 
 struct ContactAvatar: View {
-    let contact: ContactDTO
+    let name: String
     let size: CGFloat
+
+    init(contact: ContactDTO, size: CGFloat) {
+        self.name = contact.displayName
+        self.size = size
+    }
+
+    init(name: String, size: CGFloat) {
+        self.name = name
+        self.size = size
+    }
 
     var body: some View {
         Text(initials)
@@ -14,15 +24,17 @@ struct ContactAvatar: View {
     }
 
     private var initials: String {
-        let name = contact.displayName
+        if let emoji = name.first(where: \.isEmoji) {
+            return String(emoji)
+        }
         let words = name.split(separator: " ")
         if words.count >= 2 {
             return String(words[0].prefix(1) + words[1].prefix(1)).uppercased()
         }
-        return String(name.prefix(2)).uppercased()
+        return String(name.prefix(1)).uppercased()
     }
 
     private var avatarColor: Color {
-        AppColors.NameColor.color(for: contact.displayName)
+        AppColors.NameColor.color(for: name)
     }
 }

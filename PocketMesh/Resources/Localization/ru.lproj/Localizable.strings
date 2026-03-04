@@ -189,3 +189,24 @@
 
 /* Status pill message when sync has failed */
 "statusPill.syncFailed" = "Ошибка синхронизации";
+
+
+// MARK: - Accessibility Toggle States
+
+/* Accessibility value for off state */
+"accessibility.off" = "Выкл.";
+
+/* Accessibility value for on state */
+"accessibility.on" = "Вкл.";
+
+
+// MARK: - Rate Limiting
+
+/* Error message when user hits rate limit */
+"common.error.rateLimited" = "Слишком много запросов. Попробуйте позже.";
+
+
+// MARK: - Reaction Notifications
+
+/* Notification body when someone reacts to your message - %1$@ is emoji, %2$@ is message text */
+"notifications.reaction.body" = "Отреагировал(а) %1$@ на ваше сообщение: «%2$@»";

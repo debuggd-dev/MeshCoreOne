@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Floating action button to scroll to latest message with unread badge
-struct ScrollToBottomFAB: View {
+/// Button to scroll to latest message with unread badge
+struct ScrollToBottomButton: View {
     let isVisible: Bool
     let unreadCount: Int
     let onTap: () -> Void
@@ -21,7 +21,7 @@ struct ScrollToBottomFAB: View {
         .opacity(isVisible ? 1 : 0)
         .scaleEffect(isVisible ? 1 : 0.5)
         .animation(.snappy(duration: 0.2), value: isVisible)
-        .accessibilityLabel(L10n.Chats.Chats.Fab.ScrollToBottom.accessibilityLabel)
+        .accessibilityLabel(L10n.Chats.Chats.ScrollButton.ScrollToBottom.accessibilityLabel)
         .accessibilityValue(unreadCount > 0 ? String(format: NSLocalizedString("chats.unreadMessages.accessibilityValue", tableName: "Chats", comment: ""), locale: .current, unreadCount) : "")
         .accessibilityHidden(!isVisible)
     }
@@ -29,7 +29,7 @@ struct ScrollToBottomFAB: View {
     @ViewBuilder
     private var unreadBadge: some View {
         if unreadCount > 0 {
-            Text(unreadCount > 99 ? L10n.Chats.Chats.Fab.Badge.overflow : "\(unreadCount)")
+            Text(unreadCount > 99 ? L10n.Chats.Chats.ScrollButton.Badge.overflow : "\(unreadCount)")
                 .font(.caption2.bold())
                 .foregroundStyle(.white)
                 .padding(.horizontal, 6)
@@ -41,16 +41,16 @@ struct ScrollToBottomFAB: View {
 }
 
 #Preview("Visible with unread") {
-    ScrollToBottomFAB(isVisible: true, unreadCount: 5, onTap: {})
+    ScrollToBottomButton(isVisible: true, unreadCount: 5, onTap: {})
         .padding(50)
 }
 
 #Preview("Visible no unread") {
-    ScrollToBottomFAB(isVisible: true, unreadCount: 0, onTap: {})
+    ScrollToBottomButton(isVisible: true, unreadCount: 0, onTap: {})
         .padding(50)
 }
 
 #Preview("Hidden") {
-    ScrollToBottomFAB(isVisible: false, unreadCount: 3, onTap: {})
+    ScrollToBottomButton(isVisible: false, unreadCount: 3, onTap: {})
         .padding(50)
 }

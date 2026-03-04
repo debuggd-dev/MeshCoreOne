@@ -8,11 +8,18 @@ struct AdvancedSettingsView: View {
 
     @State private var selectedOCVPreset: OCVPreset = .liIon
     @State private var ocvValues: [Int] = OCVPreset.liIon.ocvArray
+    @State private var showingImportKeySheet = false
+    @State private var showingRegenerateSheet = false
 
     var body: some View {
         List {
             // Manual Radio Configuration
             AdvancedRadioSection()
+
+            // Path Hash Mode (firmware v10+)
+            if appState.connectedDevice?.supportsPathHashMode == true {
+                PathHashModeSection()
+            }
 
             // Nodes Settings
             NodesSettingsSection()
@@ -43,8 +50,20 @@ struct AdvancedSettingsView: View {
             // Device Actions
             DeviceActionsSection()
 
+            // Identity
+            DeviceIdentitySection(
+                showingImportKeySheet: $showingImportKeySheet,
+                showingRegenerateSheet: $showingRegenerateSheet
+            )
+
             // Danger Zone
             DangerZoneSection()
+        }
+        .sheet(isPresented: $showingImportKeySheet) {
+            ImportKeySheet()
+        }
+        .sheet(isPresented: $showingRegenerateSheet) {
+            RegenerateIdentitySheet()
         }
         .scrollDismissesKeyboard(.interactively)
         .navigationTitle(L10n.Settings.AdvancedSettings.title)

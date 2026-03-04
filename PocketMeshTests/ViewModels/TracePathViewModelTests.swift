@@ -135,7 +135,7 @@ struct PathEditClearsSavedPathTests {
 
         #expect(viewModel.activeSavedPath != nil)
 
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
 
         #expect(viewModel.activeSavedPath == nil)
     }
@@ -144,7 +144,7 @@ struct PathEditClearsSavedPathTests {
     func removeRepeaterClearsActiveSavedPath() {
         let viewModel = TracePathViewModel()
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
         // Re-set since addRepeater clears it
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
 
@@ -160,8 +160,8 @@ struct PathEditClearsSavedPathTests {
         let viewModel = TracePathViewModel()
 
         // Add two repeaters
-        viewModel.addRepeater(createTestContact())
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
 
         #expect(viewModel.activeSavedPath != nil)
@@ -479,7 +479,7 @@ struct ErrorHandlingTests {
 
         #expect(viewModel.errorMessage != nil)
 
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
 
         #expect(viewModel.errorMessage == nil)
     }
@@ -487,7 +487,7 @@ struct ErrorHandlingTests {
     @Test("removeRepeater clears error")
     func removeRepeaterClearsError() {
         let viewModel = TracePathViewModel()
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.setError("Test error")
 
         #expect(viewModel.errorMessage != nil)
@@ -500,8 +500,8 @@ struct ErrorHandlingTests {
     @Test("moveRepeater clears error")
     func moveRepeaterClearsError() {
         let viewModel = TracePathViewModel()
-        viewModel.addRepeater(createTestContact())
-        viewModel.addRepeater(createTestContact())
+        viewModel.addNode(createTestContact())
+        viewModel.addNode(createTestContact())
         viewModel.setError("Test error")
 
         #expect(viewModel.errorMessage != nil)
@@ -634,6 +634,81 @@ struct MultiByteHashTests {
         // Single-byte hash stored correctly
         #expect(result.hops[1].hashBytes == Data([0xAB]))
         #expect(result.hops[1].hashDisplayString == "AB")
+    }
+}
+
+// MARK: - Saved Path Hash Size Tests
+
+@Suite("Saved Path Hash Size")
+@MainActor
+struct SavedPathHashSizeTests {
+
+    @Test("loadSavedPath uses stored hashSize, not device hashSize")
+    func loadSavedPathUsesStoredHashSize() {
+        // Path saved with 2-byte hashes: 4 bytes = 2 hops
+        let savedPath = SavedTracePathDTO(
+            id: UUID(),
+            deviceID: UUID(),
+            name: "2-byte hash path",
+            pathBytes: Data([0xAA, 0xBB, 0xCC, 0xDD]),
+            hashSize: 2,
+            createdDate: Date(),
+            runs: []
+        )
+
+        let vm = TracePathViewModel()
+        // Device hashSize defaults to 1 (no connected device),
+        // but the saved path has hashSize=2
+        vm.loadSavedPath(savedPath)
+
+        // With hashSize=2: 4 bytes = 2 total hops, outbound = (2+1)/2 = 1 hop of 2 bytes
+        #expect(vm.outboundPath.count == 1)
+        #expect(vm.outboundPath.first?.hashBytes == Data([0xAA, 0xBB]))
+    }
+
+    @Test("fullPathString chunks by saved hash size, not device hash size")
+    func fullPathStringUsesPathHashSize() {
+        // Path saved with 2-byte hashes: 6 bytes = 3 total hops, outbound = 2 hops
+        let savedPath = SavedTracePathDTO(
+            id: UUID(),
+            deviceID: UUID(),
+            name: "2-byte path",
+            pathBytes: Data([0xAA, 0xBB, 0xCC, 0xDD, 0xAA, 0xBB]),
+            hashSize: 2,
+            createdDate: Date(),
+            runs: []
+        )
+
+        let vm = TracePathViewModel()
+        // No connected device → device hashSize defaults to 1
+        vm.loadSavedPath(savedPath)
+
+        // Should chunk as 2-byte groups from the outbound hops, not 1-byte
+        let parts = vm.fullPathString.split(separator: ",")
+        for part in parts {
+            #expect(part.count == 4, "Each chunk should be 4 hex chars (2 bytes), got \(part)")
+        }
+    }
+
+    @Test("loadSavedPath with hashSize 1 produces correct hops")
+    func loadSavedPathHashSize1() {
+        let savedPath = SavedTracePathDTO(
+            id: UUID(),
+            deviceID: UUID(),
+            name: "1-byte hash path",
+            pathBytes: Data([0xAA, 0xBB, 0xCC]),
+            hashSize: 1,
+            createdDate: Date(),
+            runs: []
+        )
+
+        let vm = TracePathViewModel()
+        vm.loadSavedPath(savedPath)
+
+        // With hashSize=1: 3 bytes = 3 total hops, outbound = (3+1)/2 = 2 hops of 1 byte each
+        #expect(vm.outboundPath.count == 2)
+        #expect(vm.outboundPath[0].hashBytes == Data([0xAA]))
+        #expect(vm.outboundPath[1].hashBytes == Data([0xBB]))
     }
 }
 
@@ -817,7 +892,7 @@ struct PathCaptureTests {
             longitude: 0,
             lastModified: 0
         )
-        viewModel.addRepeater(ContactDTO(from: contact))
+        viewModel.addNode(ContactDTO(from: contact))
 
         // fullPathBytes is now different from result.tracedPathBytes
         // canSavePath should be false
@@ -843,7 +918,7 @@ struct PathCaptureTests {
             longitude: 0,
             lastModified: 0
         )
-        viewModel.addRepeater(ContactDTO(from: contact))
+        viewModel.addNode(ContactDTO(from: contact))
 
         // Get the current full path bytes
         let currentPath = viewModel.fullPathBytes
@@ -881,7 +956,7 @@ struct FailureResultTests {
     @Test("timeout result contains attempted path")
     func timeoutResultContainsAttemptedPath() {
         let attemptedPath: [UInt8] = [0xAA, 0xBB, 0xAA]
-        let result = TraceResult.timeout(attemptedPath: attemptedPath)
+        let result = TraceResult.timeout(attemptedPath: attemptedPath, hashSize: 1)
 
         #expect(result.success == false)
         #expect(result.tracedPathBytes == attemptedPath)
@@ -891,7 +966,7 @@ struct FailureResultTests {
     @Test("sendFailed result contains attempted path")
     func sendFailedResultContainsAttemptedPath() {
         let attemptedPath: [UInt8] = [0xCC, 0xDD, 0xCC]
-        let result = TraceResult.sendFailed("Connection lost", attemptedPath: attemptedPath)
+        let result = TraceResult.sendFailed("Connection lost", attemptedPath: attemptedPath, hashSize: 1)
 
         #expect(result.success == false)
         #expect(result.errorMessage == "Connection lost")
@@ -901,10 +976,26 @@ struct FailureResultTests {
 
     @Test("empty path produces empty tracedPathString")
     func emptyPathProducesEmptyString() {
-        let result = TraceResult.timeout(attemptedPath: [])
+        let result = TraceResult.timeout(attemptedPath: [], hashSize: 1)
 
         #expect(result.tracedPathBytes.isEmpty)
         #expect(result.tracedPathString == "")
+    }
+
+    @Test("tracedPathString chunks by 2-byte hash size")
+    func tracedPathStringChunksByTwoByteHashSize() {
+        let attemptedPath: [UInt8] = [0xAA, 0xBB, 0xCC, 0xDD, 0xAA, 0xBB]
+        let result = TraceResult.timeout(attemptedPath: attemptedPath, hashSize: 2)
+
+        #expect(result.tracedPathString == "AABB,CCDD,AABB")
+    }
+
+    @Test("tracedPathString chunks by 3-byte hash size")
+    func tracedPathStringChunksByThreeByteHashSize() {
+        let attemptedPath: [UInt8] = [0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF, 0xAA, 0xBB, 0xCC]
+        let result = TraceResult.timeout(attemptedPath: attemptedPath, hashSize: 3)
+
+        #expect(result.tracedPathString == "AABBCC,DDEEFF,AABBCC")
     }
 }
 
@@ -934,7 +1025,7 @@ struct TotalPathDistanceTests {
                      latitude: sf.lat, longitude: sf.lon)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F], hashSize: 1)
 
         let distance = viewModel.totalPathDistance
         #expect(distance != nil)
@@ -961,7 +1052,7 @@ struct TotalPathDistanceTests {
                      latitude: nil, longitude: nil)  // No device location
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F], hashSize: 1)
 
         let distance = viewModel.totalPathDistance
         #expect(distance != nil)
@@ -983,7 +1074,7 @@ struct TotalPathDistanceTests {
                      latitude: 37.7749, longitude: -122.4194)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         #expect(viewModel.totalPathDistance == nil)
     }
@@ -1001,7 +1092,7 @@ struct TotalPathDistanceTests {
                      latitude: 37.7749, longitude: -122.4194)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         #expect(viewModel.totalPathDistance == nil)
     }
@@ -1010,7 +1101,7 @@ struct TotalPathDistanceTests {
     func returnsNilForFailedResult() {
         let viewModel = TracePathViewModel()
 
-        viewModel.result = TraceResult(hops: [], durationMs: 0, success: false, errorMessage: "Timeout", tracedPathBytes: [])
+        viewModel.result = TraceResult(hops: [], durationMs: 0, success: false, errorMessage: "Timeout", tracedPathBytes: [], hashSize: 1)
         #expect(viewModel.totalPathDistance == nil)
     }
 
@@ -1030,7 +1121,7 @@ struct TotalPathDistanceTests {
                      latitude: sf.lat, longitude: sf.lon)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         // Full path: SF→Tower→SF should calculate (device has location)
         #expect(viewModel.totalPathDistance != nil)
@@ -1049,7 +1140,7 @@ struct TotalPathDistanceTests {
                      latitude: nil, longitude: nil)  // No device location
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         // Only 1 intermediate repeater, device has no location - can't calculate distance
         #expect(viewModel.totalPathDistance == nil)
@@ -1074,7 +1165,7 @@ struct TotalPathDistanceTests {
                      latitude: sf.lat, longitude: sf.lon)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F], hashSize: 1)
 
         #expect(viewModel.isDistanceUsingFallback == false)
     }
@@ -1097,7 +1188,7 @@ struct TotalPathDistanceTests {
                      latitude: nil, longitude: nil)  // No device location
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F], hashSize: 1)
 
         #expect(viewModel.isDistanceUsingFallback == true)
     }
@@ -1115,7 +1206,7 @@ struct TotalPathDistanceTests {
                      latitude: nil, longitude: nil)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         // Distance is nil because repeater lacks location, so fallback flag is false
         #expect(viewModel.totalPathDistance == nil)
@@ -1146,7 +1237,7 @@ struct RepeatersWithoutLocationTests {
                      latitude: 37.7749, longitude: -122.4194)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F, 0x5F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F, 0x4F, 0x5F], hashSize: 1)
 
         let missing = viewModel.repeatersWithoutLocation
         #expect(missing.count == 2)
@@ -1168,7 +1259,7 @@ struct RepeatersWithoutLocationTests {
                      latitude: 37.7749, longitude: -122.4194)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         let missing = viewModel.repeatersWithoutLocation
         #expect(missing.count == 1)
@@ -1188,7 +1279,7 @@ struct RepeatersWithoutLocationTests {
                      latitude: nil, longitude: nil) // End node missing - excluded
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         let missing = viewModel.repeatersWithoutLocation
         #expect(missing.count == 0) // Only intermediate hops count
@@ -1207,7 +1298,7 @@ struct RepeatersWithoutLocationTests {
                      latitude: nil, longitude: nil)
         ]
 
-        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F])
+        viewModel.result = TraceResult(hops: hops, durationMs: 100, success: true, errorMessage: nil, tracedPathBytes: [0x3F], hashSize: 1)
 
         let missing = viewModel.repeatersWithoutLocation
         #expect(missing.count == 0)
@@ -1220,7 +1311,7 @@ struct RepeatersWithoutLocationTests {
 @MainActor
 struct CodeInputParsingTests {
 
-    private func createRepeater(prefix: UInt8, name: String) -> ContactDTO {
+    private func createContact(prefix: UInt8, name: String) -> ContactDTO {
         let contact = Contact(
             id: UUID(),
             deviceID: UUID(),
@@ -1242,9 +1333,9 @@ struct CodeInputParsingTests {
     func parsesValidCodes() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha"),
-            createRepeater(prefix: 0xB7, name: "Bravo"),
-            createRepeater(prefix: 0xF2, name: "Foxtrot")
+            createContact(prefix: 0xA3, name: "Alpha"),
+            createContact(prefix: 0xB7, name: "Bravo"),
+            createContact(prefix: 0xF2, name: "Foxtrot")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3, B7")
@@ -1253,15 +1344,15 @@ struct CodeInputParsingTests {
         #expect(result.notFound.isEmpty)
         #expect(result.alreadyInPath.isEmpty)
         #expect(viewModel.outboundPath.count == 2)
-        #expect(viewModel.outboundPath[0].hashByte == 0xA3)
-        #expect(viewModel.outboundPath[1].hashByte == 0xB7)
+        #expect(viewModel.outboundPath[0].hashBytes == Data([0xA3]))
+        #expect(viewModel.outboundPath[1].hashBytes == Data([0xB7]))
     }
 
     @Test("handles case insensitive input")
     func caseInsensitive() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
 
         let result = viewModel.addRepeatersFromCodes("a3")
@@ -1274,8 +1365,8 @@ struct CodeInputParsingTests {
     func noSpacesAfterCommas() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha"),
-            createRepeater(prefix: 0xB7, name: "Bravo")
+            createContact(prefix: 0xA3, name: "Alpha"),
+            createContact(prefix: 0xB7, name: "Bravo")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3,B7")
@@ -1288,7 +1379,7 @@ struct CodeInputParsingTests {
     func reportsNotFound() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3, 11, FF")
@@ -1301,9 +1392,9 @@ struct CodeInputParsingTests {
     @Test("reports codes already in outbound path")
     func reportsAlreadyInPath() {
         let viewModel = TracePathViewModel()
-        let alpha = createRepeater(prefix: 0xA3, name: "Alpha")
+        let alpha = createContact(prefix: 0xA3, name: "Alpha")
         viewModel.availableRepeaters = [alpha]
-        viewModel.addRepeater(alpha)
+        viewModel.addNode(alpha)
 
         let result = viewModel.addRepeatersFromCodes("A3")
 
@@ -1316,7 +1407,7 @@ struct CodeInputParsingTests {
     func deduplicatesInput() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3, A3, a3")
@@ -1329,7 +1420,7 @@ struct CodeInputParsingTests {
     func reportsInvalidFormat() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3, ZZ, 123, X")
@@ -1362,7 +1453,7 @@ struct CodeInputParsingTests {
     func hasErrorsWhenNoErrors() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
 
         let result = viewModel.addRepeatersFromCodes("A3")
@@ -1385,9 +1476,9 @@ struct CodeInputParsingTests {
     @Test("errorMessage formats multiple error types with separator")
     func errorMessageFormatsMultipleTypes() {
         let viewModel = TracePathViewModel()
-        let alpha = createRepeater(prefix: 0xA3, name: "Alpha")
+        let alpha = createContact(prefix: 0xA3, name: "Alpha")
         viewModel.availableRepeaters = [alpha]
-        viewModel.addRepeater(alpha)
+        viewModel.addNode(alpha)
 
         let result = viewModel.addRepeatersFromCodes("ZZ, 11, A3")
 
@@ -1400,7 +1491,7 @@ struct CodeInputParsingTests {
     func clearsSavedPathStateOnSuccess() {
         let viewModel = TracePathViewModel()
         viewModel.availableRepeaters = [
-            createRepeater(prefix: 0xA3, name: "Alpha")
+            createContact(prefix: 0xA3, name: "Alpha")
         ]
         viewModel.activeSavedPath = createTestSavedPath(runs: [])
 
@@ -1493,7 +1584,7 @@ struct OutboundPathNameResolutionTests {
         viewModel.setContactsForTesting([contact1Modified, contact2Modified])
 
         // User selects contact1 for their path
-        viewModel.addRepeater(contact1Modified)
+        viewModel.addNode(contact1Modified)
 
         // Run trace
         let traceInfo = TraceInfo(
@@ -1524,11 +1615,11 @@ struct OutboundPathNameResolutionTests {
         let viewModel = TracePathViewModel()
         let key = Data([0x3F] + Array(repeating: UInt8(0), count: 31))
         let contact = createContact(prefix: 0x3F, name: "Tower")
-        viewModel.addRepeater(contact)
+        viewModel.addNode(contact)
 
         #expect(viewModel.outboundPath.count == 1)
         #expect(viewModel.outboundPath[0].publicKey == key)
-        #expect(viewModel.outboundPath[0].hashByte == 0x3F)
+        #expect(viewModel.outboundPath[0].hashBytes == Data([0x3F]))
     }
 
     @Test("handleTraceResponse resolves correct repeater when hash collision exists using stored key")
@@ -1580,7 +1671,7 @@ struct OutboundPathNameResolutionTests {
         viewModel.setContactsForTesting([nearRepeater, farRepeater])
 
         // User explicitly selects the near repeater
-        viewModel.addRepeater(nearRepeater)
+        viewModel.addNode(nearRepeater)
 
         let traceInfo = TraceInfo(
             tag: 42,
@@ -1637,5 +1728,84 @@ struct OutboundPathNameResolutionTests {
 
         // Should fall back to contact lookup since outboundPath is empty
         #expect(result.hops[1].resolvedName == "Test Tower")
+    }
+}
+
+// MARK: - Room Support Tests
+
+@Suite("Room Support")
+@MainActor
+struct RoomSupportTests {
+
+    private func createContact(prefix: UInt8, name: String, type: ContactType = .repeater) -> ContactDTO {
+        let contact = Contact(
+            id: UUID(),
+            deviceID: UUID(),
+            publicKey: Data([prefix] + Array(repeating: UInt8(0x00), count: 31)),
+            name: name,
+            typeRawValue: type.rawValue,
+            flags: 0,
+            outPathLength: 0,
+            outPath: Data(),
+            lastAdvertTimestamp: 0,
+            latitude: 0,
+            longitude: 0,
+            lastModified: 0
+        )
+        return ContactDTO(from: contact)
+    }
+
+    @Test("setContactsForTesting populates both availableRepeaters and availableRooms")
+    func setContactsPopulatesBothLists() {
+        let viewModel = TracePathViewModel()
+        let repeater = createContact(prefix: 0xA1, name: "Repeater")
+        let room = createContact(prefix: 0xB2, name: "Room", type: .room)
+
+        viewModel.setContactsForTesting([repeater, room])
+
+        #expect(viewModel.availableRepeaters.count == 1)
+        #expect(viewModel.availableRepeaters[0].name == "Repeater")
+        #expect(viewModel.availableRooms.count == 1)
+        #expect(viewModel.availableRooms[0].name == "Room")
+    }
+
+    @Test("availableNodes returns union of repeaters and rooms")
+    func availableNodesReturnsUnion() {
+        let viewModel = TracePathViewModel()
+        let repeater = createContact(prefix: 0xA1, name: "Repeater")
+        let room = createContact(prefix: 0xB2, name: "Room", type: .room)
+
+        viewModel.setContactsForTesting([repeater, room])
+
+        #expect(viewModel.availableNodes.count == 2)
+        #expect(viewModel.availableNodes.contains { $0.name == "Repeater" })
+        #expect(viewModel.availableNodes.contains { $0.name == "Room" })
+    }
+
+    @Test("addRepeater works with a room contact")
+    func addRepeaterWorksWithRoom() {
+        let viewModel = TracePathViewModel()
+        let room = createContact(prefix: 0xB2, name: "Room Server", type: .room)
+
+        viewModel.addNode(room)
+
+        #expect(viewModel.outboundPath.count == 1)
+        #expect(viewModel.outboundPath[0].resolvedName == "Room Server")
+        #expect(viewModel.outboundPath[0].hashBytes == Data([0xB2]))
+    }
+
+    @Test("addRepeatersFromCodes finds rooms via availableNodes")
+    func addRepeatersFromCodesFindsRooms() {
+        let viewModel = TracePathViewModel()
+        let room = createContact(prefix: 0xB2, name: "Room Server", type: .room)
+
+        viewModel.setContactsForTesting([room])
+
+        let result = viewModel.addRepeatersFromCodes("B2")
+
+        #expect(result.added == ["B2"])
+        #expect(result.notFound.isEmpty)
+        #expect(viewModel.outboundPath.count == 1)
+        #expect(viewModel.outboundPath[0].resolvedName == "Room Server")
     }
 }

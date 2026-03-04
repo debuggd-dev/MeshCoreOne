@@ -112,8 +112,11 @@ struct ContactsSidebarContent: View {
 
                     Divider()
 
-                    NavigationLink {
-                        DiscoveryView()
+                    Button {
+                        if shouldUseSplitView {
+                            selectedContact = nil
+                        }
+                        showDiscovery = true
                     } label: {
                         Label(L10n.Contacts.Contacts.List.discover, systemImage: "antenna.radiowaves.left.and.right")
                     }

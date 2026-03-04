@@ -120,7 +120,7 @@ public enum OCVPreset: String, CaseIterable, Codable, Sendable {
     /// See: https://github.com/meshcore-dev/MeshCore
     public static func preset(forManufacturer name: String) -> OCVPreset? {
         let preset: OCVPreset? = switch name {
-        case "Seeed Tracker T1000-e": .trackerT1000E
+        case "Seeed Tracker T1000-e", "Seeed Tracker T1000-E": .trackerT1000E
         case "Seeed Wio Tracker L1": .seeedWioTracker
         case "Seeed SenseCap Solar": .seeedSolarNode
         case "RAK WisMesh Tag": .wisMeshTag

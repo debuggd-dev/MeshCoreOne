@@ -80,9 +80,9 @@ final class TracePathMapViewModel {
 
     // MARK: - Computed Properties
 
-    /// Repeaters to display on map
+    /// Repeaters and rooms to display on map
     var repeatersWithLocation: [ContactDTO] {
-        traceViewModel?.availableRepeaters.filter { $0.hasLocation } ?? []
+        traceViewModel?.availableNodes.filter { $0.hasLocation } ?? []
     }
 
     /// Whether a path has been built (at least one hop)
@@ -124,9 +124,9 @@ final class TracePathMapViewModel {
 
     // MARK: - Path Building
 
-    /// Find the repeater for a hop using full public key or RepeaterResolver fallback.
+    /// Find the repeater or room for a hop using full public key or RepeaterResolver fallback.
     private func findRepeater(for hop: PathHop) -> ContactDTO? {
-        RepeaterResolver.bestMatch(for: hop, in: traceViewModel?.availableRepeaters ?? [], userLocation: userLocation)
+        RepeaterResolver.bestMatch(for: hop, in: traceViewModel?.availableNodes ?? [], userLocation: userLocation)
     }
 
     /// Whether a hop matches a specific repeater.
@@ -168,7 +168,7 @@ final class TracePathMapViewModel {
             result = .removed
         } else if !isRepeaterInPath(repeater) {
             // Add to path
-            traceViewModel.addRepeater(repeater)
+            traceViewModel.addNode(repeater)
             result = .added
         } else {
             // Tapping middle hop - provide feedback that this action is not allowed
@@ -269,14 +269,14 @@ final class TracePathMapViewModel {
                 let quality = PathLineOverlay.SignalQuality(snr: hop.snr)
 
                 // Create new overlay with signal quality
-                let updatedOverlay = overlay.withSignalQuality(quality, snrDB: hop.snr)
+                let updatedOverlay = overlay.withSignalQuality(quality, snr: hop.snr)
                 updatedOverlays.append(updatedOverlay)
 
                 // Add badge annotation at midpoint
                 let badge = StatsBadgeAnnotation(
                     coordinate: updatedOverlay.midpoint,
                     distanceMeters: updatedOverlay.distanceMeters,
-                    snrDB: hop.snr,
+                    snr: hop.snr,
                     segmentIndex: index
                 )
                 badgeAnnotations.append(badge)

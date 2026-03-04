@@ -85,6 +85,11 @@ final class LinkPreviewService: Sendable {
     /// - Parameter url: The URL to fetch metadata for
     /// - Returns: Metadata if successful, nil on failure
     func fetchMetadata(for url: URL) async -> LinkPreviewMetadata? {
+        guard await URLSafetyChecker.isSafe(url) else {
+            logger.warning("Blocked metadata fetch to unsafe URL: \(url.host() ?? "unknown")")
+            return nil
+        }
+
         let provider = LPMetadataProvider()
         provider.timeout = 10
 

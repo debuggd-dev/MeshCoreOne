@@ -315,12 +315,17 @@ final class LineOfSightViewModel {
             centerLat -= southExtra / 2
         }
 
+        // Clamp to valid MKCoordinateRegion bounds to prevent MKMapView crash
+        let clampedLatDelta = min(adjustedLatDelta, 180)
+        let clampedLonDelta = min(lonDelta, 360)
+        let clampedCenterLat = centerLat.clamped(to: -90...90)
+
         cameraRegion = MKCoordinateRegion(
             center: CLLocationCoordinate2D(
-                latitude: centerLat,
+                latitude: clampedCenterLat,
                 longitude: (lons.min()! + lons.max()!) / 2
             ),
-            span: MKCoordinateSpan(latitudeDelta: adjustedLatDelta, longitudeDelta: lonDelta)
+            span: MKCoordinateSpan(latitudeDelta: clampedLatDelta, longitudeDelta: clampedLonDelta)
         )
         cameraRegionVersion += 1
     }
@@ -646,78 +651,21 @@ final class LineOfSightViewModel {
               let pointB,
               elevationProfile.count >= 2 else { return }
 
-        let profile = elevationProfile
-        let pointAHeight = Double(pointA.additionalHeight)
-        let pointBHeight = Double(pointB.additionalHeight)
-        let repeaterHeight = Double(repeaterPoint.additionalHeight)
-        let freq = frequencyMHz
-        let k = refractionK
         let pathFraction = repeaterPoint.pathFraction
 
         // Calculate split index
-        let splitIndex = Int(pathFraction * Double(profile.count - 1))
-        guard splitIndex > 0, splitIndex < profile.count - 1 else { return }
+        let splitIndex = Int(pathFraction * Double(elevationProfile.count - 1))
+        guard splitIndex > 0, splitIndex < elevationProfile.count - 1 else { return }
 
-        // Create segments using ArraySlice (zero allocation)
-        let segmentARSlice = profile[0...splitIndex]
-        let segmentRBSlice = profile[splitIndex...]
-
-        // Analyze both segments
-        let arResult = RFCalculator.analyzePathSegment(
-            elevationProfile: segmentARSlice,
-            startHeightMeters: pointAHeight,
-            endHeightMeters: repeaterHeight,
-            frequencyMHz: freq,
-            refractionK: k
+        applyRelayAnalysis(
+            profileAR: Array(elevationProfile[0...splitIndex]),
+            profileRB: Array(elevationProfile[splitIndex...]),
+            pointAHeight: Double(pointA.additionalHeight),
+            repeaterHeight: Double(repeaterPoint.additionalHeight),
+            pointBHeight: Double(pointB.additionalHeight),
+            frequencyMHz: frequencyMHz,
+            refractionK: refractionK
         )
-
-        let rbResult = RFCalculator.analyzePathSegment(
-            elevationProfile: segmentRBSlice,
-            startHeightMeters: repeaterHeight,
-            endHeightMeters: pointBHeight,
-            frequencyMHz: freq,
-            refractionK: k
-        )
-
-        // Create segment results
-        let segmentAR = SegmentAnalysisResult(
-            startLabel: "A",
-            endLabel: "R",
-            clearanceStatus: arResult.clearanceStatus,
-            distanceMeters: arResult.distanceMeters,
-            worstClearancePercent: arResult.worstClearancePercent
-        )
-
-        let segmentRB = SegmentAnalysisResult(
-            startLabel: "R",
-            endLabel: "B",
-            clearanceStatus: rbResult.clearanceStatus,
-            distanceMeters: rbResult.distanceMeters,
-            worstClearancePercent: rbResult.worstClearancePercent
-        )
-
-        let relayResult = RelayPathAnalysisResult(
-            segmentAR: segmentAR,
-            segmentRB: segmentRB
-        )
-
-        // Build profile samples for dual Fresnel zone rendering
-        profileSamples = FresnelZoneRenderer.buildProfileSamples(
-            from: Array(segmentARSlice),
-            pointAHeight: pointAHeight,
-            pointBHeight: repeaterHeight,
-            frequencyMHz: freq,
-            refractionK: k
-        )
-        profileSamplesRB = FresnelZoneRenderer.buildProfileSamples(
-            from: Array(segmentRBSlice),
-            pointAHeight: repeaterHeight,
-            pointBHeight: pointBHeight,
-            frequencyMHz: freq,
-            refractionK: k
-        )
-
-        analysisStatus = .relayResult(relayResult)
     }
 
     /// Off-path analysis - fetches A→R and R→B profiles
@@ -732,11 +680,6 @@ final class LineOfSightViewModel {
             let pointACoord = pointA.coordinate
             let repeaterCoord = repeaterPoint.coordinate
             let pointBCoord = pointB.coordinate
-            let pointAHeight = Double(pointA.additionalHeight)
-            let pointBHeight = Double(pointB.additionalHeight)
-            let repeaterHeight = Double(repeaterPoint.additionalHeight)
-            let freq = frequencyMHz
-            let k = refractionK
 
             // Fetch A→R profile
             let distanceAR = RFCalculator.distance(from: pointACoord, to: repeaterCoord)
@@ -758,45 +701,6 @@ final class LineOfSightViewModel {
             )
             let profileRB = try await elevationService.fetchElevations(along: sampleCoordsRB)
 
-            // Analyze both segments
-            let arResult = RFCalculator.analyzePathSegment(
-                elevationProfile: profileAR[...],
-                startHeightMeters: pointAHeight,
-                endHeightMeters: repeaterHeight,
-                frequencyMHz: freq,
-                refractionK: k
-            )
-
-            let rbResult = RFCalculator.analyzePathSegment(
-                elevationProfile: profileRB[...],
-                startHeightMeters: repeaterHeight,
-                endHeightMeters: pointBHeight,
-                frequencyMHz: freq,
-                refractionK: k
-            )
-
-            // Create segment results
-            let segmentAR = SegmentAnalysisResult(
-                startLabel: "A",
-                endLabel: "R",
-                clearanceStatus: arResult.clearanceStatus,
-                distanceMeters: arResult.distanceMeters,
-                worstClearancePercent: arResult.worstClearancePercent
-            )
-
-            let segmentRB = SegmentAnalysisResult(
-                startLabel: "R",
-                endLabel: "B",
-                clearanceStatus: rbResult.clearanceStatus,
-                distanceMeters: rbResult.distanceMeters,
-                worstClearancePercent: rbResult.worstClearancePercent
-            )
-
-            let relayResult = RelayPathAnalysisResult(
-                segmentAR: segmentAR,
-                segmentRB: segmentRB
-            )
-
             // Offset R→B profile distances to continue from A→R endpoint
             // (fetchElevations returns distances relative to segment start, not global A)
             let profileRBAdjusted = profileRB.map { sample in
@@ -807,20 +711,14 @@ final class LineOfSightViewModel {
                 )
             }
 
-            // Build profile samples for terrain visualization
-            profileSamples = FresnelZoneRenderer.buildProfileSamples(
-                from: profileAR,
-                pointAHeight: pointAHeight,
-                pointBHeight: repeaterHeight,
-                frequencyMHz: freq,
-                refractionK: k
-            )
-            profileSamplesRB = FresnelZoneRenderer.buildProfileSamples(
-                from: profileRBAdjusted,
-                pointAHeight: repeaterHeight,
-                pointBHeight: pointBHeight,
-                frequencyMHz: freq,
-                refractionK: k
+            applyRelayAnalysis(
+                profileAR: profileAR,
+                profileRB: profileRBAdjusted,
+                pointAHeight: Double(pointA.additionalHeight),
+                repeaterHeight: Double(repeaterPoint.additionalHeight),
+                pointBHeight: Double(pointB.additionalHeight),
+                frequencyMHz: frequencyMHz,
+                refractionK: refractionK
             )
 
             // Store profiles for terrain visualization
@@ -828,13 +726,73 @@ final class LineOfSightViewModel {
             elevationProfileRB = profileRBAdjusted
 
             isAnalyzing = false
-            analysisStatus = .relayResult(relayResult)
 
         } catch {
             isAnalyzing = false
             analysisStatus = .error(error.localizedDescription)
             logger.error("Off-path analysis failed: \(error.localizedDescription)")
         }
+    }
+
+    /// Shared relay analysis: analyzes both segments and updates profile samples and status
+    private func applyRelayAnalysis(
+        profileAR: [ElevationSample],
+        profileRB: [ElevationSample],
+        pointAHeight: Double,
+        repeaterHeight: Double,
+        pointBHeight: Double,
+        frequencyMHz: Double,
+        refractionK: Double
+    ) {
+        let arResult = RFCalculator.analyzePathSegment(
+            elevationProfile: profileAR[...],
+            startHeightMeters: pointAHeight,
+            endHeightMeters: repeaterHeight,
+            frequencyMHz: frequencyMHz,
+            refractionK: refractionK
+        )
+
+        let rbResult = RFCalculator.analyzePathSegment(
+            elevationProfile: profileRB[...],
+            startHeightMeters: repeaterHeight,
+            endHeightMeters: pointBHeight,
+            frequencyMHz: frequencyMHz,
+            refractionK: refractionK
+        )
+
+        let relayResult = RelayPathAnalysisResult(
+            segmentAR: SegmentAnalysisResult(
+                startLabel: "A",
+                endLabel: "R",
+                clearanceStatus: arResult.clearanceStatus,
+                distanceMeters: arResult.distanceMeters,
+                worstClearancePercent: arResult.worstClearancePercent
+            ),
+            segmentRB: SegmentAnalysisResult(
+                startLabel: "R",
+                endLabel: "B",
+                clearanceStatus: rbResult.clearanceStatus,
+                distanceMeters: rbResult.distanceMeters,
+                worstClearancePercent: rbResult.worstClearancePercent
+            )
+        )
+
+        profileSamples = FresnelZoneRenderer.buildProfileSamples(
+            from: profileAR,
+            pointAHeight: pointAHeight,
+            pointBHeight: repeaterHeight,
+            frequencyMHz: frequencyMHz,
+            refractionK: refractionK
+        )
+        profileSamplesRB = FresnelZoneRenderer.buildProfileSamples(
+            from: profileRB,
+            pointAHeight: repeaterHeight,
+            pointBHeight: pointBHeight,
+            frequencyMHz: frequencyMHz,
+            refractionK: refractionK
+        )
+
+        analysisStatus = .relayResult(relayResult)
     }
 
     // MARK: - Analysis

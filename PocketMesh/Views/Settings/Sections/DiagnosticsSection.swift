@@ -1,28 +1,34 @@
 import PocketMeshServices
 import SwiftUI
-import UIKit
 
 /// Settings section for diagnostic tools including log export and clearing
 struct DiagnosticsSection: View {
     @Environment(\.appState) private var appState
     @State private var isExporting = false
+    @State private var exportedFileURL: URL?
     @State private var showingClearLogsAlert = false
     @State private var showError: String?
 
     var body: some View {
         Section {
-            Button {
-                exportLogs()
-            } label: {
-                HStack {
+            if let url = exportedFileURL {
+                ShareLink(item: url, preview: SharePreview(L10n.Settings.Diagnostics.exportLogs)) {
                     TintedLabel(L10n.Settings.Diagnostics.exportLogs, systemImage: "arrow.up.doc")
-                    Spacer()
-                    if isExporting {
-                        ProgressView()
+                }
+            } else {
+                Button {
+                    exportLogs()
+                } label: {
+                    HStack {
+                        TintedLabel(L10n.Settings.Diagnostics.exportLogs, systemImage: "arrow.up.doc")
+                        Spacer()
+                        if isExporting {
+                            ProgressView()
+                        }
                     }
                 }
+                .disabled(isExporting)
             }
-            .disabled(isExporting)
 
             Button(role: .destructive) {
                 showingClearLogsAlert = true
@@ -49,47 +55,16 @@ struct DiagnosticsSection: View {
         let dataStore = appState.services?.dataStore ?? appState.connectionManager.createStandalonePersistenceStore()
         isExporting = true
 
-        Task {
+        Task { @MainActor in
             if let url = await LogExportService.createExportFile(
                 appState: appState,
                 persistenceStore: dataStore
             ) {
-                await MainActor.run {
-                    let activityVC = UIActivityViewController(
-                        activityItems: [url],
-                        applicationActivities: nil
-                    )
-
-                    if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                       let rootVC = windowScene.windows.first?.rootViewController {
-                        var topVC = rootVC
-                        while let presented = topVC.presentedViewController {
-                            topVC = presented
-                        }
-
-                        // Configure popover for iPad
-                        if let popover = activityVC.popoverPresentationController {
-                            popover.sourceView = topVC.view
-                            popover.sourceRect = CGRect(
-                                x: topVC.view.bounds.midX,
-                                y: topVC.view.bounds.midY,
-                                width: 0,
-                                height: 0
-                            )
-                            popover.permittedArrowDirections = []
-                        }
-
-                        topVC.present(activityVC, animated: true)
-                    }
-
-                    isExporting = false
-                }
+                exportedFileURL = url
             } else {
-                await MainActor.run {
-                    showError = L10n.Settings.Diagnostics.Error.exportFailed
-                    isExporting = false
-                }
+                showError = L10n.Settings.Diagnostics.Error.exportFailed
             }
+            isExporting = false
         }
     }
 

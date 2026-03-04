@@ -7,11 +7,10 @@ struct ChatsStackRootContent: View {
     let viewModel: ChatViewModel
     let filteredFavorites: [Conversation]
     let filteredOthers: [Conversation]
-    let filteredConversations: [Conversation]
     let emptyStateMessage: (title: String, description: String, systemImage: String)
     let hasLoadedOnce: Bool
 
-    @Binding var selectedFilter: ChatFilter?
+    @Binding var selectedFilter: ChatFilter
     @Binding var searchText: String
     @Binding var showingNewChat: Bool
     @Binding var showingChannelOptions: Bool
@@ -21,7 +20,6 @@ struct ChatsStackRootContent: View {
 
     let onNavigate: (ChatRoute) -> Void
     let onDeleteConversation: (Conversation) -> Void
-    let onRefreshConversations: () async -> Void
     let onLoadConversations: () async -> Void
     let onHandlePendingNavigation: () -> Void
     let onHandlePendingChannelNavigation: () -> Void
@@ -30,20 +28,17 @@ struct ChatsStackRootContent: View {
 
     var body: some View {
         applyChatsListModifiers(
-            to: conversationListState {
-                ConversationListContent(
-                    viewModel: viewModel,
-                    favoriteConversations: filteredFavorites,
-                    otherConversations: filteredOthers,
-                    onNavigate: { route in
-                        navigationPath.append(route)
-                    },
-                    onRequestRoomAuth: { session in
-                        roomToAuthenticate = session
-                    },
-                    onDeleteConversation: onDeleteConversation
-                )
-            },
+            to: ConversationListContent(
+                viewModel: viewModel,
+                favoriteConversations: filteredFavorites,
+                otherConversations: filteredOthers,
+                selectedFilter: $selectedFilter,
+                hasLoadedOnce: hasLoadedOnce,
+                emptyStateMessage: emptyStateMessage,
+                onNavigate: { navigationPath.append($0) },
+                onRequestRoomAuth: { roomToAuthenticate = $0 },
+                onDeleteConversation: onDeleteConversation
+            ),
             onTaskStart: {
                 viewModel.configure(appState: appState)
                 await onLoadConversations()
@@ -55,32 +50,6 @@ struct ChatsStackRootContent: View {
         )
     }
 
-    // MARK: - Helpers
-
-    @ViewBuilder
-    private func conversationListState<Content: View>(
-        @ViewBuilder listContent: () -> Content
-    ) -> some View {
-        if !hasLoadedOnce {
-            ProgressView()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if filteredConversations.isEmpty {
-            ContentUnavailableView {
-                Label(emptyStateMessage.title, systemImage: emptyStateMessage.systemImage)
-            } description: {
-                Text(emptyStateMessage.description)
-            } actions: {
-                if selectedFilter != nil {
-                    Button(L10n.Chats.Chats.Filter.clear) {
-                        selectedFilter = nil
-                    }
-                }
-            }
-        } else {
-            listContent()
-        }
-    }
-
     private func applyChatsListModifiers<Content: View>(
         to content: Content,
         onTaskStart: @escaping () async -> Void
@@ -88,18 +57,9 @@ struct ChatsStackRootContent: View {
         content
             .navigationTitle(L10n.Chats.Chats.title)
             .searchable(text: $searchText, prompt: L10n.Chats.Chats.Search.placeholder)
-            .searchScopes($selectedFilter, activation: .onSearchPresentation) {
-                Text(L10n.Chats.Chats.Filter.all).tag(nil as ChatFilter?)
-                ForEach(ChatFilter.allCases) { filter in
-                    Text(filter.localizedName).tag(filter as ChatFilter?)
-                }
-            }
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
                     BLEStatusIndicatorView()
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    ChatsFilterMenu(selectedFilter: $selectedFilter)
                 }
                 ToolbarItem(placement: .automatic) {
                     Menu {
@@ -123,7 +83,7 @@ struct ChatsStackRootContent: View {
                 if appState.connectionState != .ready {
                     showOfflineRefreshAlert = true
                 } else {
-                    await onRefreshConversations()
+                    await onLoadConversations()
                 }
             }
             .alert(L10n.Chats.Chats.Alert.CannotRefresh.title, isPresented: $showOfflineRefreshAlert) {

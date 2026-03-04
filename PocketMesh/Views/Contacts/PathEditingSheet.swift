@@ -10,6 +10,22 @@ struct PathEditingSheet: View {
     // Haptic feedback triggers (SwiftUI native approach)
     @State private var dragHapticTrigger = 0
     @State private var addHapticTrigger = 0
+    @AppStorage("pathEditIncludeDiscovered") private var includeDiscovered = false
+
+    private var hashSize: Int { viewModel.hashSize }
+
+    private var filteredNodes: [PickerNode] {
+        var nodes: [PickerNode] = viewModel.filteredAvailableRepeaters.map { .contact($0) }
+        if includeDiscovered {
+            let contactKeys = Set(nodes.compactMap {
+                if case .contact(let c) = $0 { c.publicKey } else { nil }
+            })
+            nodes += viewModel.discoveredRepeaters
+                .filter { !contactKeys.contains($0.publicKey) }
+                .map { .discovered($0) }
+        }
+        return nodes
+    }
 
     var body: some View {
         NavigationStack {
@@ -86,22 +102,29 @@ struct PathEditingSheet: View {
 
     private var addRepeaterSection: some View {
         Section {
-            if viewModel.filteredAvailableRepeaters.isEmpty {
+            Toggle(L10n.Contacts.Contacts.Trace.List.includeDiscovered, isOn: $includeDiscovered)
+
+            if filteredNodes.isEmpty {
                 ContentUnavailableView(
                     L10n.Contacts.Contacts.PathEdit.NoRepeaters.title,
                     systemImage: "antenna.radiowaves.left.and.right.slash",
                     description: Text(L10n.Contacts.Contacts.PathEdit.NoRepeaters.description)
                 )
             } else {
-                ForEach(viewModel.filteredAvailableRepeaters) { repeater in
+                ForEach(filteredNodes) { node in
                     Button {
                         addHapticTrigger += 1
-                        viewModel.addRepeater(repeater)
+                        viewModel.addNode(node.underlying)
                     } label: {
                         HStack {
                             VStack(alignment: .leading) {
-                                Text(repeater.displayName)
-                                Text(String(format: "%02X", repeater.publicKey[0]))
+                                HStack {
+                                    Text(node.displayName)
+                                    if node.isDiscovered {
+                                        NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.discovered, color: .blue)
+                                    }
+                                }
+                                Text(node.publicKeyHex)
                                     .font(.caption.monospaced())
                                     .foregroundStyle(.secondary)
                             }
@@ -111,13 +134,13 @@ struct PathEditingSheet: View {
                         }
                     }
                     .foregroundStyle(.primary)
-                    .accessibilityLabel(L10n.Contacts.Contacts.PathEdit.addToPath(repeater.displayName))
+                    .accessibilityLabel(L10n.Contacts.Contacts.PathEdit.addToPath(node.displayName))
                 }
             }
         } header: {
             Text(L10n.Contacts.Contacts.PathEdit.addRepeater)
         } footer: {
-            if !viewModel.filteredAvailableRepeaters.isEmpty {
+            if !filteredNodes.isEmpty {
                 Text(L10n.Contacts.Contacts.PathEdit.addFooter)
             }
         }
@@ -134,11 +157,11 @@ private struct PathHopRow: View {
         VStack(alignment: .leading) {
             if let name = hop.resolvedName {
                 Text(name)
-                Text(String(format: "%02X", hop.hashByte))
+                Text(hop.hashHex)
                     .font(.caption.monospaced())
                     .foregroundStyle(.secondary)
             } else {
-                Text(String(format: "%02X", hop.hashByte))
+                Text(hop.hashHex)
                     .font(.body.monospaced())
             }
         }
@@ -151,7 +174,7 @@ private struct PathHopRow: View {
         if let name = hop.resolvedName {
             return L10n.Contacts.Contacts.PathEdit.hopWithName(index + 1, totalCount, name)
         } else {
-            return L10n.Contacts.Contacts.PathEdit.hopWithHex(index + 1, totalCount, String(format: "%02X", hop.hashByte))
+            return L10n.Contacts.Contacts.PathEdit.hopWithHex(index + 1, totalCount, hop.hashHex)
         }
     }
 }

@@ -10,7 +10,7 @@ struct ChatsView: View {
 
     @State private var viewModel = ChatViewModel()
     @State private var searchText = ""
-    @State private var selectedFilter: ChatFilter?
+    @State private var selectedFilter: ChatFilter = .all
     @State private var showingNewChat = false
     @State private var showingChannelOptions = false
 
@@ -23,7 +23,6 @@ struct ChatsView: View {
     @State private var roomToAuthenticate: RemoteNodeSessionDTO?
     @State private var roomToDelete: RemoteNodeSessionDTO?
     @State private var showRoomDeleteAlert = false
-    @State private var sidebarListID = UUID()
     @State private var pendingChatContact: ContactDTO?
     @State private var pendingChannel: ChannelDTO?
     @State private var hashtagToJoin: HashtagJoinRequest?
@@ -41,13 +40,9 @@ struct ChatsView: View {
         viewModel.nonFavoriteConversations.filtered(by: selectedFilter, searchText: searchText)
     }
 
-    private var filteredConversations: [Conversation] {
-        filteredFavorites + filteredOthers
-    }
-
     private var emptyStateMessage: (title: String, description: String, systemImage: String) {
         switch selectedFilter {
-        case .none:
+        case .all:
             return (L10n.Chats.Chats.EmptyState.NoConversations.title, L10n.Chats.Chats.EmptyState.NoConversations.description, "message")
         case .unread:
             return (L10n.Chats.Chats.EmptyState.NoUnread.title, L10n.Chats.Chats.EmptyState.NoUnread.description, "checkmark.circle")
@@ -55,20 +50,17 @@ struct ChatsView: View {
             return (L10n.Chats.Chats.EmptyState.NoDirectMessages.title, L10n.Chats.Chats.EmptyState.NoDirectMessages.description, "person")
         case .channels:
             return (L10n.Chats.Chats.EmptyState.NoChannels.title, L10n.Chats.Chats.EmptyState.NoChannels.description, "number")
-        case .favorites:
-            return (L10n.Chats.Chats.EmptyState.NoFavorites.title, L10n.Chats.Chats.EmptyState.NoFavorites.description, "star")
         }
     }
 
     var body: some View {
         Group {
             if shouldUseSplitView {
-                ChatsSplitLayout(sidebarListID: sidebarListID) {
+                ChatsSplitLayout(detailID: appState.navigation.chatsSelectedRoute?.conversationID) {
                     ChatsSplitSidebarContent(
                         viewModel: viewModel,
                         filteredFavorites: filteredFavorites,
                         filteredOthers: filteredOthers,
-                        filteredConversations: filteredConversations,
                         emptyStateMessage: emptyStateMessage,
                         hasLoadedOnce: viewModel.hasLoadedOnce,
                         selectedRoute: $selectedRoute,
@@ -81,7 +73,6 @@ struct ChatsView: View {
                         lastSelectedRoomIsConnected: $lastSelectedRoomIsConnected,
                         routeBeingDeleted: $routeBeingDeleted,
                         onDeleteConversation: handleDeleteConversation,
-                        onRefreshConversations: refreshConversations,
                         onLoadConversations: loadConversations,
                         onHandlePendingNavigation: handlePendingNavigation,
                         onHandlePendingChannelNavigation: handlePendingChannelNavigation,
@@ -102,7 +93,6 @@ struct ChatsView: View {
                         viewModel: viewModel,
                         filteredFavorites: filteredFavorites,
                         filteredOthers: filteredOthers,
-                        filteredConversations: filteredConversations,
                         emptyStateMessage: emptyStateMessage,
                         hasLoadedOnce: viewModel.hasLoadedOnce,
                         selectedFilter: $selectedFilter,
@@ -114,7 +104,6 @@ struct ChatsView: View {
                         navigationPath: $navigationPath,
                         onNavigate: { navigate(to: $0) },
                         onDeleteConversation: handleDeleteConversation,
-                        onRefreshConversations: refreshConversations,
                         onLoadConversations: loadConversations,
                         onHandlePendingNavigation: handlePendingNavigation,
                         onHandlePendingChannelNavigation: handlePendingChannelNavigation,
@@ -187,6 +176,7 @@ struct ChatsView: View {
                         await deleteRoom(session)
                     }
                     roomToDelete = nil
+                    await loadConversations()
                     routeBeingDeleted = nil
                 }
             }
@@ -238,11 +228,6 @@ struct ChatsView: View {
         )
     }
 
-    private func refreshConversations() async {
-        guard let deviceID = appState.currentDeviceID else { return }
-        await viewModel.loadAllConversations(deviceID: deviceID)
-    }
-
     private func navigate(to route: ChatRoute) {
         if shouldUseSplitView {
             selectedRoute = route
@@ -277,13 +262,12 @@ struct ChatsView: View {
     }
 
     private func deleteDirectConversation(_ contact: ContactDTO) {
-        if shouldUseSplitView && selectedRoute == .direct(contact) {
+        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .direct(contact) {
             selectedRoute = nil
             appState.navigation.chatsSelectedRoute = nil
         }
 
         viewModel.removeConversation(.direct(contact))
-        sidebarListID = UUID()
 
         if !shouldUseSplitView && activeRoute == .direct(contact) {
             navigationPath.removeLast(navigationPath.count)
@@ -293,18 +277,18 @@ struct ChatsView: View {
 
         Task {
             try? await viewModel.deleteConversation(for: contact)
+            await loadConversations()
             routeBeingDeleted = nil
         }
     }
 
     private func deleteChannelConversation(_ channel: ChannelDTO) {
-        if shouldUseSplitView && selectedRoute == .channel(channel) {
+        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .channel(channel) {
             selectedRoute = nil
             appState.navigation.chatsSelectedRoute = nil
         }
 
         viewModel.removeConversation(.channel(channel))
-        sidebarListID = UUID()
 
         if !shouldUseSplitView && activeRoute == .channel(channel) {
             navigationPath.removeLast(navigationPath.count)
@@ -314,6 +298,7 @@ struct ChatsView: View {
 
         Task {
             await deleteChannel(channel)
+            await loadConversations()
             routeBeingDeleted = nil
         }
     }
@@ -333,13 +318,12 @@ struct ChatsView: View {
             await appState.services?.notificationService.updateBadgeCount()
 
             await MainActor.run {
-                if shouldUseSplitView && selectedRoute == .room(session) {
+                if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .room(session) {
                     selectedRoute = nil
                     appState.navigation.chatsSelectedRoute = nil
                 }
 
                 viewModel.removeConversation(.room(session))
-                sidebarListID = UUID()
 
                 if !shouldUseSplitView && activeRoute == .room(session) {
                     navigationPath.removeLast(navigationPath.count)

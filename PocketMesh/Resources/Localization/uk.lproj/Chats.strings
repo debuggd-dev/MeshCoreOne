@@ -19,12 +19,6 @@
 /* Location: ChatsView.swift - Filter menu title */
 "chats.filter.title" = "Фільтр";
 
-/* Location: ChatsView.swift - Accessibility label when no filter is active */
-"chats.filter.accessibilityLabel" = "Фільтр розмов";
-
-/* Location: ChatsView.swift - Accessibility label format when filter is active - %@ is the filter name */
-"chats.filter.accessibilityLabelActive" = "Фільтр розмов, наразі показує %@";
-
 /* Location: ChatsView.swift - Button to clear active filter */
 "chats.filter.clear" = "Скинути фільтр";
 
@@ -36,9 +30,6 @@
 
 /* Location: ChatsView.swift - Filter option for channels */
 "chats.filter.channels" = "Канали";
-
-/* Location: ChatsView.swift - Filter option for favorites */
-"chats.filter.favorites" = "Обрані";
 
 // MARK: - Compose Menu
 
@@ -77,12 +68,6 @@
 /* Location: ChatsView.swift - Description when no channels */
 "chats.emptyState.noChannels.description" = "Приєднайся до каналу або створи новий";
 
-/* Location: ChatsView.swift - Title when no favorites */
-"chats.emptyState.noFavorites.title" = "Немає обраних";
-
-/* Location: ChatsView.swift - Description when no favorites */
-"chats.emptyState.noFavorites.description" = "Позначай контакти як обрані, щоб бачити їх тут";
-
 /* Location: ChatsView.swift - Split view placeholder when no conversation selected */
 "chats.emptyState.selectConversation" = "Вибери розмову";
 
@@ -116,28 +101,28 @@
 /* Location: RelativeTimestampText.swift - Timestamp for messages under 1 minute old */
 "chats.timestamp.now" = "Зараз";
 
-// MARK: - Floating Action Buttons
+// MARK: - Scroll Buttons
 
-/* Location: ScrollToMentionFAB.swift - Accessibility label for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityLabel" = "Перейти до найстарішої непрочитаної згадки";
+/* Location: ScrollToMentionButton.swift - Accessibility label for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityLabel" = "Перейти до найстарішої непрочитаної згадки";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility hint for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityHint" = "Подвійний дотик для переходу до повідомлення";
+/* Location: ScrollToMentionButton.swift - Accessibility hint for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityHint" = "Подвійний дотик для переходу до повідомлення";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
-"chats.fab.scrollToMention.accessibilityValue" = "%d непрочитаних згадок";
+/* Location: ScrollToMentionButton.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
+"chats.scrollButton.scrollToMention.accessibilityValue" = "%d непрочитаних згадок";
 
-/* Location: ScrollToBottomFAB.swift - Accessibility label for scroll to bottom button */
-"chats.fab.scrollToBottom.accessibilityLabel" = "Перейти до останнього повідомлення";
+/* Location: ScrollToBottomButton.swift - Accessibility label for scroll to bottom button */
+"chats.scrollButton.scrollToBottom.accessibilityLabel" = "Перейти до останнього повідомлення";
 
-/* Location: ScrollToMentionFAB.swift, ScrollToBottomFAB.swift - Badge text for 99+ unread */
-"chats.fab.badge.overflow" = "99+";
+/* Location: ScrollToMentionButton.swift, ScrollToBottomButton.swift - Badge text for 99+ unread */
+"chats.scrollButton.badge.overflow" = "99+";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility label for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
+/* Location: ScrollToDividerButton.swift - Accessibility label for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility hint for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
+/* Location: ScrollToDividerButton.swift - Accessibility hint for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
 
 // MARK: - Chat View (Direct Messages)
 
@@ -925,3 +910,62 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Ключ: %@";
+
+// MARK: - Message Actions Sheet
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Повідомлення";
+
+// MARK: - Notification Level
+
+/* Location: NotificationLevelPicker.swift - Purpose: Label for notification level */
+"chats.notificationLevel.label" = "Рівень сповіщень";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Hint for notification level picker */
+"chats.notificationLevel.hint" = "Оберіть, коли отримувати сповіщення";
+
+/* Location: ConversationRow.swift - Purpose: Mentions-only indicator */
+"chats.row.mentionsOnly" = "Лише згадки";
+
+// MARK: - Reactions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji + count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Accessibility hint for reaction badge */
+"reactions.badge_hint" = "Натисніть двічі, щоб відреагувати, утримуйте для деталей";
+
+/* Location: ReactionBadgeView.swift - More reaction types badge */
+"reactions.more_badge" = "Ще %d типів реакцій";
+
+/* Location: ReactionBadgeView.swift - Accessibility hint for more badge */
+"reactions.more_badge_hint" = "Натисніть двічі, щоб побачити всі реакції";
+
+/* Location: ReactionBadgeView.swift - More emojis button */
+"reactions.more_emojis" = "Більше емодзі";
+
+/* Location: ReactionBadgeView.swift - View details button */
+"reactions.view_details" = "Деталі реакцій";
+
+/* Location: ReactionDetailsSheet.swift - Details title */
+"reactions.details_title" = "Реакції";
+
+/* Location: ReactionBadgeView.swift - Send failed error */
+"reactions.send_failed" = "Не вдалося надіслати реакцію";
+
+/* Location: MessageActionsSheet.swift - Reply action */
+"reactions.reply" = "Відповісти";
+
+/* Location: MessageActionsSheet.swift - Copy action */
+"reactions.copy" = "Копіювати";
+
+/* Location: MessageActionsSheet.swift - Delete action */
+"reactions.delete" = "Видалити";
+
+// MARK: - Malware Warning
+
+/* Location: MalwareWarningCard.swift - Warning title for flagged domains */
+"chats.malwareWarning.title" = "Посилання позначено як підозріле";
+
+/* Location: MalwareWarningCard.swift - Accessibility label - %@ is domain */
+"chats.malwareWarning.accessibility" = "Попередження: посилання на %@ позначено як підозріле";

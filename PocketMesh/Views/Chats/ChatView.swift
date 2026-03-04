@@ -29,6 +29,7 @@ struct ChatView: View {
     @State private var selectedMessageForActions: MessageDTO?
     @State private var recentEmojisStore = RecentEmojisStore()
     @State private var imageViewerData: ImageViewerData?
+    @State private var eventCursor: Int?
     @FocusState private var isInputFocused: Bool
 
     @AppStorage("showInlineImages") private var showInlineImages = true
@@ -100,6 +101,9 @@ struct ChatView: View {
         .fullScreenCover(item: $imageViewerData) { data in
             FullScreenImageViewer(data: data)
         }
+        .onAppear {
+            eventCursor = appState.messageEventBroadcaster.currentEventSequence
+        }
         .task(id: appState.servicesVersion) {
             // Capture pending scroll target before loading
             let pendingTarget = appState.navigation.pendingScrollToMessageID
@@ -138,54 +142,48 @@ struct ChatView: View {
             }
         }
         .onChange(of: appState.messageEventBroadcaster.newMessageCount) { _, _ in
-            switch appState.messageEventBroadcaster.latestEvent {
-            case .directMessageReceived(let message, _) where message.contactID == contact.id:
-                // Optimistic insert: add message immediately so ChatTableView sees new count
-                // No full reload needed - appendMessageIfNew handles local state
-                viewModel.appendMessageIfNew(message)
-                // Link previews deferred - fetching during active message receipt causes
-                // WKWebView process spawning that blocks main thread and causes scroll jank.
-                // Previews will be fetched by batch mechanism when message flow settles.
-                // Handle self-mention: if at bottom, mark seen immediately; otherwise reload unseen
-                if message.containsSelfMention {
-                    Task {
-                        if isAtBottom {
-                            // User will see the message immediately, mark it seen
-                            await markNewArrivalMentionSeen(messageID: message.id)
-                        } else {
-                            await loadUnseenMentions()
+            guard let cursor = eventCursor else { return }
+            let (events, newCursor, droppedEvents) = appState.messageEventBroadcaster.events(after: cursor)
+            eventCursor = newCursor
+            var needsReload = droppedEvents
+            var needsContactRefresh = false
+            for event in events {
+                switch event {
+                case .directMessageReceived(let message, _) where message.contactID == contact.id:
+                    viewModel.appendMessageIfNew(message)
+                    if message.containsSelfMention {
+                        Task {
+                            if isAtBottom {
+                                await markNewArrivalMentionSeen(messageID: message.id)
+                            } else {
+                                await loadUnseenMentions()
+                            }
                         }
                     }
-                }
-            case .messageStatusUpdated:
-                // Reload to pick up status changes (Sent -> Delivered, etc.)
-                Task {
-                    await viewModel.loadMessages(for: contact)
-                }
-            case .messageFailed(let messageID):
-                // Only reload if this message belongs to the current conversation
-                // This prevents multiple reloads when several messages fail at once
-                if viewModel.messages.contains(where: { $0.id == messageID }) {
-                    Task {
-                        await viewModel.loadMessages(for: contact)
+                case .messageStatusUpdated, .messageRetrying:
+                    needsReload = true
+                case .messageFailed(let messageID):
+                    if viewModel.messages.contains(where: { $0.id == messageID }) {
+                        needsReload = true
                     }
+                case .routingChanged(let contactID, _) where contactID == contact.id:
+                    needsContactRefresh = true
+                case .reactionReceived(let messageID, let summary):
+                    if viewModel.messages.contains(where: { $0.id == messageID }) {
+                        viewModel.updateReactionSummary(for: messageID, summary: summary)
+                    }
+                default:
+                    break
                 }
-            case .routingChanged(let contactID, _) where contactID == contact.id:
-                // Refresh contact to update header when routing changes
-                Task {
-                    await refreshContact()
-                }
-            case .messageRetrying:
-                // Reload to pick up retry status changes
-                Task {
-                    await viewModel.loadMessages(for: contact)
-                }
-            case .reactionReceived(let messageID, let summary):
-                if viewModel.messages.contains(where: { $0.id == messageID }) {
-                    viewModel.updateReactionSummary(for: messageID, summary: summary)
-                }
-            default:
-                break
+            }
+            if needsReload {
+                Task { await viewModel.loadMessages(for: contact) }
+            }
+            if needsContactRefresh || droppedEvents {
+                Task { await refreshContact() }
+            }
+            if droppedEvents {
+                Task { await loadUnseenMentions() }
             }
         }
         .alert(L10n.Chats.Chats.Alert.UnableToSend.title, isPresented: $viewModel.showRetryError) {
@@ -299,10 +297,9 @@ struct ChatView: View {
     private var connectionStatus: String {
         if contact.isFloodRouted {
             return L10n.Chats.Chats.ConnectionStatus.floodRouting
-        } else if contact.outPathLength >= 0 {
-            return L10n.Chats.Chats.ConnectionStatus.direct(Int(contact.outPathLength))
+        } else {
+            return L10n.Chats.Chats.ConnectionStatus.direct(contact.pathHopCount)
         }
-        return L10n.Chats.Chats.ConnectionStatus.unknown
     }
 
     private func setReplyText(_ text: String) {
@@ -350,18 +347,14 @@ struct ChatView: View {
     // MARK: - Input Bar
 
     private var inputBar: some View {
-        MentionInputBar(
+        ChatInputBar(
             text: $viewModel.composingText,
             isFocused: $isInputFocused,
             placeholder: L10n.Chats.Chats.Input.Placeholder.directMessage,
-            maxBytes: ProtocolLimits.maxDirectMessageLength,
-            contacts: viewModel.allContacts
-        ) {
-            // Force scroll to bottom on user send (before message is added)
+            maxBytes: ProtocolLimits.maxDirectMessageLength
+        ) { text in
             scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendMessage()
-            }
+            Task { await viewModel.sendMessage(text: text) }
         }
     }
 
@@ -478,7 +471,7 @@ private struct ChatMessagesContent: View {
                 .overlay(alignment: .bottomTrailing) {
                     VStack(spacing: 12) {
                         if showDividerFAB {
-                            ScrollToDividerFAB(
+                            ScrollToDividerButton(
                                 onTap: {
                                     scrollToDividerRequest += 1
                                     hasDismissedDividerFAB = true
@@ -488,14 +481,14 @@ private struct ChatMessagesContent: View {
                         }
 
                         if !unseenMentionIDs.isEmpty {
-                            ScrollToMentionFAB(
+                            ScrollToMentionButton(
                                 unreadMentionCount: unseenMentionIDs.count,
                                 onTap: { onScrollToMention() }
                             )
                             .transition(.scale.combined(with: .opacity))
                         }
 
-                        ScrollToBottomFAB(
+                        ScrollToBottomButton(
                             isVisible: !isAtBottom,
                             unreadCount: unreadCount,
                             onTap: { scrollToBottomRequest += 1 }
@@ -521,45 +514,49 @@ private struct ChatMessagesContent: View {
                 contactName: contact.displayName,
                 deviceName: deviceName,
                 configuration: .directMessage,
-                showTimestamp: item.showTimestamp,
-                showDirectionGap: item.showDirectionGap,
-                showSenderName: item.showSenderName,
-                showNewMessagesDivider: item.showNewMessagesDivider,
-                previewState: item.previewState,
-                loadedPreview: item.loadedPreview,
-                isImageURL: item.isImageURL,
-                decodedImage: viewModel.decodedImage(for: message.id),
-                isGIF: viewModel.isGIFImage(for: message.id),
-                showInlineImages: showInlineImages,
-                autoPlayGIFs: autoPlayGIFs,
-                onRetry: {
-                    logger.info("retryMessage called for message: \(message.id)")
-                    Task { await viewModel.retryMessage(message) }
-                },
-                onLongPress: { selectedMessageForActions = message },
-                onImageTap: {
-                    if let data = viewModel.imageData(for: message.id) {
-                        imageViewerData = ImageViewerData(
-                            imageData: data,
-                            isGIF: false
-                        )
+                displayState: MessageDisplayState(
+                    showTimestamp: item.showTimestamp,
+                    showDirectionGap: item.showDirectionGap,
+                    showSenderName: item.showSenderName,
+                    showNewMessagesDivider: item.showNewMessagesDivider,
+                    previewState: item.previewState,
+                    loadedPreview: item.loadedPreview,
+                    isImageURL: item.isImageURL,
+                    decodedImage: viewModel.decodedImage(for: message.id),
+                    isGIF: viewModel.isGIFImage(for: message.id),
+                    showInlineImages: showInlineImages,
+                    autoPlayGIFs: autoPlayGIFs
+                ),
+                callbacks: MessageBubbleCallbacks(
+                    onRetry: {
+                        logger.info("retryMessage called for message: \(message.id)")
+                        Task { await viewModel.retryMessage(message) }
+                    },
+                    onLongPress: { selectedMessageForActions = message },
+                    onImageTap: {
+                        if let data = viewModel.imageData(for: message.id) {
+                            imageViewerData = ImageViewerData(
+                                imageData: data,
+                                isGIF: false
+                            )
+                        }
+                    },
+                    onRetryImageFetch: {
+                        Task { await viewModel.retryImageFetch(for: message.id) }
+                    },
+                    onRequestPreviewFetch: {
+                        if item.isImageURL && showInlineImages {
+                            viewModel.requestImageFetch(for: message.id, showInlineImages: showInlineImages)
+                        } else {
+                            viewModel.requestPreviewFetch(for: message.id)
+                        }
+                    },
+                    onManualPreviewFetch: {
+                        Task {
+                            await viewModel.manualFetchPreview(for: message.id)
+                        }
                     }
-                },
-                onRetryImageFetch: {
-                    Task { await viewModel.retryImageFetch(for: message.id) }
-                },
-                onRequestPreviewFetch: {
-                    if item.isImageURL && showInlineImages {
-                        viewModel.requestImageFetch(for: message.id, showInlineImages: showInlineImages)
-                    } else {
-                        viewModel.requestPreviewFetch(for: message.id)
-                    }
-                },
-                onManualPreviewFetch: {
-                    Task {
-                        await viewModel.manualFetchPreview(for: message.id)
-                    }
-                }
+                )
             )
         } else {
             Text(L10n.Chats.Chats.Message.unavailable)

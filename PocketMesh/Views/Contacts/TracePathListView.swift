@@ -20,11 +20,31 @@ struct TracePathListView: View {
     @State private var codeInputError: String?
     @State private var pastedSuccessfully = false
     @AppStorage("tracePathShowOnlyFavorites") private var showOnlyFavorites = false
+    @AppStorage("tracePathIncludeRooms") private var includeRooms = false
+    @AppStorage("tracePathIncludeDiscovered") private var includeDiscovered = false
 
-    private var filteredRepeaters: [ContactDTO] {
-        showOnlyFavorites
-            ? viewModel.availableRepeaters.filter(\.isFavorite)
-            : viewModel.availableRepeaters
+    private var filteredNodes: [PickerNode] {
+        var nodes: [PickerNode] = viewModel.availableRepeaters.map { .contact($0) }
+        if includeRooms {
+            nodes += viewModel.availableRooms.map { .contact($0) }
+        }
+        if includeDiscovered {
+            let contactKeys = Set(nodes.compactMap {
+                if case .contact(let c) = $0 { c.publicKey } else { nil }
+            })
+            nodes += viewModel.discoveredRepeaters
+                .filter { !contactKeys.contains($0.publicKey) }
+                .map { .discovered($0) }
+        }
+        if showOnlyFavorites {
+            nodes = nodes.filter {
+                switch $0 {
+                case .contact(let c): c.isFavorite
+                case .discovered: false
+                }
+            }
+        }
+        return nodes
     }
 
     var body: some View {
@@ -105,8 +125,12 @@ struct TracePathListView: View {
         Section {
             DisclosureGroup(isExpanded: $isRepeatersExpanded) {
                 Toggle(L10n.Contacts.Contacts.Trace.List.favoritesOnly, isOn: $showOnlyFavorites)
+                Toggle(L10n.Contacts.Contacts.Trace.List.includeRooms, isOn: $includeRooms)
+                if !showOnlyFavorites {
+                    Toggle(L10n.Contacts.Contacts.Trace.List.includeDiscovered, isOn: $includeDiscovered)
+                }
 
-                if filteredRepeaters.isEmpty {
+                if filteredNodes.isEmpty {
                     if showOnlyFavorites {
                         ContentUnavailableView(
                             L10n.Contacts.Contacts.Trace.List.NoFavorites.title,
@@ -121,38 +145,51 @@ struct TracePathListView: View {
                         )
                     }
                 } else {
-                    ForEach(filteredRepeaters) { repeater in
+                    ForEach(filteredNodes) { node in
                         Button {
-                            recentlyAddedRepeaterID = repeater.id
+                            recentlyAddedRepeaterID = node.id
                             addHapticTrigger += 1
-                            viewModel.addRepeater(repeater)
+                            viewModel.addNode(node.underlying)
                         } label: {
                             HStack {
                                 VStack(alignment: .leading) {
-                                    Text(repeater.displayName)
-                                    Text(repeater.publicKey.hexString())
+                                    HStack {
+                                        Text(node.displayName)
+                                        if node.isRoom {
+                                            NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.room, color: .orange)
+                                        }
+                                        if node.isDiscovered {
+                                            NodeKindBadge(text: L10n.Contacts.Contacts.NodeKind.discovered, color: .blue)
+                                        }
+                                    }
+                                    Text(node.publicKeyHex)
                                         .font(.caption.monospaced())
                                         .foregroundStyle(.secondary)
                                         .lineLimit(1)
                                         .truncationMode(.middle)
                                 }
                                 Spacer()
-                                Image(systemName: recentlyAddedRepeaterID == repeater.id ? "checkmark.circle.fill" : "plus.circle")
-                                    .foregroundStyle(recentlyAddedRepeaterID == repeater.id ? Color.green : Color.accentColor)
+                                Image(systemName: recentlyAddedRepeaterID == node.id ? "checkmark.circle.fill" : "plus.circle")
+                                    .foregroundStyle(recentlyAddedRepeaterID == node.id ? Color.green : Color.accentColor)
                                     .contentTransition(.symbolEffect(.replace))
                             }
                         }
-                        .id(repeater.id)
+                        .id(node.id)
                         .foregroundStyle(.primary)
-                        .accessibilityLabel(L10n.Contacts.Contacts.PathEdit.addToPath(repeater.displayName))
+                        .accessibilityLabel(L10n.Contacts.Contacts.PathEdit.addToPath(node.displayName))
                     }
                 }
             } label: {
                 HStack {
                     Text(L10n.Contacts.Contacts.Trace.List.repeaters)
                     Spacer()
-                    Text("\(filteredRepeaters.count)")
+                    Text("\(filteredNodes.count)")
                         .foregroundStyle(.secondary)
+                }
+            }
+            .onChange(of: showOnlyFavorites) { _, newValue in
+                if newValue {
+                    includeDiscovered = false
                 }
             }
         }
@@ -312,53 +349,5 @@ struct TracePathListView: View {
             }
         }
         .listSectionSeparator(.hidden)
-    }
-}
-
-// MARK: - Path Hop Row
-
-struct TracePathHopRow: View {
-    let hop: PathHop
-    let hopNumber: Int
-
-    var body: some View {
-        VStack(alignment: .leading) {
-            if let name = hop.resolvedName {
-                Text(name)
-                Text(hop.hashByte.hexString)
-                    .font(.caption.monospaced())
-                    .foregroundStyle(.secondary)
-            } else {
-                Text(hop.hashByte.hexString)
-                    .font(.body.monospaced())
-            }
-        }
-        .frame(minHeight: 44)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(L10n.Contacts.Contacts.Trace.List.hopLabel(hopNumber, hop.resolvedName ?? hop.hashByte.hexString))
-        .accessibilityHint(L10n.Contacts.Contacts.Trace.List.hopHint)
-    }
-}
-
-// MARK: - Batch Size Chip
-
-struct BatchSizeChip: View {
-    let size: Int
-    @Binding var selectedSize: Int
-
-    private var isSelected: Bool { selectedSize == size }
-
-    var body: some View {
-        Button {
-            selectedSize = size
-        } label: {
-            Text("\(size)×")
-                .font(.subheadline.weight(.medium))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? Color.accentColor : Color.secondary.opacity(0.2), in: .capsule)
-                .foregroundStyle(isSelected ? .white : .primary)
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -149,7 +149,13 @@ public actor ContactService {
             // On full sync, remove local contacts that no longer exist on device
             if since == nil {
                 let localContacts = try await dataStore.fetchContacts(deviceID: deviceID)
-                for localContact in localContacts where !devicePublicKeys.contains(localContact.publicKey) {
+                let orphans = localContacts.filter { !devicePublicKeys.contains($0.publicKey) }
+                if !orphans.isEmpty {
+                    logger.notice("Full sync prune: \(orphans.count) local contact(s) not found on device (device has \(devicePublicKeys.count), local has \(localContacts.count))")
+                }
+                for localContact in orphans {
+                    let keyPrefix = localContact.publicKey.prefix(4).map { String(format: "%02x", $0) }.joined()
+                    logger.notice("Full sync prune: deleting '\(localContact.name)' [\(keyPrefix)…] (favorite=\(localContact.isFavorite), type=\(localContact.typeRawValue), lastModified=\(localContact.lastModified))")
                     try await dataStore.deleteMessagesForContact(contactID: localContact.id)
                     try await dataStore.deleteContact(id: localContact.id)
                     await cleanupHandler?(localContact.id, .deleted, localContact.publicKey)
@@ -264,7 +270,7 @@ public actor ContactService {
                     publicKey: contact.publicKey,
                     type: contact.type,
                     flags: contact.flags,
-                    outPathLength: -1,  // Flood routing
+                    outPathLength: 0xFF,  // Flood routing
                     outPath: Data(),
                     name: contact.name,
                     lastAdvertTimestamp: contact.lastAdvertTimestamp,
@@ -307,8 +313,8 @@ public actor ContactService {
     ///   - deviceID: The device ID
     ///   - publicKey: The contact's 32-byte public key
     ///   - path: The path data (repeater hashes)
-    ///   - pathLength: The path length (-1 for flood, 0 for direct, >0 for routed)
-    public func setPath(deviceID: UUID, publicKey: Data, path: Data, pathLength: Int8) async throws {
+    ///   - pathLength: Encoded path length byte (0xFF for flood, 0 for direct, >0 for routed)
+    public func setPath(deviceID: UUID, publicKey: Data, path: Data, pathLength: UInt8) async throws {
         // Get current contact to preserve other fields
         guard let existingContact = try await dataStore.fetchContact(deviceID: deviceID, publicKey: publicKey) else {
             throw ContactServiceError.contactNotFound

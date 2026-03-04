@@ -81,6 +81,9 @@ public final class AppState {
     /// Battery monitoring (polling, thresholds, low-battery notifications)
     let batteryMonitor = BatteryMonitor()
 
+    /// Live Activity lifecycle (start/update/stop on Lock Screen and Dynamic Island)
+    let liveActivityManager = LiveActivityManager()
+
     /// Task chain that serializes BLE lifecycle transitions across scene-phase changes.
     /// Do not cancel this task externally -- cancelling breaks the serialization
     /// guarantee because Task<Void, Never>.value returns immediately on cancellation.
@@ -184,8 +187,10 @@ public final class AppState {
 
     /// Initialize on app launch
     func initialize() async {
-        // activate() will trigger onConnectionReady callback if connection succeeds
-        // Notification delegate is set in wireServicesIfConnected() when services become available
+        // Recover any existing Live Activity before activate() so that onConnectionReady
+        // (which fires during activate) finds currentActivity populated and can update it.
+        await liveActivityManager.recoverExistingActivity()
+        liveActivityManager.startObservingEnablement()
         await connectionManager.activate()
         // Check if disconnected pill should show (for fresh launch after termination)
         connectionUI.updateDisconnectedPillState(
@@ -209,6 +214,7 @@ public final class AppState {
             cliToolViewModel?.reset()
             batteryMonitor.stop()
             batteryMonitor.clearThresholds()
+            await liveActivityManager.handleConnectionLost()
             return
         }
 
@@ -232,80 +238,11 @@ public final class AppState {
         // Store syncCoordinator reference
         syncCoordinator = services.syncCoordinator
 
-        // Wire data change callbacks for SwiftUI observation
-        // (actors don't participate in SwiftUI's observation system, so we need callbacks)
-        await services.syncCoordinator.setDataChangeCallbacks(
-            onContactsChanged: { @MainActor [weak self] in
-                self?.contactsVersion += 1
-            },
-            onConversationsChanged: { @MainActor [weak self] in
-                self?.conversationsVersion += 1
-            }
-        )
-
-        // Consume settings service event stream
-        // Updates connectedDevice when settings are changed via SettingsService
-        settingsEventsTask?.cancel()
-        settingsEventsTask = Task { [weak self] in
-            guard let self else { return }
-            for await event in await services.settingsService.events() {
-                switch event {
-                case .deviceUpdated(let selfInfo):
-                    await MainActor.run {
-                        self.connectionManager.updateDevice(from: selfInfo)
-                    }
-                case .autoAddConfigUpdated(let config):
-                    await MainActor.run {
-                        self.connectionManager.updateAutoAddConfig(config)
-                        // Clear storage full flag when overwrite oldest is enabled (bit 0x01)
-                        if config & 0x01 != 0 {
-                            self.connectionUI.isNodeStorageFull = false
-                        }
-                    }
-                case .clientRepeatUpdated(let enabled):
-                    await MainActor.run {
-                        self.connectionManager.updateClientRepeat(enabled)
-                    }
-                case .allowedRepeatFreqUpdated(let ranges):
-                    await MainActor.run {
-                        self.connectionManager.allowedRepeatFreqRanges = ranges
-                    }
-                }
-            }
-        }
-
-        // Wire device update callback for device data changes
-        // Updates connectedDevice when local device settings (like OCV) are changed via DeviceService
-        await services.deviceService.setDeviceUpdateCallback { [weak self] deviceDTO in
-            await MainActor.run {
-                self?.connectionManager.updateDevice(with: deviceDTO)
-            }
-        }
-
-        // Wire contact updated callback for real-time Discover page updates
-        await services.advertisementService.setContactUpdatedHandler { @MainActor [weak self] in
-            self?.contactsVersion += 1
-        }
-
-        // Wire contact deleted cleanup callback
-        // Removes notifications and updates badge when device auto-deletes a contact via 0x8F
-        await services.advertisementService.setContactDeletedCleanupHandler { [weak self] contactID, _ in
-            guard let self else { return }
-            self.logger.info("Overwrite oldest: running cleanup for deleted contact \(contactID) - removing notifications and updating badge")
-            await self.services?.notificationService.removeDeliveredNotifications(forContactID: contactID)
-            await self.services?.notificationService.updateBadgeCount()
-        }
-
-        // Wire message event broadcaster callbacks
-        await messageEventBroadcaster.wireServices(
-            services,
-            onConversationsChanged: { [weak self] in
-                self?.conversationsVersion += 1
-            },
-            onReactionReceived: { [weak self] messageID in
-                await self?.handleReactionNotification(messageID: messageID)
-            }
-        )
+        await wireDataChangeCallbacks(services: services)
+        wireSettingsEventStream(services: services)
+        await wireDeviceUpdateCallbacks(services: services)
+        await wireMessageBroadcasting(services: services)
+        await wireLiveActivityCallbacks(services: services)
 
         // Increment version to trigger UI refresh in views observing this
         servicesVersion += 1
@@ -334,6 +271,146 @@ public final class AppState {
         // Defer battery bootstrap so connection setup is not blocked by device request timeouts.
         batteryMonitor.start(services: services, device: connectedDevice)
 
+    }
+
+    // MARK: - Service Wiring Helpers
+
+    /// Wire data change callbacks for SwiftUI observation
+    /// (actors don't participate in SwiftUI's observation system, so we need callbacks)
+    private func wireDataChangeCallbacks(services: ServiceContainer) async {
+        await services.syncCoordinator.setDataChangeCallbacks(
+            onContactsChanged: { @MainActor [weak self] in
+                self?.contactsVersion += 1
+            },
+            onConversationsChanged: { @MainActor [weak self] in
+                self?.conversationsVersion += 1
+                Task { @MainActor [weak self] in
+                    guard let self, let services = self.services else { return }
+                    let total = await self.totalUnreadCount(from: services)
+                    await self.liveActivityManager.handleUnreadCountChanged(unreadCount: total)
+                }
+            }
+        )
+    }
+
+    /// Consume settings service event stream.
+    /// Updates connectedDevice when settings are changed via SettingsService.
+    private func wireSettingsEventStream(services: ServiceContainer) {
+        settingsEventsTask?.cancel()
+        settingsEventsTask = Task { [weak self] in
+            guard let self else { return }
+            for await event in await services.settingsService.events() {
+                switch event {
+                case .deviceUpdated(let selfInfo):
+                    await MainActor.run {
+                        self.connectionManager.updateDevice(from: selfInfo)
+                    }
+                case .autoAddConfigUpdated(let config):
+                    await MainActor.run {
+                        self.connectionManager.updateAutoAddConfig(config)
+                        // Clear storage full flag when overwrite oldest is enabled (bit 0x01)
+                        if config & 0x01 != 0 {
+                            self.connectionUI.isNodeStorageFull = false
+                        }
+                    }
+                case .clientRepeatUpdated(let enabled):
+                    await MainActor.run {
+                        self.connectionManager.updateClientRepeat(enabled)
+                    }
+                case .pathHashModeUpdated(let mode):
+                    await MainActor.run {
+                        self.connectionManager.updatePathHashMode(mode)
+                    }
+                case .allowedRepeatFreqUpdated(let ranges):
+                    await MainActor.run {
+                        self.connectionManager.allowedRepeatFreqRanges = ranges
+                    }
+                }
+            }
+        }
+    }
+
+    /// Wire device update and contact change callbacks.
+    /// Updates connectedDevice when local device settings (like OCV) are changed via DeviceService,
+    /// and handles contact updates/deletions for real-time Discover page updates.
+    private func wireDeviceUpdateCallbacks(services: ServiceContainer) async {
+        await services.deviceService.setDeviceUpdateCallback { [weak self] deviceDTO in
+            await MainActor.run {
+                self?.connectionManager.updateDevice(with: deviceDTO)
+            }
+        }
+
+        // Wire contact updated callback for real-time Discover page updates
+        await services.advertisementService.setContactUpdatedHandler { @MainActor [weak self] in
+            self?.contactsVersion += 1
+        }
+
+        // Wire contact deleted cleanup callback
+        // Removes notifications and updates badge when device auto-deletes a contact via 0x8F
+        await services.advertisementService.setContactDeletedCleanupHandler { [weak self] contactID, _ in
+            guard let self else { return }
+            self.logger.info("Overwrite oldest: running cleanup for deleted contact \(contactID) - removing notifications and updating badge")
+            await self.services?.notificationService.removeDeliveredNotifications(forContactID: contactID)
+            await self.services?.notificationService.updateBadgeCount()
+        }
+    }
+
+    /// Wire message event broadcaster callbacks for conversation and reaction updates.
+    private func wireMessageBroadcasting(services: ServiceContainer) async {
+        await messageEventBroadcaster.wireServices(
+            services,
+            onConversationsChanged: { [weak self] in
+                self?.conversationsVersion += 1
+                Task { @MainActor [weak self] in
+                    guard let self, let services = self.services else { return }
+                    let total = await self.totalUnreadCount(from: services)
+                    await self.liveActivityManager.handleUnreadCountChanged(unreadCount: total)
+                }
+            },
+            onReactionReceived: { [weak self] messageID in
+                await self?.handleReactionNotification(messageID: messageID)
+            }
+        )
+    }
+
+    /// Wire Live Activity callbacks for RX freshness, battery, and connection lifecycle.
+    private func wireLiveActivityCallbacks(services: ServiceContainer) async {
+        await services.rxLogService.setPacketReceivedHandler { [weak self] in
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                await self.liveActivityManager.handlePacketReceived()
+                if self.liveActivityManager.hasActiveActivity {
+                    await self.batteryMonitor.fetchBatteryIfOverdue(
+                        services: self.services, device: self.connectedDevice
+                    )
+                }
+            }
+        }
+
+        batteryMonitor.onBatteryChanged = { [weak self] battery in
+            Task { @MainActor [weak self] in
+                await self?.liveActivityManager.handleBatteryChanged(battery: battery)
+            }
+        }
+
+        let device = connectedDevice
+        let ocvArray = batteryMonitor.activeBatteryOCVArray(for: device)
+        let unreadCount = await totalUnreadCount(from: services)
+
+        if let device {
+            await liveActivityManager.handleConnectionReady(
+                device: device,
+                ocvArray: ocvArray,
+                unreadCount: unreadCount
+            )
+        }
+    }
+
+    private func totalUnreadCount(from services: ServiceContainer) async -> Int {
+        guard let deviceID = currentDeviceID else { return 0 }
+        let counts = (try? await services.dataStore.getTotalUnreadCounts(deviceID: deviceID))
+            ?? (contacts: 0, channels: 0, rooms: 0)
+        return counts.contacts + counts.channels + counts.rooms
     }
 
     // MARK: - Stale Node Cleanup
@@ -443,6 +520,7 @@ public final class AppState {
     /// - Parameter reason: The reason for disconnecting (for debugging)
     func disconnect(reason: DisconnectReason = .userInitiated) async {
         await connectionManager.disconnect(reason: reason)
+        await liveActivityManager.endActivity()
     }
 
     /// Connect to a device via WiFi/TCP
@@ -500,8 +578,12 @@ public final class AppState {
         activeRecoveryFallbackTask?.cancel()
         activeRecoveryFallbackTask = nil
 
-        // Stop battery refresh - don't poll while UI isn't visible
-        batteryMonitor.stop()
+        liveActivityManager.handleEnterBackground()
+
+        // Keep battery polling alive when the live activity is visible on the lock screen
+        if !liveActivityManager.hasActiveActivity {
+            batteryMonitor.stop()
+        }
 
         // Stop room keepalives to save battery/bandwidth
         Task {
@@ -520,11 +602,11 @@ public final class AppState {
         // Room keepalives are managed by RoomConversationView lifecycle
         // (started on view appear, stopped on disappear, restarted via scenePhase)
 
-        // Check for missed battery thresholds and restart polling if connected
-        if let services {
-            await batteryMonitor.checkMissedBatteryThreshold(device: connectedDevice, services: services)
-            batteryMonitor.startRefreshLoop(services: services, device: connectedDevice)
-        }
+        // Restart decay timer and flush any buffered live activity state
+        liveActivityManager.handleReturnToForeground()
+
+        // Validate live activity is still alive (may have ended while suspended)
+        await liveActivityManager.validateActivityState()
 
         // Check for expired ACKs
         if connectionState == .ready {
@@ -537,6 +619,12 @@ public final class AppState {
 
         // Trigger resync if sync failed while connected
         await connectionManager.checkSyncHealth()
+
+        // Check for missed battery thresholds and restart polling if connected
+        if let services {
+            await batteryMonitor.checkMissedBatteryThreshold(device: connectedDevice, services: services)
+            batteryMonitor.startRefreshLoop(services: services, device: connectedDevice)
+        }
     }
 
     // MARK: - Onboarding
@@ -584,103 +672,112 @@ public final class AppState {
             connectedDevice: { [weak self] in self?.connectedDevice }
         )
 
-        // Quick reply handler
         services.notificationService.onQuickReply = { [weak self] contactID, text in
             guard let self else { return }
-
-            guard let contact = try? await services.dataStore.fetchContact(id: contactID) else { return }
-
-            if self.connectionState == .ready {
-                do {
-                    _ = try await services.messageService.sendDirectMessage(text: text, to: contact)
-
-                    // Clear unread state - user replied so they've seen the chat
-                    try? await services.dataStore.clearUnreadCount(contactID: contactID)
-                    await services.notificationService.removeDeliveredNotifications(forContactID: contactID)
-                    await services.notificationService.updateBadgeCount()
-                    self.syncCoordinator?.notifyConversationsChanged()
-                    return
-                } catch {
-                    // Fall through to draft handling
-                }
-            }
-
-            services.notificationService.saveDraft(for: contactID, text: text)
-            await services.notificationService.postQuickReplyFailedNotification(
-                contactName: contact.displayName,
-                contactID: contactID
-            )
+            await self.handleQuickReply(services: services, contactID: contactID, text: text)
         }
 
-        // Channel quick reply handler
         services.notificationService.onChannelQuickReply = { [weak self] deviceID, channelIndex, text in
             guard let self else { return }
-
-            // Fetch channel for display name in failure notification
-            let channel = try? await services.dataStore.fetchChannel(deviceID: deviceID, index: channelIndex)
-            let channelName = channel?.name ?? "Channel \(channelIndex)"
-
-            guard self.connectionState == .ready else {
-                await services.notificationService.postChannelQuickReplyFailedNotification(
-                    channelName: channelName,
-                    deviceID: deviceID,
-                    channelIndex: channelIndex
-                )
-                return
-            }
-
-            do {
-                _ = try await services.messageService.sendChannelMessage(
-                    text: text,
-                    channelIndex: channelIndex,
-                    deviceID: deviceID
-                )
-
-                // Clear unread state - user replied so they've seen the channel
-                try? await services.dataStore.clearChannelUnreadCount(deviceID: deviceID, index: channelIndex)
-                await services.notificationService.removeDeliveredNotifications(
-                    forChannelIndex: channelIndex,
-                    deviceID: deviceID
-                )
-                await services.notificationService.updateBadgeCount()
-                self.syncCoordinator?.notifyConversationsChanged()
-            } catch {
-                await services.notificationService.postChannelQuickReplyFailedNotification(
-                    channelName: channelName,
-                    deviceID: deviceID,
-                    channelIndex: channelIndex
-                )
-            }
+            await self.handleChannelQuickReply(services: services, deviceID: deviceID, channelIndex: channelIndex, text: text)
         }
 
-        // Mark as read handler
         services.notificationService.onMarkAsRead = { [weak self] contactID, messageID in
             guard let self else { return }
-            do {
-                try await services.dataStore.markMessageAsRead(id: messageID)
-                try await services.dataStore.clearUnreadCount(contactID: contactID)
-                services.notificationService.removeDeliveredNotification(messageID: messageID)
-                await services.notificationService.updateBadgeCount()
-                self.syncCoordinator?.notifyConversationsChanged()
-            } catch {
-                // Silently ignore
-            }
+            await self.handleMarkAsRead(services: services, contactID: contactID, messageID: messageID)
         }
 
-        // Channel mark as read handler
         services.notificationService.onChannelMarkAsRead = { [weak self] deviceID, channelIndex, messageID in
             guard let self else { return }
+            await self.handleChannelMarkAsRead(services: services, deviceID: deviceID, channelIndex: channelIndex, messageID: messageID)
+        }
+    }
+
+    private func handleQuickReply(services: ServiceContainer, contactID: UUID, text: String) async {
+        guard let contact = try? await services.dataStore.fetchContact(id: contactID) else { return }
+
+        if connectionState == .ready {
             do {
-                try await services.dataStore.markMessageAsRead(id: messageID)
-                try await services.dataStore.clearChannelUnreadCount(deviceID: deviceID, index: channelIndex)
-                services.notificationService.removeDeliveredNotification(messageID: messageID)
+                _ = try await services.messageService.sendDirectMessage(text: text, to: contact)
+
+                // Clear unread state - user replied so they've seen the chat
+                try? await services.dataStore.clearUnreadCount(contactID: contactID)
+                await services.notificationService.removeDeliveredNotifications(forContactID: contactID)
                 await services.notificationService.updateBadgeCount()
-                self.syncCoordinator?.notifyConversationsChanged()
+                syncCoordinator?.notifyConversationsChanged()
+                return
             } catch {
-                // Silently ignore
+                // Fall through to draft handling
             }
         }
 
+        services.notificationService.saveDraft(for: contactID, text: text)
+        await services.notificationService.postQuickReplyFailedNotification(
+            contactName: contact.displayName,
+            contactID: contactID
+        )
+    }
+
+    private func handleChannelQuickReply(services: ServiceContainer, deviceID: UUID, channelIndex: UInt8, text: String) async {
+        // Fetch channel for display name in failure notification
+        let channel = try? await services.dataStore.fetchChannel(deviceID: deviceID, index: channelIndex)
+        let channelName = channel?.name ?? "Channel \(channelIndex)"
+
+        guard connectionState == .ready else {
+            await services.notificationService.postChannelQuickReplyFailedNotification(
+                channelName: channelName,
+                deviceID: deviceID,
+                channelIndex: channelIndex
+            )
+            return
+        }
+
+        do {
+            _ = try await services.messageService.sendChannelMessage(
+                text: text,
+                channelIndex: channelIndex,
+                deviceID: deviceID
+            )
+
+            // Clear unread state - user replied so they've seen the channel
+            try? await services.dataStore.clearChannelUnreadCount(deviceID: deviceID, index: channelIndex)
+            await services.notificationService.removeDeliveredNotifications(
+                forChannelIndex: channelIndex,
+                deviceID: deviceID
+            )
+            await services.notificationService.updateBadgeCount()
+            syncCoordinator?.notifyConversationsChanged()
+        } catch {
+            await services.notificationService.postChannelQuickReplyFailedNotification(
+                channelName: channelName,
+                deviceID: deviceID,
+                channelIndex: channelIndex
+            )
+        }
+    }
+
+    private func handleMarkAsRead(services: ServiceContainer, contactID: UUID, messageID: UUID) async {
+        do {
+            try await services.dataStore.markMessageAsRead(id: messageID)
+            try await services.dataStore.clearUnreadCount(contactID: contactID)
+            services.notificationService.removeDeliveredNotification(messageID: messageID)
+            await services.notificationService.updateBadgeCount()
+            syncCoordinator?.notifyConversationsChanged()
+        } catch {
+            // Silently ignore
+        }
+    }
+
+    private func handleChannelMarkAsRead(services: ServiceContainer, deviceID: UUID, channelIndex: UInt8, messageID: UUID) async {
+        do {
+            try await services.dataStore.markMessageAsRead(id: messageID)
+            try await services.dataStore.clearChannelUnreadCount(deviceID: deviceID, index: channelIndex)
+            services.notificationService.removeDeliveredNotification(messageID: messageID)
+            await services.notificationService.updateBadgeCount()
+            syncCoordinator?.notifyConversationsChanged()
+        } catch {
+            // Silently ignore
+        }
     }
 
     /// Handle posting a notification when someone reacts to the user's message

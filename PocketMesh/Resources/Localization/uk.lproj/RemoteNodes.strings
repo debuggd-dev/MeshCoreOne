@@ -157,6 +157,21 @@
 /* Location: RepeaterSettingsView.swift - Apply identity settings button */
 "remoteNodes.settings.applyIdentitySettings" = "Застосувати налаштування ідентифікації";
 
+/* Location: RepeaterSettingsView.swift - Contact info section title */
+"remoteNodes.settings.contactInfo" = "Контактна інформація";
+
+/* Location: RepeaterSettingsView.swift - Contact info placeholder */
+"remoteNodes.settings.contactInfoPlaceholder" = "Частота, ім'я оператора, вебсайт...";
+
+/* Location: RepeaterSettingsView.swift - Contact info footer */
+"remoteNodes.settings.contactInfoFooter" = "Публічні контактні дані, видимі іншим вузлам. Використовуйте переноси рядків для розділення полів.";
+
+/* Location: RepeaterSettingsView.swift - Apply contact info button */
+"remoteNodes.settings.applyContactInfo" = "Застосувати контактну інформацію";
+
+/* Location: RepeaterSettingsView.swift - Contact info character count format */
+"remoteNodes.settings.contactInfoCharCount" = "%d/119";
+
 /* Location: RepeaterSettingsView.swift - Behavior section title */
 "remoteNodes.settings.behavior" = "Поведінка";
 
@@ -198,6 +213,18 @@
 
 /* Location: RepeaterSettingsView.swift - Security footer text */
 "remoteNodes.settings.securityFooter" = "Змінити пароль автентифікації адміністратора.";
+
+/* Location: RepeaterSettingsView.swift - Device info section footer */
+"remoteNodes.settings.deviceInfoFooter" = "Версія прошивки та годинник пристрою.";
+
+/* Location: RepeaterSettingsView.swift - Radio settings section footer */
+"remoteNodes.settings.radioFooter" = "Частота, смуга пропускання, коефіцієнт розширення, швидкість кодування та потужність передачі.";
+
+/* Location: RepeaterSettingsView.swift - Identity section footer */
+"remoteNodes.settings.identityFooter" = "Назва ретранслятора та GPS-координати для відображення на карті.";
+
+/* Location: RepeaterSettingsView.swift - Behavior section footer */
+"remoteNodes.settings.behaviorFooter" = "Інтервали оголошень, переходи розсилки та режим ретранслятора.";
 
 /* Location: RepeaterSettingsView.swift - Device actions section header */
 "remoteNodes.settings.deviceActions" = "Дії з пристроєм";
@@ -512,6 +539,9 @@
 
 /* Location: RoomConversationView.swift - Public key label */
 "remoteNodes.room.publicKey" = "Публічний ключ";
+
+/* Location: RoomConversationView.swift - Room reconnected status */
+"remoteNodes.room.reconnected" = "Кімнату перепідключено";
 
 /* Location: RoomConversationView.swift - Disconnected banner text */
 "remoteNodes.room.disconnectedBanner" = "Disconnected";

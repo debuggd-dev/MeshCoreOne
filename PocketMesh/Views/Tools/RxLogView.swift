@@ -29,6 +29,10 @@ struct RxLogView: View {
         .task(id: appState.servicesVersion) {
             guard let service = appState.services?.rxLogService else { return }
             await viewModel.subscribe(to: service)
+            await loadNodeNames()
+        }
+        .onChange(of: appState.contactsVersion) {
+            Task { await loadNodeNames() }
         }
         .onDisappear {
             viewModel.unsubscribe()
@@ -63,7 +67,8 @@ struct RxLogView: View {
                         entry: entry,
                         isExpanded: expandedBinding(for: entry.packetHash),
                         groupCount: groupDuplicates ? viewModel.groupCounts[entry.packetHash, default: 1] : 1,
-                        localPublicKeyPrefix: appState.connectedDevice?.publicKeyPrefix
+                        localPublicKeyPrefix: appState.connectedDevice?.publicKeyPrefix,
+                        nodeNames: viewModel.nodeNames
                     )
                 }
             } header: {
@@ -227,6 +232,12 @@ struct RxLogView: View {
         }
         expandedHashes.removeAll()
     }
+
+    private func loadNodeNames() async {
+        guard let dataStore = appState.services?.dataStore,
+              let deviceID = appState.currentDeviceID else { return }
+        await viewModel.loadNodeNames(from: dataStore, deviceID: deviceID)
+    }
 }
 
 // MARK: - Row View
@@ -236,6 +247,7 @@ struct RxLogRowView: View {
     @Binding var isExpanded: Bool
     let groupCount: Int
     let localPublicKeyPrefix: Data?
+    let nodeNames: [Data: String]
 
     var body: some View {
         DisclosureGroup(isExpanded: $isExpanded) {
@@ -274,12 +286,13 @@ struct RxLogRowView: View {
                 Text(pathDisplayString)
                     .font(.caption)
                     .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
 
-                // Direct message payload format: [dest: 1B] [src: 1B] [MAC + encrypted]
-                if isDirectTextMessage, entry.packetPayload.count >= 2 {
+                if isDirectTextMessage, let sender = entry.senderPrefix, let recipient = entry.recipientPrefix {
                     Text("·")
                         .foregroundStyle(.tertiary)
-                    Text("<\(String(format: "%02x", entry.packetPayload[1]))> → <\(String(format: "%02x", entry.packetPayload[0]))>")
+                    Text("\(resolveHashLabel(sender)) → \(resolveHashLabel(recipient))")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -320,45 +333,81 @@ struct RxLogRowView: View {
 
     // MARK: - Path Display
 
+    private var isTrace: Bool {
+        entry.payloadType == .trace
+    }
+
     private var pathDisplayString: String {
-        if entry.pathLength == 0 {
+        if entry.pathNodes.isEmpty {
             return L10n.Tools.Tools.RxLog.direct
         }
 
-        var parts: [String] = []
-        for byte in entry.pathNodes {
-            let hex = String(format: "%02X", byte)
-            // Check if this is the local device
-            if let prefix = localPublicKeyPrefix, prefix.first == byte {
-                parts.append("YOU")
-            } else {
-                parts.append(hex)
+        if isTrace {
+            let routeParts = traceRouteIdParts
+            if !routeParts.isEmpty {
+                return truncatedJoin(routeParts, separator: " → ")
             }
+            let count = entry.pathNodes.count
+            let hopLabel = count == 1 ? L10n.Tools.Tools.RxLog.hopSingular : L10n.Tools.Tools.RxLog.hopPlural
+            return "\(count) \(hopLabel)"
         }
 
-        // Truncate long paths: show first 3 + ellipsis + last 3
-        if parts.count > 6 {
-            let first = parts.prefix(3).joined(separator: " → ")
-            let last = parts.suffix(3).joined(separator: " → ")
-            return "\(first) → … → \(last)"
-        }
-
-        return parts.joined(separator: " → ")
+        return truncatedJoin(hopIdParts, separator: " → ")
     }
 
     private var pathDetailString: String {
-        if entry.pathLength == 0 {
+        if entry.pathNodes.isEmpty {
             return L10n.Tools.Tools.RxLog.direct
         }
-
-        let hopCount = Int(entry.pathLength)
+        let hopCount = entry.hopCount
         let hopLabel = hopCount == 1 ? L10n.Tools.Tools.RxLog.hopSingular : L10n.Tools.Tools.RxLog.hopPlural
-        let nodes = entry.pathNodes.map { String(format: "%02X", $0) }.joined(separator: ", ")
-        return "\(hopCount) \(hopLabel) [\(nodes)]"
+        return "\(hopCount) \(hopLabel) [\(hopIdParts.joined(separator: ", "))]"
+    }
+
+    /// For TRACE packets: public key prefix IDs from traceTargetHashes.
+    private var traceRouteIdParts: [String] {
+        guard let targetHashes = entry.traceTargetHashes else { return [] }
+        return targetHashes.map { $0.hexString() }
+    }
+
+    /// For non-TRACE packets: public key prefix IDs for each hop, chunked by hashSize.
+    private var hopIdParts: [String] {
+        let hashSize = entry.pathHashSize
+        return stride(from: 0, to: entry.pathNodes.count, by: hashSize).map { start in
+            let end = min(start + hashSize, entry.pathNodes.count)
+            let chunk = entry.pathNodes[start..<end]
+
+            // Check if this hop is the local device
+            if let prefix = localPublicKeyPrefix, prefix.prefix(chunk.count) == chunk {
+                return L10n.Tools.Tools.RxLog.pathYou
+            }
+
+            return Data(chunk).hexString()
+        }
+    }
+
+    /// Join parts with separator, truncating to first 3 … last 3 if > 6 elements.
+    private func truncatedJoin(_ parts: [String], separator: String) -> String {
+        if parts.count > 6 {
+            let first = parts.prefix(3).joined(separator: separator)
+            let last = parts.suffix(3).joined(separator: separator)
+            return "\(first) \(separator) … \(separator) \(last)"
+        }
+        return parts.joined(separator: separator)
     }
 
     private var isDirectTextMessage: Bool {
         (entry.routeType == .direct || entry.routeType == .tcDirect) && entry.payloadType == .textMessage
+    }
+
+    private func resolveHashLabel(_ hashBytes: Data) -> String {
+        if let prefix = localPublicKeyPrefix, prefix.prefix(hashBytes.count) == hashBytes {
+            return L10n.Tools.Tools.RxLog.pathYou
+        }
+        if let name = nodeNames[hashBytes] {
+            return name
+        }
+        return hashBytes.hexString()
     }
 
     // MARK: - Expanded Content
@@ -374,16 +423,21 @@ struct RxLogRowView: View {
 
             DetailRow(label: L10n.Tools.Tools.RxLog.typeLabel, value: entry.payloadType.displayName)
             DetailRow(label: L10n.Tools.Tools.RxLog.sizeLabel, value: "\(entry.rawPayload.count) \(L10n.Tools.Tools.RxLog.bytes)")
-            DetailRow(label: L10n.Tools.Tools.RxLog.pathLabel, value: pathDetailString, wrapping: true)
+
+            if isTrace {
+                let idParts = traceRouteIdParts
+                if !idParts.isEmpty {
+                    DetailRow(label: L10n.Tools.Tools.RxLog.traceRouteLabel, value: idParts.joined(separator: " → "), wrapping: true)
+                }
+            } else {
+                DetailRow(label: L10n.Tools.Tools.RxLog.pathLabel, value: pathDetailString, wrapping: true)
+            }
+
             DetailRow(label: L10n.Tools.Tools.RxLog.hashLabel, value: entry.packetHash, truncate: true)
 
-            // Direct message: show sender and recipient
-            // Payload format: [dest: 1B] [src: 1B] [MAC + encrypted content]
-            if isDirectTextMessage, entry.packetPayload.count >= 2 {
-                let destByte = entry.packetPayload[0]  // recipient
-                let srcByte = entry.packetPayload[1]   // sender
-                DetailRow(label: L10n.Tools.Tools.RxLog.fromLabel, value: "<\(String(format: "%02x", srcByte))>")
-                DetailRow(label: L10n.Tools.Tools.RxLog.toLabel, value: "<\(String(format: "%02x", destByte))>")
+            if isDirectTextMessage, let sender = entry.senderPrefix, let recipient = entry.recipientPrefix {
+                DetailRow(label: L10n.Tools.Tools.RxLog.fromLabel, value: resolveHashLabel(sender))
+                DetailRow(label: L10n.Tools.Tools.RxLog.toLabel, value: resolveHashLabel(recipient))
             }
 
             // Channel message: show channel info
@@ -477,16 +531,6 @@ private struct RawPayloadSection: View {
 }
 
 // MARK: - Glass Effect Modifiers
-
-private struct GlassButtonModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        if #available(iOS 26.0, *) {
-            content.buttonStyle(.glass)
-        } else {
-            content
-        }
-    }
-}
 
 private struct GlassEffectModifier: ViewModifier {
     func body(content: Content) -> some View {

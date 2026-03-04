@@ -1277,10 +1277,20 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     ///
     /// This replaces the device's cryptographic identity. Use with caution.
     ///
-    /// - Parameter key: The 32-byte private key to import.
-    /// - Throws: ``MeshCoreError/timeout`` or ``MeshCoreError/deviceError(code:)`` on failure.
+    /// - Parameter key: The 64-byte expanded private key to import.
+    /// - Throws: ``MeshCoreError/featureDisabled`` if the device does not support key import,
+    ///   ``MeshCoreError/timeout`` or ``MeshCoreError/deviceError(code:)`` on failure.
     public func importPrivateKey(_ key: Data) async throws {
-        try await sendSimpleCommand(PacketBuilder.importPrivateKey(key))
+        let succeeded: Bool = try await sendAndWaitWithError(
+            PacketBuilder.importPrivateKey(key)
+        ) { event in
+            if case .ok = event { return true }
+            if case .disabled = event { return false }
+            return nil
+        }
+        if !succeeded {
+            throw MeshCoreError.featureDisabled
+        }
     }
 
     // MARK: - Stats Commands
@@ -1382,7 +1392,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     ///   - publicKey: The full 32-byte public key.
     ///   - type: Contact type identifier.
     ///   - flags: Contact flags for capabilities and permissions.
-    ///   - outPathLength: Length of the outbound path, or -1 for flood.
+    ///   - outPathLength: Encoded outbound path length byte, or `0xFF` for flood.
     ///   - outPath: The routing path (up to 64 bytes).
     ///   - advertisedName: The contact's advertised name.
     ///   - lastAdvertisement: Timestamp of last received advertisement.
@@ -1393,7 +1403,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         publicKey: Data,
         type: ContactType,
         flags: ContactFlags,
-        outPathLength: Int8,
+        outPathLength: UInt8,
         outPath: Data,
         advertisedName: String,
         lastAdvertisement: Date,
@@ -1404,7 +1414,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         data.append(publicKey.prefix(PacketBuilder.publicKeySize))
         data.append(type.rawValue)
         data.append(flags.rawValue)
-        data.append(UInt8(bitPattern: outPathLength))
+        data.append(outPathLength)
 
         var pathData = outPath.prefix(64)
         while pathData.count < 64 {
@@ -1454,9 +1464,15 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     /// - Parameters:
     ///   - contact: The contact to modify.
     ///   - path: The new routing path, or empty data to reset to flood.
+    ///   - hashSize: Bytes per path hop (1, 2, or 3). Defaults to 1 for backward compatibility.
     /// - Throws: ``MeshCoreError/timeout`` or ``MeshCoreError/deviceError(code:)`` on failure.
-    public func changeContactPath(_ contact: MeshContact, path: Data) async throws {
-        let pathLength: Int8 = path.isEmpty ? -1 : Int8(min(path.count, 64))
+    public func changeContactPath(_ contact: MeshContact, path: Data, hashSize: UInt8 = 1) async throws {
+        let pathLength: UInt8
+        if path.isEmpty {
+            pathLength = 0xFF
+        } else {
+            pathLength = encodePathLen(hashSize: Int(hashSize), hopCount: path.count / Int(hashSize))
+        }
         try await updateContact(
             publicKey: contact.publicKey,
             type: contact.type,
@@ -1713,6 +1729,14 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     /// - Throws: ``MeshCoreError/timeout`` or ``MeshCoreError/deviceError(code:)`` on failure.
     public func setFloodScope(_ scope: FloodScope) async throws {
         try await setFloodScope(scopeKey: scope.scopeKey())
+    }
+
+    /// Sets the path hash mode on the device.
+    ///
+    /// - Parameter mode: Hash mode (0=1-byte, 1=2-byte, 2=3-byte hashes).
+    /// - Throws: ``MeshCoreError/timeout`` or ``MeshCoreError/deviceError(code:)`` on failure.
+    public func setPathHashMode(_ mode: UInt8) async throws {
+        try await sendSimpleCommand(PacketBuilder.setPathHashMode(mode))
     }
 
     // MARK: - Channel Commands

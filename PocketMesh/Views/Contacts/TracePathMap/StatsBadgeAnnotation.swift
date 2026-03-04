@@ -4,13 +4,13 @@ import MapKit
 final class StatsBadgeAnnotation: NSObject, MKAnnotation {
     let coordinate: CLLocationCoordinate2D
     let distanceMeters: Double
-    let snrDB: Double
+    let snr: Double
     let segmentIndex: Int
 
-    init(coordinate: CLLocationCoordinate2D, distanceMeters: Double, snrDB: Double, segmentIndex: Int) {
+    init(coordinate: CLLocationCoordinate2D, distanceMeters: Double, snr: Double, segmentIndex: Int) {
         self.coordinate = coordinate
         self.distanceMeters = distanceMeters
-        self.snrDB = snrDB
+        self.snr = snr
         self.segmentIndex = segmentIndex
         super.init()
     }
@@ -27,7 +27,7 @@ final class StatsBadgeAnnotation: NSObject, MKAnnotation {
 
     /// Formatted SNR string (e.g., "8 dB")
     var snrString: String {
-        "\(snrDB.formatted(.number.precision(.fractionLength(0)))) dB"
+        "\(snr.formatted(.number.precision(.fractionLength(0)))) dB"
     }
 
     /// Combined display string

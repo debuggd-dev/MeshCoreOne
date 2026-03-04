@@ -22,8 +22,14 @@ public final class BatteryMonitor {
     /// Thresholds that have already triggered a notification this session
     private var notifiedBatteryThresholds: Set<Int> = []
 
+    /// Tracks last successful battery fetch for background piggybacking
+    private var lastSuccessfulFetchDate: Date?
+
     /// Battery warning threshold levels (percentage)
     private let batteryWarningThresholds = [20, 10, 5]
+
+    /// Called when battery info is updated, for Live Activity
+    var onBatteryChanged: ((_ battery: BatteryInfo) -> Void)?
 
     /// The active OCV array for the connected device
     func activeBatteryOCVArray(for device: DeviceDTO?) -> [Int] {
@@ -38,10 +44,24 @@ public final class BatteryMonitor {
 
         do {
             deviceBattery = try await settingsService.getBattery()
+            lastSuccessfulFetchDate = .now
+            if let battery = deviceBattery {
+                onBatteryChanged?(battery)
+            }
             await checkBatteryThresholds(device: device, services: services)
         } catch {
             deviceBattery = nil
         }
+    }
+
+    private static let backgroundBatteryInterval: TimeInterval = 900
+
+    /// Fetch battery only if enough time has passed since last successful fetch.
+    /// Called from packet reception handler to piggyback on active BLE wake-ups.
+    func fetchBatteryIfOverdue(services: ServiceContainer?, device: DeviceDTO?) async {
+        if let last = lastSuccessfulFetchDate,
+           Date.now.timeIntervalSince(last) < Self.backgroundBatteryInterval { return }
+        await fetchDeviceBattery(services: services, device: device)
     }
 
     /// Start battery monitoring for a newly connected device.
@@ -52,6 +72,10 @@ public final class BatteryMonitor {
 
             do {
                 self.deviceBattery = try await services.settingsService.getBattery()
+                self.lastSuccessfulFetchDate = .now
+                if let battery = self.deviceBattery {
+                    self.onBatteryChanged?(battery)
+                }
             } catch {
                 self.logger.debug("Deferred battery bootstrap failed: \(error.localizedDescription, privacy: .public)")
                 self.deviceBattery = nil
@@ -86,6 +110,9 @@ public final class BatteryMonitor {
 
         do {
             deviceBattery = try await settingsService.getBattery()
+            if let battery = deviceBattery {
+                onBatteryChanged?(battery)
+            }
         } catch {
             return
         }

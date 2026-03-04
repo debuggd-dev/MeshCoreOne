@@ -70,7 +70,7 @@ final class StatsBadgeView: MKAnnotationView {
 
         // Accessibility
         isAccessibilityElement = true
-        accessibilityLabel = "Distance: \(annotation.distanceString), Signal: \(Int(annotation.snrDB)) decibels"
+        accessibilityLabel = "Distance: \(annotation.distanceString), Signal: \(Int(annotation.snr)) decibels"
         accessibilityTraits = .staticText
     }
 

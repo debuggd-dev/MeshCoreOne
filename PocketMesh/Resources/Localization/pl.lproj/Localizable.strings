@@ -190,3 +190,24 @@
 
 /* Status pill message when sync has failed */
 "statusPill.syncFailed" = "Sync nieudany";
+
+
+// MARK: - Additional Accessibility
+
+/* Accessibility label for off state */
+"accessibility.off" = "Wył.";
+
+/* Accessibility label for on state */
+"accessibility.on" = "Wł.";
+
+
+// MARK: - Rate Limiting
+
+/* Error message when rate limited */
+"common.error.rateLimited" = "Zbyt wiele żądań. Spróbuj ponownie za chwilę.";
+
+
+// MARK: - Reaction Notifications
+
+/* Notification body for a reaction - %1$@ is emoji, %2$@ is message text */
+"notifications.reaction.body" = "Zareagował(a) %1$@ na Twoją wiadomość: \"%2$@\"";

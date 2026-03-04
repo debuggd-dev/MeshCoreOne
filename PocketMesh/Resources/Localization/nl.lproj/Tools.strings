@@ -24,7 +24,7 @@
 "tools.noiseFloor" = "Ruisvloer";
 
 /* Location: ToolsView.swift - Tool selection label */
-"tools.nodeDiscovery" = "Discover Nodes";
+"tools.nodeDiscovery" = "Knooppunten ontdekken";
 
 /* Location: ToolsView.swift - Empty state when no tool selected */
 "tools.selectTool" = "Selecteer een hulpmiddel";
@@ -150,6 +150,12 @@
 /* Location: RxLogViewModel.swift - Decrypt filter: failed */
 "tools.rxLog.filter.failed" = "Mislukt";
 
+/* Location: RxLogRowView - Label for local device in path display */
+"tools.rxLog.pathYou" = "Jij";
+
+/* Location: RxLogRowView - Route label for TRACE target hashes */
+"tools.rxLog.traceRouteLabel" = "Route:";
+
 // MARK: - Noise Floor View
 
 /* Location: NoiseFloorView.swift - Disconnected state description */
@@ -229,46 +235,46 @@
 // MARK: - Node Discovery View
 
 /* Location: NodeDiscoveryView.swift - Disconnected state description */
-"tools.nodeDiscovery.notConnectedDescription" = "Connect to a mesh radio to discover %@.";
+"tools.nodeDiscovery.notConnectedDescription" = "Verbind met een mesh-radio om %@ te ontdekken.";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state title */
-"tools.nodeDiscovery.scanPrompt" = "Scan for %@";
+"tools.nodeDiscovery.scanPrompt" = "Zoek naar %@";
 
 /* Location: NodeDiscoveryView.swift - Initial empty state description */
-"tools.nodeDiscovery.scanPromptDescription" = "Tap the button below to discover nearby %@.";
+"tools.nodeDiscovery.scanPromptDescription" = "Tik op de knop hieronder om nabijgelegen %@ te ontdekken.";
 
 /* Location: NodeDiscoveryView.swift - No results empty state title */
-"tools.nodeDiscovery.noResults" = "No %@ Found";
+"tools.nodeDiscovery.noResults" = "Geen %@ gevonden";
 
 /* Location: NodeDiscoveryView.swift - No results empty state description */
-"tools.nodeDiscovery.noResultsDescription" = "No %@ responded to the discovery ping. Try again or move closer to the mesh.";
+"tools.nodeDiscovery.noResultsDescription" = "Geen %@ heeft gereageerd op de ontdekkingsping. Probeer het opnieuw of ga dichter bij het mesh-netwerk.";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (idle) */
-"tools.nodeDiscovery.scanButton" = "Scan for %@";
+"tools.nodeDiscovery.scanButton" = "Zoek naar %@";
 
 /* Location: NodeDiscoveryView.swift - Scan button label (scanning) */
-"tools.nodeDiscovery.stopButton" = "Stop Scanning";
+"tools.nodeDiscovery.stopButton" = "Zoeken stoppen";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
 "tools.nodeDiscovery.repeaters" = "Repeaters";
 
 /* Location: NodeDiscoveryView.swift - Segment label */
-"tools.nodeDiscovery.sensors" = "Sensors";
+"tools.nodeDiscovery.sensors" = "Sensoren";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortSignal" = "Signal Strength";
+"tools.nodeDiscovery.sortSignal" = "Signaalsterkte";
 
 /* Location: NodeDiscoveryView.swift - Sort option */
-"tools.nodeDiscovery.sortName" = "Name";
+"tools.nodeDiscovery.sortName" = "Naam";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility label */
-"tools.nodeDiscovery.sortMenu" = "Sort nodes";
+"tools.nodeDiscovery.sortMenu" = "Knooppunten sorteren";
 
 /* Location: NodeDiscoveryView.swift - Sort menu accessibility hint */
-"tools.nodeDiscovery.sortMenuHint" = "Changes the sort order of discovered nodes";
+"tools.nodeDiscovery.sortMenuHint" = "Wijzigt de sorteervolgorde van ontdekte knooppunten";
 
 /* Location: NodeDiscoveryRowView.swift - Unknown node name fallback */
-"tools.nodeDiscovery.unknownNode" = "Unknown";
+"tools.nodeDiscovery.unknownNode" = "Onbekend";
 
 /* Location: NodeDiscoveryRowView.swift - Node type: repeater */
 "tools.nodeDiscovery.typeRepeater" = "Repeater";
@@ -286,7 +292,7 @@
 "tools.nodeDiscovery.rssi" = "RSSI %@ dBm";
 
 /* Location: NodeDiscoveryView.swift - Error alert title */
-"tools.nodeDiscovery.errorTitle" = "Scan Failed";
+"tools.nodeDiscovery.errorTitle" = "Zoeken mislukt";
 
 // MARK: - Line of Sight View
 
@@ -421,6 +427,15 @@
 
 /* Location: LineOfSightViewModel.swift - Dropped pin display name */
 "tools.lineOfSight.droppedPin" = "Geplaatste speld";
+
+/* Location: LineOfSightView.swift - Accessibility hint for repeater pin */
+"tools.lineOfSight.repeaterPin.accessibilityHint" = "Tik twee keer om als analysepunt te selecteren";
+
+/* Location: LineOfSightView.swift - Accessibility hint for point pin */
+"tools.lineOfSight.pointPin.accessibilityHint" = "Zichtlijn-analysepunt";
+
+/* Location: LineOfSightView.swift - Accessibility hint for repeater target */
+"tools.lineOfSight.repeaterTarget.accessibilityHint" = "Repeater-plaatsingsmarkering";
 
 // MARK: - Terrain Profile Canvas
 

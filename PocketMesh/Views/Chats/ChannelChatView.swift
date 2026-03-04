@@ -40,6 +40,8 @@ struct ChannelChatView: View {
     @State private var blockSenderContext: BlockSenderContext?
     @State private var recentEmojisStore = RecentEmojisStore()
     @State private var imageViewerData: ImageViewerData?
+    @State private var mentionSenderOrder: [String: UInt32]?
+    @State private var eventCursor: Int?
     @FocusState private var isInputFocused: Bool
 
     @AppStorage("showInlineImages") private var showInlineImages = true
@@ -115,6 +117,9 @@ struct ChannelChatView: View {
         .fullScreenCover(item: $imageViewerData) { data in
             FullScreenImageViewer(data: data)
         }
+        .onAppear {
+            eventCursor = appState.messageEventBroadcaster.currentEventSequence
+        }
         .task(id: appState.servicesVersion) {
             // Capture pending scroll target before loading
             let pendingTarget = appState.navigation.pendingScrollToMessageID
@@ -154,53 +159,55 @@ struct ChannelChatView: View {
                 }
             }
         }
+        .onChange(of: isMentionActive) { _, isActive in
+            if isActive {
+                mentionSenderOrder = viewModel.channelSenderOrder
+            } else {
+                mentionSenderOrder = nil
+            }
+        }
         .onChange(of: appState.messageEventBroadcaster.newMessageCount) { _, _ in
-            switch appState.messageEventBroadcaster.latestEvent {
-            case .channelMessageReceived(let message, let channelIndex)
-                where channelIndex == channel.index && message.deviceID == channel.deviceID:
-                // Optimistic insert: add message immediately so ChatTableView sees new count
-                // No full reload needed - appendMessageIfNew handles local state
-                viewModel.appendMessageIfNew(message)
-                // Link previews deferred - fetching during active message receipt causes
-                // WKWebView process spawning that blocks main thread and causes scroll jank.
-                // Previews will be fetched by batch mechanism when message flow settles.
-                // Handle self-mention: if at bottom, mark seen immediately; otherwise reload unseen
-                if message.containsSelfMention {
-                    Task {
-                        if isAtBottom {
-                            // User will see the message immediately, mark it seen
-                            await markNewArrivalMentionSeen(messageID: message.id)
-                        } else {
-                            await loadUnseenMentions()
+            guard let cursor = eventCursor else { return }
+            let (events, newCursor, droppedEvents) = appState.messageEventBroadcaster.events(after: cursor)
+            eventCursor = newCursor
+            var needsReload = droppedEvents
+            for event in events {
+                switch event {
+                case .channelMessageReceived(let message, let channelIndex)
+                    where channelIndex == channel.index && message.deviceID == channel.deviceID:
+                    viewModel.appendMessageIfNew(message)
+                    if message.containsSelfMention {
+                        Task {
+                            if isAtBottom {
+                                await markNewArrivalMentionSeen(messageID: message.id)
+                            } else {
+                                await loadUnseenMentions()
+                            }
                         }
                     }
-                }
-            case .messageStatusUpdated:
-                // Reload to pick up status changes (Sent -> Delivered, etc.)
-                Task {
-                    await viewModel.loadChannelMessages(for: channel)
-                }
-            case .messageFailed(let messageID):
-                // Only reload if this message belongs to the current channel
-                // This prevents multiple reloads when several messages fail at once
-                if viewModel.messages.contains(where: { $0.id == messageID }) {
-                    Task {
-                        await viewModel.loadChannelMessages(for: channel)
+                case .messageStatusUpdated:
+                    needsReload = true
+                case .messageFailed(let messageID):
+                    if viewModel.messages.contains(where: { $0.id == messageID }) {
+                        needsReload = true
                     }
-                }
-            case .heardRepeatRecorded(let messageID, _):
-                // Reload to update the heard repeats count for the message
-                if viewModel.messages.contains(where: { $0.id == messageID }) {
-                    Task {
-                        await viewModel.loadChannelMessages(for: channel)
+                case .heardRepeatRecorded(let messageID, _):
+                    if viewModel.messages.contains(where: { $0.id == messageID }) {
+                        needsReload = true
                     }
+                case .reactionReceived(let messageID, let summary):
+                    if viewModel.messages.contains(where: { $0.id == messageID }) {
+                        viewModel.updateReactionSummary(for: messageID, summary: summary)
+                    }
+                default:
+                    break
                 }
-            case .reactionReceived(let messageID, let summary):
-                if viewModel.messages.contains(where: { $0.id == messageID }) {
-                    viewModel.updateReactionSummary(for: messageID, summary: summary)
-                }
-            default:
-                break
+            }
+            if needsReload {
+                Task { await viewModel.loadChannelMessages(for: channel) }
+            }
+            if droppedEvents {
+                Task { await loadUnseenMentions() }
             }
         }
         .alert(L10n.Chats.Chats.Alert.UnableToSend.title, isPresented: $viewModel.showRetryError) {
@@ -382,7 +389,7 @@ struct ChannelChatView: View {
                 .overlay(alignment: .bottomTrailing) {
                     VStack(spacing: 12) {
                         if showDividerFAB {
-                            ScrollToDividerFAB(
+                            ScrollToDividerButton(
                                 onTap: {
                                     scrollToDividerRequest += 1
                                     hasDismissedDividerFAB = true
@@ -392,14 +399,14 @@ struct ChannelChatView: View {
                         }
 
                         if !unseenMentionIDs.isEmpty {
-                            ScrollToMentionFAB(
+                            ScrollToMentionButton(
                                 unreadMentionCount: unseenMentionIDs.count,
                                 onTap: { scrollToNextMention() }
                             )
                             .transition(.scale.combined(with: .opacity))
                         }
 
-                        ScrollToBottomFAB(
+                        ScrollToBottomButton(
                             isVisible: !isAtBottom,
                             unreadCount: unreadCount,
                             onTap: { scrollToBottomRequest += 1 }
@@ -428,46 +435,50 @@ struct ChannelChatView: View {
                     isPublic: channel.isPublicChannel || channel.name.hasPrefix("#"),
                     contacts: viewModel.conversations
                 ),
-                showTimestamp: item.showTimestamp,
-                showDirectionGap: item.showDirectionGap,
-                showSenderName: item.showSenderName,
-                showNewMessagesDivider: item.showNewMessagesDivider,
-                previewState: item.previewState,
-                loadedPreview: item.loadedPreview,
-                isImageURL: item.isImageURL,
-                decodedImage: viewModel.decodedImage(for: message.id),
-                isGIF: viewModel.isGIFImage(for: message.id),
-                showInlineImages: showInlineImages,
-                autoPlayGIFs: autoPlayGIFs,
-                onRetry: { retryMessage(message) },
-                onReaction: { emoji in
-                    recentEmojisStore.recordUsage(emoji)
-                    Task { await viewModel.sendReaction(emoji: emoji, to: message) }
-                },
-                onLongPress: { selectedMessageForActions = message },
-                onImageTap: {
-                    if let data = viewModel.imageData(for: message.id) {
-                        imageViewerData = ImageViewerData(
-                            imageData: data,
-                            isGIF: false
-                        )
+                displayState: MessageDisplayState(
+                    showTimestamp: item.showTimestamp,
+                    showDirectionGap: item.showDirectionGap,
+                    showSenderName: item.showSenderName,
+                    showNewMessagesDivider: item.showNewMessagesDivider,
+                    previewState: item.previewState,
+                    loadedPreview: item.loadedPreview,
+                    isImageURL: item.isImageURL,
+                    decodedImage: viewModel.decodedImage(for: message.id),
+                    isGIF: viewModel.isGIFImage(for: message.id),
+                    showInlineImages: showInlineImages,
+                    autoPlayGIFs: autoPlayGIFs
+                ),
+                callbacks: MessageBubbleCallbacks(
+                    onRetry: { retryMessage(message) },
+                    onReaction: { emoji in
+                        recentEmojisStore.recordUsage(emoji)
+                        Task { await viewModel.sendReaction(emoji: emoji, to: message) }
+                    },
+                    onLongPress: { selectedMessageForActions = message },
+                    onImageTap: {
+                        if let data = viewModel.imageData(for: message.id) {
+                            imageViewerData = ImageViewerData(
+                                imageData: data,
+                                isGIF: false
+                            )
+                        }
+                    },
+                    onRetryImageFetch: {
+                        Task { await viewModel.retryImageFetch(for: message.id) }
+                    },
+                    onRequestPreviewFetch: {
+                        if item.isImageURL && showInlineImages {
+                            viewModel.requestImageFetch(for: message.id, showInlineImages: showInlineImages)
+                        } else {
+                            viewModel.requestPreviewFetch(for: message.id)
+                        }
+                    },
+                    onManualPreviewFetch: {
+                        Task {
+                            await viewModel.manualFetchPreview(for: message.id)
+                        }
                     }
-                },
-                onRetryImageFetch: {
-                    Task { await viewModel.retryImageFetch(for: message.id) }
-                },
-                onRequestPreviewFetch: {
-                    if item.isImageURL && showInlineImages {
-                        viewModel.requestImageFetch(for: message.id, showInlineImages: showInlineImages)
-                    } else {
-                        viewModel.requestPreviewFetch(for: message.id)
-                    }
-                },
-                onManualPreviewFetch: {
-                    Task {
-                        await viewModel.manualFetchPreview(for: message.id)
-                    }
-                }
+                )
             )
         } else {
             // ViewModel logs the warning for data inconsistency
@@ -606,29 +617,30 @@ struct ChannelChatView: View {
     }
 
     private var inputBar: some View {
-        MentionInputBar(
+        ChatInputBar(
             text: $viewModel.composingText,
             isFocused: $isInputFocused,
             placeholder: channel.isPublicChannel || channel.name.hasPrefix("#") ? L10n.Chats.Chats.Channel.typePublic : L10n.Chats.Chats.Channel.typePrivate,
-            maxBytes: maxChannelMessageLength,
-            contacts: viewModel.allContacts
-        ) {
-            // Force scroll to bottom on user send (before message is added)
+            maxBytes: maxChannelMessageLength
+        ) { text in
             scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendChannelMessage()
-            }
+            Task { await viewModel.sendChannelMessage(text: text) }
         }
     }
 
     // MARK: - Mention Suggestions
+
+    private var isMentionActive: Bool {
+        MentionUtilities.detectActiveMention(in: viewModel.composingText) != nil
+    }
 
     private var mentionSuggestions: [ContactDTO] {
         guard let query = MentionUtilities.detectActiveMention(in: viewModel.composingText) else {
             return []
         }
         let combined = viewModel.allContacts + viewModel.channelSenders
-        return MentionUtilities.filterContacts(combined, query: query)
+        let order = mentionSenderOrder ?? viewModel.channelSenderOrder
+        return MentionUtilities.filterContacts(combined, query: query, senderOrder: order)
     }
 
     @ViewBuilder

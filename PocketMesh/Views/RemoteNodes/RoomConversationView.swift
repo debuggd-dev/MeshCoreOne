@@ -15,6 +15,7 @@ struct RoomConversationView: View {
     @State private var isAtBottom = true
     @State private var unreadCount = 0
     @State private var scrollToBottomRequest = 0
+    @State private var eventCursor: Int?
     @FocusState private var isInputFocused: Bool
 
     init(session: RemoteNodeSessionDTO) {
@@ -22,14 +23,14 @@ struct RoomConversationView: View {
     }
 
     var body: some View {
-        messagesView
+        makeMessagesView()
             .safeAreaInset(edge: .bottom, spacing: 0) {
                 if !session.isConnected {
-                    disconnectedBanner
+                    makeDisconnectedBanner()
                 } else if session.canPost {
-                    inputBar
+                    makeInputBar()
                 } else {
-                    readOnlyBanner
+                    makeReadOnlyBanner()
                 }
             }
             .animation(.default, value: session.isConnected)
@@ -52,30 +53,41 @@ struct RoomConversationView: View {
                 }
                 .presentationSizing(.page)
             }
+            .onAppear {
+                eventCursor = appState.messageEventBroadcaster.currentEventSequence
+            }
             .task {
                 viewModel.configure(appState: appState)
                 chatViewModel.configure(appState: appState)
                 await viewModel.loadMessages(for: session)
             }
             .onChange(of: appState.messageEventBroadcaster.newMessageCount) { _, _ in
-                // Reload messages when a new room message arrives for this session
-                if case .roomMessageReceived(let message, let sessionID) = appState.messageEventBroadcaster.latestEvent,
-                   sessionID == session.id {
-                    // Optimistic insert: add message immediately so ChatTableView sees new count
-                    viewModel.appendMessageIfNew(message)
-                    Task {
-                        await viewModel.loadMessages(for: session)
+                guard let cursor = eventCursor else { return }
+                let (events, newCursor, droppedEvents) = appState.messageEventBroadcaster.events(after: cursor)
+                eventCursor = newCursor
+                var needsReload = droppedEvents
+                for event in events {
+                    switch event {
+                    case .roomMessageReceived(let message, let sessionID) where sessionID == session.id:
+                        viewModel.appendMessageIfNew(message)
+                        needsReload = true
+                    case .roomMessageStatusUpdated(let messageID):
+                        if viewModel.messages.contains(where: { $0.id == messageID }) {
+                            needsReload = true
+                        }
+                    case .roomMessageFailed(let messageID):
+                        if viewModel.messages.contains(where: { $0.id == messageID }) {
+                            needsReload = true
+                        }
+                    default:
+                        break
                     }
                 }
-
-                // Handle status updates and failures
-                if let event = appState.messageEventBroadcaster.latestEvent {
-                    Task {
-                        await viewModel.handleEvent(event)
-                    }
+                if needsReload {
+                    Task { await viewModel.loadMessages(for: session) }
                 }
             }
-            .onChange(of: appState.messageEventBroadcaster.sessionStateChanged) { _, _ in
+            .onChange(of: appState.messageEventBroadcaster.sessionStateChangeCount) { _, _ in
                 Task {
                     await viewModel.refreshSession()
                     if let updated = viewModel.session {
@@ -124,18 +136,82 @@ struct RoomConversationView: View {
         return L10n.RemoteNodes.RemoteNodes.Room.disconnected
     }
 
-    // MARK: - Messages View
+    // MARK: - Subviews
 
-    private var messagesView: some View {
+    private func makeMessagesView() -> some View {
+        MessagesView(
+            hasLoadedOnce: viewModel.hasLoadedOnce,
+            messages: viewModel.messages,
+            isAtBottom: $isAtBottom,
+            unreadCount: $unreadCount,
+            scrollToBottomRequest: $scrollToBottomRequest,
+            session: session,
+            onRetry: { id in
+                Task { await viewModel.retryMessage(id: id) }
+            }
+        )
+    }
+
+    private func makeEmptyMessagesView() -> some View {
+        EmptyMessagesView(session: session)
+    }
+
+    private func makeInputBar() -> some View {
+        ChatInputBar(
+            text: $viewModel.composingText,
+            isFocused: $isInputFocused,
+            placeholder: L10n.RemoteNodes.RemoteNodes.Room.publicMessage,
+            maxBytes: ProtocolLimits.maxDirectMessageLength
+        ) { text in
+            scrollToBottomRequest += 1
+            Task { await viewModel.sendMessage(text: text) }
+        }
+    }
+
+    private func makeReadOnlyBanner() -> some View {
+        RoomStatusBanner(
+            icon: "eye",
+            title: L10n.RemoteNodes.RemoteNodes.Room.viewOnlyBanner,
+            hint: L10n.RemoteNodes.RemoteNodes.Room.viewOnlyHint,
+            style: AnyShapeStyle(.secondary),
+            isBold: false,
+            action: { roomToAuthenticate = session }
+        )
+    }
+
+    private func makeDisconnectedBanner() -> some View {
+        RoomStatusBanner(
+            icon: "exclamationmark.triangle.fill",
+            title: L10n.RemoteNodes.RemoteNodes.Room.disconnectedBanner,
+            hint: L10n.RemoteNodes.RemoteNodes.Room.disconnectedHint,
+            style: AnyShapeStyle(.orange),
+            isBold: true,
+            action: { roomToAuthenticate = session }
+        )
+    }
+}
+
+// MARK: - Messages View
+
+private struct MessagesView: View {
+    let hasLoadedOnce: Bool
+    let messages: [RoomMessageDTO]
+    @Binding var isAtBottom: Bool
+    @Binding var unreadCount: Int
+    @Binding var scrollToBottomRequest: Int
+    let session: RemoteNodeSessionDTO
+    let onRetry: (UUID) -> Void
+
+    var body: some View {
         Group {
-            if !viewModel.hasLoadedOnce {
+            if !hasLoadedOnce {
                 ProgressView()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if viewModel.messages.isEmpty {
-                emptyMessagesView
+            } else if messages.isEmpty {
+                EmptyMessagesView(session: session)
             } else {
                 ChatTableView(
-                    items: viewModel.messages,
+                    items: messages,
                     cellContent: { message in
                         messageBubble(for: message)
                     },
@@ -147,7 +223,7 @@ struct RoomConversationView: View {
                     isDividerVisible: .constant(false)
                 )
                 .overlay(alignment: .bottomTrailing) {
-                    ScrollToBottomFAB(
+                    ScrollToBottomButton(
                         isVisible: !isAtBottom,
                         unreadCount: unreadCount,
                         onTap: { scrollToBottomRequest += 1 }
@@ -160,19 +236,23 @@ struct RoomConversationView: View {
     }
 
     private func messageBubble(for message: RoomMessageDTO) -> some View {
-        let index = viewModel.messages.firstIndex(where: { $0.id == message.id }) ?? 0
+        let index = messages.firstIndex(where: { $0.id == message.id }) ?? 0
         return RoomMessageBubble(
             message: message,
-            showTimestamp: RoomConversationViewModel.shouldShowTimestamp(at: index, in: viewModel.messages),
+            showTimestamp: RoomConversationViewModel.shouldShowTimestamp(at: index, in: messages),
             onRetry: message.status == .failed ? {
-                Task {
-                    await viewModel.retryMessage(id: message.id)
-                }
+                onRetry(message.id)
             } : nil
         )
     }
+}
 
-    private var emptyMessagesView: some View {
+// MARK: - Empty Messages View
+
+private struct EmptyMessagesView: View {
+    let session: RemoteNodeSessionDTO
+
+    var body: some View {
         VStack(spacing: 16) {
             NodeAvatar(publicKey: session.publicKey, role: .roomServer, size: 80)
 
@@ -191,45 +271,6 @@ struct RoomConversationView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding()
-    }
-
-    // MARK: - Input Bar
-
-    private var inputBar: some View {
-        ChatInputBar(
-            text: $viewModel.composingText,
-            isFocused: $isInputFocused,
-            placeholder: L10n.RemoteNodes.RemoteNodes.Room.publicMessage,
-            maxBytes: ProtocolLimits.maxDirectMessageLength
-        ) {
-            // Force scroll to bottom on user send (before message is added)
-            scrollToBottomRequest += 1
-            Task {
-                await viewModel.sendMessage()
-            }
-        }
-    }
-
-    private var readOnlyBanner: some View {
-        RoomStatusBanner(
-            icon: "eye",
-            title: L10n.RemoteNodes.RemoteNodes.Room.viewOnlyBanner,
-            hint: L10n.RemoteNodes.RemoteNodes.Room.viewOnlyHint,
-            style: AnyShapeStyle(.secondary),
-            isBold: false,
-            action: { roomToAuthenticate = session }
-        )
-    }
-
-    private var disconnectedBanner: some View {
-        RoomStatusBanner(
-            icon: "exclamationmark.triangle.fill",
-            title: L10n.RemoteNodes.RemoteNodes.Room.disconnectedBanner,
-            hint: L10n.RemoteNodes.RemoteNodes.Room.disconnectedHint,
-            style: AnyShapeStyle(.orange),
-            isBold: true,
-            action: { roomToAuthenticate = session }
-        )
     }
 }
 

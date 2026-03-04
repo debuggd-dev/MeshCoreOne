@@ -20,12 +20,6 @@
 /* Location: ChatsView.swift - Filter menu title */
 "chats.filter.title" = "筛选";
 
-/* Location: ChatsView.swift - Accessibility label when no filter is active */
-"chats.filter.accessibilityLabel" = "筛选对话";
-
-/* Location: ChatsView.swift - Accessibility label format when filter is active - %@ is the filter name */
-"chats.filter.accessibilityLabelActive" = "筛选对话，当前显示%@";
-
 /* Location: ChatsView.swift - Button to clear active filter */
 "chats.filter.clear" = "清除筛选";
 
@@ -37,9 +31,6 @@
 
 /* Location: ChatsView.swift - Filter option for channels */
 "chats.filter.channels" = "频道";
-
-/* Location: ChatsView.swift - Filter option for favorites */
-"chats.filter.favorites" = "收藏";
 
 // MARK: - Compose Menu
 
@@ -78,12 +69,6 @@
 /* Location: ChatsView.swift - Description when no channels */
 "chats.emptyState.noChannels.description" = "加入或创建频道";
 
-/* Location: ChatsView.swift - Title when no favorites */
-"chats.emptyState.noFavorites.title" = "无收藏";
-
-/* Location: ChatsView.swift - Description when no favorites */
-"chats.emptyState.noFavorites.description" = "将联系人标记为收藏以在此查看";
-
 /* Location: ChatsView.swift - Split view placeholder when no conversation selected */
 "chats.emptyState.selectConversation" = "选择对话";
 
@@ -117,28 +102,28 @@
 /* Location: RelativeTimestampText.swift - Timestamp for messages under 1 minute old */
 "chats.timestamp.now" = "刚刚";
 
-// MARK: - Floating Action Buttons
+// MARK: - Scroll Buttons
 
-/* Location: ScrollToMentionFAB.swift - Accessibility label for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityLabel" = "滚动到最早的未读提及";
+/* Location: ScrollToMentionButton.swift - Accessibility label for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityLabel" = "滚动到最早的未读提及";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility hint for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityHint" = "双击以导航到消息";
+/* Location: ScrollToMentionButton.swift - Accessibility hint for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityHint" = "双击以导航到消息";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
-"chats.fab.scrollToMention.accessibilityValue" = "%d条未读提及";
+/* Location: ScrollToMentionButton.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
+"chats.scrollButton.scrollToMention.accessibilityValue" = "%d条未读提及";
 
-/* Location: ScrollToBottomFAB.swift - Accessibility label for scroll to bottom button */
-"chats.fab.scrollToBottom.accessibilityLabel" = "滚动到最新消息";
+/* Location: ScrollToBottomButton.swift - Accessibility label for scroll to bottom button */
+"chats.scrollButton.scrollToBottom.accessibilityLabel" = "滚动到最新消息";
 
-/* Location: ScrollToMentionFAB.swift, ScrollToBottomFAB.swift - Badge text for 99+ unread */
-"chats.fab.badge.overflow" = "99+";
+/* Location: ScrollToMentionButton.swift, ScrollToBottomButton.swift - Badge text for 99+ unread */
+"chats.scrollButton.badge.overflow" = "99+";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility label for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
+/* Location: ScrollToDividerButton.swift - Accessibility label for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility hint for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
+/* Location: ScrollToDividerButton.swift - Accessibility hint for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
 
 // MARK: - Chat View (Direct Messages)
 
@@ -984,3 +969,11 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "密钥：%@";
+
+// MARK: - Malware Warning
+
+/* Location: MalwareWarningCard.swift - Warning title for flagged domains */
+"chats.malwareWarning.title" = "链接被标记为可疑";
+
+/* Location: MalwareWarningCard.swift - Accessibility label - %@ is domain */
+"chats.malwareWarning.accessibility" = "警告：指向%@的链接被标记为可疑";

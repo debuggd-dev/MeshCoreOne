@@ -1,5 +1,6 @@
 import SwiftUI
 import PocketMeshServices
+import TipKit
 
 /// Main settings screen — navigation-link rows for device settings, always-visible app settings
 struct SettingsView: View {
@@ -12,18 +13,34 @@ struct SettingsView: View {
     var body: some View {
         if horizontalSizeClass == .regular {
             NavigationSplitView {
-                settingsListContent
+                SettingsListContent(
+                    showingDeviceSelection: $showingDeviceSelection,
+                    demoModeManager: demoModeManager
+                )
             } detail: {
                 ContentUnavailableView(L10n.Settings.selectSetting, systemImage: "gear")
             }
         } else {
             NavigationStack {
-                settingsListContent
+                SettingsListContent(
+                    showingDeviceSelection: $showingDeviceSelection,
+                    demoModeManager: demoModeManager
+                )
             }
         }
     }
+}
 
-    private var settingsListContent: some View {
+// MARK: - Settings List Content
+
+private struct SettingsListContent: View {
+    @Environment(\.appState) private var appState
+    @Environment(\.openURL) private var openURL
+    @Binding var showingDeviceSelection: Bool
+    @Bindable var demoModeManager: DemoModeManager
+    private let liveActivityTip = LiveActivityTip()
+
+    var body: some View {
         List {
             if let device = appState.connectedDevice {
                 MyDeviceSection(device: device)
@@ -43,6 +60,36 @@ struct SettingsView: View {
                 } label: {
                     TintedLabel(L10n.Settings.ChatSettings.title, systemImage: "bubble.left.and.bubble.right")
                 }
+
+                TipView(liveActivityTip, arrowEdge: .bottom)
+
+                Toggle(isOn: Binding(
+                    get: { appState.liveActivityManager.isEnabled },
+                    set: { newValue in
+                        appState.liveActivityManager.isEnabled = newValue
+                        Task {
+                            if !newValue {
+                                await appState.liveActivityManager.endActivity()
+                            } else if appState.connectionState == .ready || appState.connectionState == .connected {
+                                await appState.wireServicesIfConnected()
+                            }
+                        }
+                    }
+                )) {
+                    TintedLabel(L10n.Settings.LiveActivity.title, systemImage: "platter.filled.bottom.and.arrow.down.iphone")
+                }
+
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        openURL(url)
+                    }
+                } label: {
+                    SettingsRow(
+                        L10n.Settings.Language.title,
+                        systemImage: "globe",
+                        detail: currentLanguageDisplayName
+                    )
+                }
             } header: {
                 Text(L10n.Settings.AppSettings.header)
             }
@@ -53,10 +100,7 @@ struct SettingsView: View {
 
             if demoModeManager.isUnlocked {
                 Section {
-                    Toggle(L10n.Settings.DemoMode.enabled, isOn: Binding(
-                        get: { demoModeManager.isEnabled },
-                        set: { demoModeManager.isEnabled = $0 }
-                    ))
+                    Toggle(L10n.Settings.DemoMode.enabled, isOn: $demoModeManager.isEnabled)
                 } header: {
                     Text(L10n.Settings.DemoMode.header)
                 } footer: {
@@ -102,6 +146,10 @@ struct SettingsView: View {
         }
     }
 
+    private var currentLanguageDisplayName: String {
+        let code = Bundle.main.preferredLocalizations.first ?? "en"
+        return Locale.current.localizedString(forLanguageCode: code) ?? code
+    }
 }
 
 // MARK: - My Device Section
@@ -146,7 +194,7 @@ private struct MyDeviceSection: View {
             NavigationLink {
                 AdvancedSettingsView()
             } label: {
-                advancedSettingsRowLabel
+                TintedLabel(L10n.Settings.AdvancedSettings.title, systemImage: "gearshape.2")
             }
         } header: {
             Text(L10n.Settings.MyDevice.header)
@@ -154,23 +202,26 @@ private struct MyDeviceSection: View {
     }
 
     private var radioDetailText: String {
-        let preset = RadioPresets.matchingPreset(
-            frequencyKHz: device.frequency,
-            bandwidthKHz: device.bandwidth,
-            spreadingFactor: device.spreadingFactor,
-            codingRate: device.codingRate
-        )
+        let preset = device.clientRepeat
+            ? RadioPresets.matchingRepeatPreset(
+                frequencyKHz: device.frequency,
+                bandwidthKHz: device.bandwidth,
+                spreadingFactor: device.spreadingFactor,
+                codingRate: device.codingRate
+            )
+            : RadioPresets.matchingPreset(
+                frequencyKHz: device.frequency,
+                bandwidthKHz: device.bandwidth,
+                spreadingFactor: device.spreadingFactor,
+                codingRate: device.codingRate
+            )
         return preset?.name ?? L10n.Settings.BatteryCurve.custom
     }
 
     private var locationDetailText: String {
-        device.advertLocationPolicy == 1
+        device.sharesLocationPublicly
             ? L10n.Settings.Location.sharingPublicly
             : L10n.Settings.Location.notSharing
-    }
-
-    private var advancedSettingsRowLabel: some View {
-        TintedLabel(L10n.Settings.AdvancedSettings.title, systemImage: "gearshape.2")
     }
 }
 

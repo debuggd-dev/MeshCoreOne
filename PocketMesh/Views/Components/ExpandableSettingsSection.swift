@@ -12,7 +12,30 @@ struct ExpandableSettingsSection<Content: View>: View {
     @Binding var error: String?
 
     let onLoad: () async -> Void
+    let footer: String?
     @ViewBuilder let content: () -> Content
+
+    init(
+        title: String,
+        icon: String,
+        isExpanded: Binding<Bool>,
+        isLoaded: @escaping () -> Bool,
+        isLoading: Binding<Bool>,
+        error: Binding<String?>,
+        onLoad: @escaping () async -> Void,
+        footer: String? = nil,
+        @ViewBuilder content: @escaping () -> Content
+    ) {
+        self.title = title
+        self.icon = icon
+        self._isExpanded = isExpanded
+        self.isLoaded = isLoaded
+        self._isLoading = isLoading
+        self._error = error
+        self.onLoad = onLoad
+        self.footer = footer
+        self.content = content
+    }
 
     var body: some View {
         Section {
@@ -33,6 +56,8 @@ struct ExpandableSettingsSection<Content: View>: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 8)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets())
                 }
             } label: {
                 HStack {
@@ -53,6 +78,10 @@ struct ExpandableSettingsSection<Content: View>: View {
                         .padding(.trailing)
                     }
                 }
+            }
+        } footer: {
+            if let footer {
+                Text(footer)
             }
         }
         .onChange(of: isExpanded) { _, expanded in

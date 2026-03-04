@@ -150,6 +150,12 @@
 /* Location: RxLogViewModel.swift - Decrypt filter: failed */
 "tools.rxLog.filter.failed" = "Failed";
 
+/* Location: RxLogRowView - Label for local device in path display */
+"tools.rxLog.pathYou" = "You";
+
+/* Location: RxLogRowView - Route label for TRACE target hashes */
+"tools.rxLog.traceRouteLabel" = "Route:";
+
 // MARK: - Noise Floor View
 
 /* Location: NoiseFloorView.swift - Disconnected state description */

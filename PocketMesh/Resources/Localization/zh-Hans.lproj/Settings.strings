@@ -146,6 +146,12 @@
 /* Button to copy key to clipboard */
 "publicKey.copy" = "复制到剪贴板";
 
+
+// MARK: - Private Key View
+
+/* Section header describing the key type */
+"privateKey.header" = "64 字节 Ed25519 私钥";
+
 // MARK: - Device Selection Sheet
 
 /* Navigation title for device selection */
@@ -185,7 +191,10 @@
 "deviceSelection.accessibility.connectedElsewhereHint" = "此设备正被其他应用使用。连接可能会导致通信问题。";
 
 /* Accessibility hint for selecting a device */
-"deviceSelection.accessibility.selectHint" = "双击以选择";
+"deviceSelection.accessibility.selectHint" = "双击以连接";
+
+/* Accessibility hint for a device that is out of Bluetooth range */
+"deviceSelection.accessibility.outOfRangeHint" = "设备不在蓝牙范围内";
 
 /* Label shown when device is connected to another app */
 "deviceSelection.connectedElsewhere" = "已连接到其他位置";
@@ -311,6 +320,27 @@
 
 /* Footer explaining repeat mode in advanced radio */
 "advancedRadio.repeatMode.footer" = "在专用频率上打开转发。适用于徒步旅行和偏远地区。有效频率：433、869、918 MHz。";
+
+// MARK: - Path Hash Mode Section
+
+/* Section header for path hash mode */
+"pathHashMode.header" = "路径哈希大小";
+
+/* Label for path hash mode picker */
+"pathHashMode.label" = "哈希大小";
+
+/* Path hash mode option: 1 byte */
+"pathHashMode.oneByte" = "1 字节";
+
+/* Path hash mode option: 2 bytes */
+"pathHashMode.twoBytes" = "2 字节";
+
+/* Path hash mode option: 3 bytes */
+"pathHashMode.threeBytes" = "3 字节";
+
+/* Footer explaining path hash mode tradeoff */
+"pathHashMode.footer" = "较大的哈希值可减少路由冲突，但会限制每条路径的最大跳数。";
+
 
 // MARK: - Battery Curve Section
 
@@ -495,22 +525,22 @@
 // MARK: - Device Actions Section
 
 /* Section header for device actions */
-"deviceActions.header" = "Device";
+"deviceActions.header" = "设备";
 
 /* Button to reboot the device */
-"deviceActions.rebootDevice" = "Reboot Device";
+"deviceActions.rebootDevice" = "重启设备";
 
 /* Text shown while rebooting */
-"deviceActions.rebooting" = "Rebooting...";
+"deviceActions.rebooting" = "正在重启…";
 
 /* Alert title for reboot confirmation */
-"deviceActions.alert.reboot.title" = "Reboot Device?";
+"deviceActions.alert.reboot.title" = "重启设备？";
 
 /* Button to confirm reboot */
-"deviceActions.alert.reboot.confirm" = "Reboot";
+"deviceActions.alert.reboot.confirm" = "重启";
 
 /* Alert message for reboot confirmation */
-"deviceActions.alert.reboot.message" = "The device will restart and temporarily disconnect.";
+"deviceActions.alert.reboot.message" = "设备将重新启动并暂时断开连接。";
 
 
 // MARK: - Danger Zone Section
@@ -1067,3 +1097,112 @@
 
 /* Location: BlockedChannelSendersView.swift - Purpose: Swipe action to unblock */
 "blocking.channelSenders.unblock" = "取消屏蔽";
+
+
+// MARK: - Language
+
+/* Location: SettingsView.swift - Purpose: Language row title */
+"language.title" = "语言";
+
+
+
+// MARK: - Live Activity
+
+/* Label for the Live Status toggle in App Settings */
+"liveActivity.title" = "实时活动";
+
+/* Title for the Live Activity tip shown after first connection */
+"liveActivity.tip.title" = "一目了然的电台状态";
+
+/* Message for the Live Activity tip */
+"liveActivity.tip.message" = "即使不打开应用，您的连接、电池和消息也清晰可见。";
+
+
+// MARK: - Regenerate Identity
+
+/* Section header for regenerate identity */
+"regenerateIdentity.header" = "身份";
+
+/* Button label to open regenerate identity sheet */
+"regenerateIdentity.title" = "重新生成密钥";
+
+/* Navigation title for the regenerate identity sheet */
+"regenerateIdentity.sheet.title" = "重新生成密钥";
+
+/* Explanation of what regenerating identity does */
+"regenerateIdentity.sheet.explanation" = "生成新的 Ed25519 密钥对以替换设备当前的身份。所有联系人需要重新发现你的设备。";
+
+/* Button to generate a new key */
+"regenerateIdentity.generate" = "生成密钥";
+
+/* Button to generate another key after the first */
+"regenerateIdentity.generateAnother" = "再次生成";
+
+/* Progress label while generating */
+"regenerateIdentity.generating" = "生成中…";
+
+/* Button to apply the generated key to the device */
+"regenerateIdentity.replace" = "使用此密钥";
+
+/* Progress label while importing key to device */
+"regenerateIdentity.importing" = "导入中…";
+
+/* Disclosure group label for vanity prefix */
+"regenerateIdentity.prefix.label" = "自定义前缀";
+
+/* Placeholder for prefix text field */
+"regenerateIdentity.prefix.placeholder" = "例如 2BA1";
+
+/* Footer explaining vanity prefix */
+"regenerateIdentity.prefix.footer" = "可选择指定公钥开头的 1–4 个十六进制字符。前缀越长，生成时间越久。";
+
+/* Error when prefix is not 1–4 hex characters */
+"regenerateIdentity.prefix.error.invalidLength" = "前缀必须为 1–4 个十六进制字符";
+
+/* Error when prefix is 00 or FF */
+"regenerateIdentity.prefix.error.reserved" = "00 和 FF 为保留值，不可使用";
+
+/* Alert title for replace identity confirmation */
+"regenerateIdentity.alert.replace.title" = "替换身份？";
+
+/* Alert confirm button for replace identity */
+"regenerateIdentity.alert.replace.confirm" = "替换";
+
+/* Alert message for replace identity */
+"regenerateIdentity.alert.replace.message" = "这将永久替换你设备的身份。其他设备会将你视为新联系人。";
+
+/* Error when firmware does not support key import */
+"regenerateIdentity.error.featureDisabled" = "此固件版本不支持密钥导入";
+
+/* Error when device rejects the key */
+"regenerateIdentity.error.deviceRejected" = "设备拒绝了密钥，请重试。";
+
+
+// MARK: - Import Key
+
+/* Button label to open import key sheet */
+"importKey.title" = "导入密钥";
+
+/* Navigation title for the import key sheet */
+"importKey.sheet.title" = "导入密钥";
+
+/* Explanation of what importing a key does */
+"importKey.sheet.explanation" = "粘贴现有的 Ed25519 私钥（128 个十六进制字符）以替换设备当前的身份。";
+
+/* Label for the private key input field */
+"importKey.keyInput.label" = "私钥";
+
+/* Placeholder for the key input field */
+"importKey.keyInput.placeholder" = "粘贴 128 位十六进制密钥";
+
+/* Button to import the key */
+"importKey.import" = "导入密钥";
+
+/* Progress label while importing */
+"importKey.importing" = "导入中…";
+
+/* Error when hex input is wrong length or invalid */
+"importKey.error.invalidHex" = "密钥必须恰好为 128 个十六进制字符";
+
+/* Error when key fails Ed25519 validation */
+"importKey.error.invalidKey" = "不是有效的 Ed25519 私钥";

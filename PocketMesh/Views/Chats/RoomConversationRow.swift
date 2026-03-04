@@ -2,6 +2,7 @@ import SwiftUI
 import PocketMeshServices
 
 struct RoomConversationRow: View {
+    @Environment(\.appState) private var appState
     let session: RemoteNodeSessionDTO
 
     var body: some View {
@@ -31,7 +32,7 @@ struct RoomConversationRow: View {
                 }
 
                 HStack {
-                    if session.isConnected {
+                    if session.isConnected && appState.connectionState == .ready {
                         Label(L10n.Chats.Chats.Room.connected, systemImage: "checkmark.circle.fill")
                             .font(.caption)
                             .foregroundStyle(.green)

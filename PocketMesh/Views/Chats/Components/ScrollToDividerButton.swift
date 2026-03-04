@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// Floating action button to scroll to the new messages divider
-struct ScrollToDividerFAB: View {
+/// Button to scroll to the new messages divider
+struct ScrollToDividerButton: View {
     let onTap: () -> Void
 
     var body: some View {
@@ -13,12 +13,12 @@ struct ScrollToDividerFAB: View {
         .buttonStyle(.plain)
         .contentShape(.circle)
         .liquidGlassInteractive(in: .circle)
-        .accessibilityLabel(L10n.Chats.Chats.Fab.ScrollToDivider.accessibilityLabel)
-        .accessibilityHint(L10n.Chats.Chats.Fab.ScrollToDivider.accessibilityHint)
+        .accessibilityLabel(L10n.Chats.Chats.ScrollButton.ScrollToDivider.accessibilityLabel)
+        .accessibilityHint(L10n.Chats.Chats.ScrollButton.ScrollToDivider.accessibilityHint)
     }
 }
 
 #Preview {
-    ScrollToDividerFAB(onTap: {})
+    ScrollToDividerButton(onTap: {})
         .padding(50)
 }

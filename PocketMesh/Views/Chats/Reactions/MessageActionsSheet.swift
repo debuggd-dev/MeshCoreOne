@@ -1,5 +1,3 @@
-import CoreLocation
-import OSLog
 import PocketMeshServices
 import SwiftUI
 
@@ -19,7 +17,6 @@ struct MessageActionsSheet: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-
     let message: MessageDTO
     let senderName: String
     let recentEmojis: [String]
@@ -29,16 +26,35 @@ struct MessageActionsSheet: View {
         MessageActionAvailability(message: message)
     }
 
+    private func performAction(_ action: MessageAction) {
+        onAction(action)
+        dismiss()
+    }
+
+    private var emojiSection: some View {
+        ActionsEmojiSection(
+            recentEmojis: recentEmojis,
+            showEmojiPicker: $showEmojiPicker,
+            onSelectEmoji: { emoji in
+                performAction(.react(emoji))
+            }
+        )
+    }
+
     @State private var longPressHapticTrigger = 0
     @State private var showEmojiPicker = false
     @State private var isDetailExpanded = false
     @State private var repeats: [MessageRepeatDTO]?
     @State private var contacts: [ContactDTO] = []
+    @State private var discoveredNodes: [DiscoveredNodeDTO] = []
     @State private var pathViewModel = MessagePathViewModel()
 
     var body: some View {
         VStack(spacing: 0) {
-            messagePreviewHeader
+            ActionsPreviewHeader(
+                message: message,
+                senderName: senderName
+            )
 
             Divider()
 
@@ -54,10 +70,27 @@ struct MessageActionsSheet: View {
                             emojiSection
                             Divider()
                         }
-                        actionsSection
-                        detailsSection
-                        blockSection
-                        deleteSection
+                        ActionsButtonsSection(
+                            availability: availability,
+                            onSelectAction: performAction
+                        )
+                        ActionsDetailsSection(
+                            message: message,
+                            availability: availability,
+                            isDetailExpanded: $isDetailExpanded,
+                            repeats: repeats,
+                            contacts: contacts,
+                            discoveredNodes: discoveredNodes,
+                            pathViewModel: pathViewModel
+                        )
+                        ActionsBlockSection(
+                            availability: availability,
+                            onSelectAction: performAction
+                        )
+                        ActionsDeleteSection(
+                            availability: availability,
+                            onSelectAction: performAction
+                        )
                     }
                 }
                 .onChange(of: isDetailExpanded) { _, expanded in
@@ -69,7 +102,10 @@ struct MessageActionsSheet: View {
                 }
             }
         }
-        .presentationDetents(dynamicTypeSize.isAccessibilitySize ? [.large] : [.medium, .large])
+        .presentationDetents(
+            (UIDevice.current.userInterfaceIdiom == .pad || dynamicTypeSize.isAccessibilitySize)
+                ? [.large] : [.medium, .large]
+        )
         .presentationContentInteraction(.scrolls)
         .presentationDragIndicator(.visible)
         .presentationBackground(Color(.systemBackground))
@@ -82,8 +118,10 @@ struct MessageActionsSheet: View {
             if availability.canShowRepeatDetails {
                 do {
                     contacts = try await services.dataStore.fetchContacts(deviceID: message.deviceID)
+                    discoveredNodes = try await services.dataStore.fetchDiscoveredNodes(deviceID: message.deviceID)
                 } catch {
                     contacts = []
+                    discoveredNodes = []
                 }
                 repeats = await services.heardRepeatsService.refreshRepeats(for: message.id)
             } else if availability.canViewPath {
@@ -91,8 +129,15 @@ struct MessageActionsSheet: View {
             }
         }
     }
+}
 
-    // MARK: - Header
+// MARK: - Extracted Views
+
+private struct ActionsPreviewHeader: View {
+    let message: MessageDTO
+    let senderName: String
+
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var senderNodeID: String? {
         guard !message.isOutgoing,
@@ -101,7 +146,7 @@ struct MessageActionsSheet: View {
         return String(format: "%02X", firstByte)
     }
 
-    private var messagePreviewHeader: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 4) {
             ViewThatFits(in: .horizontal) {
                 HStack {
@@ -115,7 +160,7 @@ struct MessageActionsSheet: View {
                         .font(.subheadline)
                         .bold()
                     Spacer()
-                    messageTimestamp
+                    ActionsTimestampLabel(message: message)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -130,7 +175,7 @@ struct MessageActionsSheet: View {
                             .font(.subheadline)
                             .bold()
                     }
-                    messageTimestamp
+                    ActionsTimestampLabel(message: message)
                 }
             }
 
@@ -141,118 +186,123 @@ struct MessageActionsSheet: View {
         }
         .padding()
     }
+}
 
-    private var messageTimestamp: some View {
+private struct ActionsTimestampLabel: View {
+    let message: MessageDTO
+
+    var body: some View {
         Text(message.isOutgoing ? message.date : message.createdAt,
              format: .dateTime.hour().minute())
             .font(.subheadline)
             .foregroundStyle(.secondary)
     }
+}
 
-    // MARK: - Emoji Section
+private struct ActionsEmojiSection: View {
+    let recentEmojis: [String]
+    @Binding var showEmojiPicker: Bool
+    let onSelectEmoji: (String) -> Void
 
-    private var emojiSection: some View {
+    var body: some View {
         EmojiPickerRow(
             emojis: recentEmojis,
-            onSelect: { emoji in
-                onAction(.react(emoji))
-                dismiss()
-            },
-            onOpenKeyboard: {
-                showEmojiPicker = true
-            }
+            onSelect: onSelectEmoji,
+            onOpenKeyboard: { showEmojiPicker = true }
         )
         .padding(.vertical, 4)
         .sheet(isPresented: $showEmojiPicker) {
-            EmojiPickerSheet { emoji in
-                onAction(.react(emoji))
-                dismiss()
-            }
+            EmojiPickerSheet(onSelect: onSelectEmoji)
         }
     }
+}
 
-    // MARK: - Actions Section
+private struct ActionsButtonsSection: View {
+    let availability: MessageActionAvailability
+    let onSelectAction: (MessageAction) -> Void
 
-    @ViewBuilder
-    private var actionsSection: some View {
+    var body: some View {
         if availability.canReply {
-            actionButton(
-                L10n.Chats.Chats.Message.Action.reply,
+            ActionButton(
+                title: L10n.Chats.Chats.Message.Action.reply,
                 icon: "arrowshape.turn.up.left",
-                action: .reply
+                action: { onSelectAction(.reply) }
             )
         }
 
-        actionButton(
-            L10n.Chats.Chats.Message.Action.copy,
+        ActionButton(
+            title: L10n.Chats.Chats.Message.Action.copy,
             icon: "doc.on.doc",
-            action: .copy
+            action: { onSelectAction(.copy) }
         )
 
         if availability.canSendAgain {
-            actionButton(
-                L10n.Chats.Chats.Message.Action.sendAgain,
+            ActionButton(
+                title: L10n.Chats.Chats.Message.Action.sendAgain,
                 icon: "arrow.uturn.forward",
-                action: .sendAgain
+                action: { onSelectAction(.sendAgain) }
             )
         }
     }
+}
 
-    @ViewBuilder
-    private var blockSection: some View {
+private struct ActionsBlockSection: View {
+    let availability: MessageActionAvailability
+    let onSelectAction: (MessageAction) -> Void
+
+    var body: some View {
         if availability.canBlockSender {
             Divider()
                 .padding(.vertical, 8)
-            actionButton(
-                L10n.Chats.Chats.Message.Action.blockSender,
+            ActionButton(
+                title: L10n.Chats.Chats.Message.Action.blockSender,
                 icon: "hand.raised",
-                action: .blockSender,
-                isDestructive: true
+                isDestructive: true,
+                action: { onSelectAction(.blockSender) }
             )
         }
     }
+}
 
-    @ViewBuilder
-    private var deleteSection: some View {
+private struct ActionsDeleteSection: View {
+    let availability: MessageActionAvailability
+    let onSelectAction: (MessageAction) -> Void
+
+    var body: some View {
         if availability.canDelete {
             Divider()
                 .padding(.vertical, 8)
-            actionButton(
-                L10n.Chats.Chats.Message.Action.delete,
+            ActionButton(
+                title: L10n.Chats.Chats.Message.Action.delete,
                 icon: "trash",
-                action: .delete,
-                isDestructive: true
+                isDestructive: true,
+                action: { onSelectAction(.delete) }
             )
         }
     }
+}
 
-    private func actionButton(
-        _ title: String,
-        icon: String,
-        action: MessageAction,
-        isDestructive: Bool = false
-    ) -> some View {
-        Button {
-            onAction(action)
-            dismiss()
-        } label: {
-            HStack {
-                Label(title, systemImage: icon)
-                Spacer()
-            }
-            .padding()
-            .contentShape(.rect)
-        }
-        .foregroundStyle(isDestructive ? .red : .primary)
-    }
+private struct ActionsDetailsSection: View {
+    let message: MessageDTO
+    let availability: MessageActionAvailability
+    @Binding var isDetailExpanded: Bool
+    let repeats: [MessageRepeatDTO]?
+    let contacts: [ContactDTO]
+    let discoveredNodes: [DiscoveredNodeDTO]
+    let pathViewModel: MessagePathViewModel
 
-    // MARK: - Details Section
-
-    @ViewBuilder
-    private var detailsSection: some View {
+    var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if availability.canShowRepeatDetails || availability.canViewPath {
-                expandableDetailRow
+                ActionsExpandableDetailRow(
+                    message: message,
+                    availability: availability,
+                    isDetailExpanded: $isDetailExpanded,
+                    repeats: repeats,
+                    contacts: contacts,
+                    discoveredNodes: discoveredNodes,
+                    pathViewModel: pathViewModel
+                )
             }
 
             Text(L10n.Chats.Chats.Message.Action.details)
@@ -263,14 +313,26 @@ struct MessageActionsSheet: View {
                 .padding(.bottom, 4)
 
             if message.isOutgoing {
-                outgoingDetailsRows
+                ActionsOutgoingDetailsRows(message: message)
             } else {
-                incomingDetailsRows
+                ActionsIncomingDetailsRows(message: message)
             }
         }
     }
+}
 
-    private var expandableDetailRow: some View {
+private struct ActionsExpandableDetailRow: View {
+    @Environment(\.appState) private var appState
+
+    let message: MessageDTO
+    let availability: MessageActionAvailability
+    @Binding var isDetailExpanded: Bool
+    let repeats: [MessageRepeatDTO]?
+    let contacts: [ContactDTO]
+    let discoveredNodes: [DiscoveredNodeDTO]
+    let pathViewModel: MessagePathViewModel
+
+    var body: some View {
         VStack(spacing: 0) {
             Button {
                 withAnimation {
@@ -301,20 +363,38 @@ struct MessageActionsSheet: View {
             if isDetailExpanded {
                 Divider()
                     .padding(.horizontal)
-                expandedContent
-                    .padding(.horizontal)
-                    .padding(.bottom)
-                    .id("expandedContent")
+                ActionsExpandedContent(
+                    message: message,
+                    availability: availability,
+                    repeats: repeats,
+                    contacts: contacts,
+                    discoveredNodes: discoveredNodes,
+                    pathViewModel: pathViewModel
+                )
+                .padding(.horizontal)
+                .padding(.bottom)
+                .id("expandedContent")
             }
         }
     }
+}
 
-    @ViewBuilder
-    private var expandedContent: some View {
+private struct ActionsExpandedContent: View {
+    @Environment(\.appState) private var appState
+
+    let message: MessageDTO
+    let availability: MessageActionAvailability
+    let repeats: [MessageRepeatDTO]?
+    let contacts: [ContactDTO]
+    let discoveredNodes: [DiscoveredNodeDTO]
+    let pathViewModel: MessagePathViewModel
+
+    var body: some View {
         if availability.canShowRepeatDetails {
             RepeatDetailsContent(
                 repeats: repeats,
                 contacts: contacts,
+                discoveredNodes: discoveredNodes,
                 userLocation: appState.locationService.currentLocation
             )
         } else if availability.canViewPath {
@@ -326,58 +406,49 @@ struct MessageActionsSheet: View {
             )
         }
     }
+}
 
-    @ViewBuilder
-    private var outgoingDetailsRows: some View {
-        infoRow(L10n.Chats.Chats.Message.Info.sent(
+private struct ActionsOutgoingDetailsRows: View {
+    let message: MessageDTO
+
+    var body: some View {
+        ActionInfoRow(text: L10n.Chats.Chats.Message.Info.sent(
             message.date.formatted(date: .abbreviated, time: .shortened)))
 
         if let rtt = message.roundTripTime {
-            infoRow(L10n.Chats.Chats.Message.Info.roundTrip(Int(rtt)))
+            ActionInfoRow(text: L10n.Chats.Chats.Message.Info.roundTrip(Int(rtt)))
         }
 
         if message.heardRepeats > 0 {
             let word = message.heardRepeats == 1
                 ? L10n.Chats.Chats.Message.Repeat.singular
                 : L10n.Chats.Chats.Message.Repeat.plural
-            infoRow(L10n.Chats.Chats.Message.Info.heardRepeats(message.heardRepeats, word))
+            ActionInfoRow(text: L10n.Chats.Chats.Message.Info.heardRepeats(message.heardRepeats, word))
         }
     }
+}
 
-    @ViewBuilder
-    private var incomingDetailsRows: some View {
-        infoRow(L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message.pathLength)),
-                icon: "arrowshape.bounce.right")
+private struct ActionsIncomingDetailsRows: View {
+    let message: MessageDTO
+
+    var body: some View {
+        ActionInfoRow(
+            text: L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message.pathLength)),
+            icon: "arrowshape.bounce.right"
+        )
 
         let sentText = L10n.Chats.Chats.Message.Info.sent(
             message.date.formatted(date: .abbreviated, time: .shortened))
         let adjusted = message.timestampCorrected ? " " + L10n.Chats.Chats.Message.Info.adjusted : ""
-        infoRow(sentText + adjusted)
+        ActionInfoRow(text: sentText + adjusted)
 
-        infoRow(L10n.Chats.Chats.Message.Info.received(
+        ActionInfoRow(text: L10n.Chats.Chats.Message.Info.received(
             message.createdAt.formatted(date: .abbreviated, time: .shortened)))
 
         if let snr = message.snr {
-            infoRow(L10n.Chats.Chats.Message.Info.snr(snrFormatted(snr)))
+            ActionInfoRow(text: L10n.Chats.Chats.Message.Info.snr(snrFormatted(snr)))
         }
     }
-
-    private func infoRow(_ text: String, icon: String? = nil) -> some View {
-        HStack {
-            if let icon {
-                Image(systemName: icon)
-                    .foregroundStyle(.secondary)
-            }
-            Text(text)
-            Spacer()
-        }
-        .font(.subheadline)
-        .foregroundStyle(.secondary)
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-    }
-
-    // MARK: - Helpers
 
     private func snrFormatted(_ snr: Double) -> String {
         let quality: String
@@ -403,6 +474,47 @@ struct MessageActionsSheet: View {
         default:
             return "\(pathLength)"
         }
+    }
+}
+
+// MARK: - Shared Helper Views
+
+private struct ActionButton: View {
+    let title: String
+    let icon: String
+    var isDestructive: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack {
+                Label(title, systemImage: icon)
+                Spacer()
+            }
+            .padding()
+            .contentShape(.rect)
+        }
+        .foregroundStyle(isDestructive ? .red : .primary)
+    }
+}
+
+private struct ActionInfoRow: View {
+    let text: String
+    var icon: String?
+
+    var body: some View {
+        HStack {
+            if let icon {
+                Image(systemName: icon)
+                    .foregroundStyle(.secondary)
+            }
+            Text(text)
+            Spacer()
+        }
+        .font(.subheadline)
+        .foregroundStyle(.secondary)
+        .padding(.horizontal)
+        .padding(.vertical, 6)
     }
 }
 

@@ -36,49 +36,49 @@ struct NoiseFloorStatisticsTests {
     }
 }
 
-@Suite("SignalQuality")
-struct SignalQualityTests {
+@Suite("NoiseFloorQuality")
+struct NoiseFloorQualityTests {
 
     @Test("excellent for noise floor <= -100")
     func excellentThreshold() {
-        #expect(SignalQuality.from(noiseFloor: -100) == .excellent)
-        #expect(SignalQuality.from(noiseFloor: -110) == .excellent)
+        #expect(NoiseFloorQuality.from(noiseFloor: -100) == .excellent)
+        #expect(NoiseFloorQuality.from(noiseFloor: -110) == .excellent)
     }
 
     @Test("good for noise floor <= -90")
     func goodThreshold() {
-        #expect(SignalQuality.from(noiseFloor: -90) == .good)
-        #expect(SignalQuality.from(noiseFloor: -99) == .good)
+        #expect(NoiseFloorQuality.from(noiseFloor: -90) == .good)
+        #expect(NoiseFloorQuality.from(noiseFloor: -99) == .good)
     }
 
     @Test("fair for noise floor <= -80")
     func fairThreshold() {
-        #expect(SignalQuality.from(noiseFloor: -80) == .fair)
-        #expect(SignalQuality.from(noiseFloor: -89) == .fair)
+        #expect(NoiseFloorQuality.from(noiseFloor: -80) == .fair)
+        #expect(NoiseFloorQuality.from(noiseFloor: -89) == .fair)
     }
 
     @Test("poor for noise floor > -80")
     func poorThreshold() {
-        #expect(SignalQuality.from(noiseFloor: -79) == .poor)
-        #expect(SignalQuality.from(noiseFloor: -60) == .poor)
+        #expect(NoiseFloorQuality.from(noiseFloor: -79) == .poor)
+        #expect(NoiseFloorQuality.from(noiseFloor: -60) == .poor)
     }
 
     @Test("label returns correct strings")
     func labelReturnsCorrectStrings() {
-        #expect(SignalQuality.excellent.label == "Excellent")
-        #expect(SignalQuality.good.label == "Good")
-        #expect(SignalQuality.fair.label == "Fair")
-        #expect(SignalQuality.poor.label == "Poor")
-        #expect(SignalQuality.unknown.label == "Unknown")
+        #expect(NoiseFloorQuality.excellent.label == "Excellent")
+        #expect(NoiseFloorQuality.good.label == "Good")
+        #expect(NoiseFloorQuality.fair.label == "Fair")
+        #expect(NoiseFloorQuality.poor.label == "Poor")
+        #expect(NoiseFloorQuality.unknown.label == "Unknown")
     }
 
     @Test("icon returns correct SF Symbols")
     func iconReturnsCorrectSymbols() {
-        #expect(SignalQuality.excellent.icon == "checkmark.circle.fill")
-        #expect(SignalQuality.good.icon == "circle.fill")
-        #expect(SignalQuality.fair.icon == "exclamationmark.circle.fill")
-        #expect(SignalQuality.poor.icon == "xmark.circle.fill")
-        #expect(SignalQuality.unknown.icon == "questionmark.circle")
+        #expect(NoiseFloorQuality.excellent.icon == "checkmark.circle.fill")
+        #expect(NoiseFloorQuality.good.icon == "circle.fill")
+        #expect(NoiseFloorQuality.fair.icon == "exclamationmark.circle.fill")
+        #expect(NoiseFloorQuality.poor.icon == "xmark.circle.fill")
+        #expect(NoiseFloorQuality.unknown.icon == "questionmark.circle")
     }
 }
 

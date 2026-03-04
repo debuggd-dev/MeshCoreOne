@@ -20,12 +20,6 @@
 /* Location: ChatsView.swift - Filter menu title */
 "chats.filter.title" = "Filter";
 
-/* Location: ChatsView.swift - Accessibility label when no filter is active */
-"chats.filter.accessibilityLabel" = "Filter gesprekken";
-
-/* Location: ChatsView.swift - Accessibility label format when filter is active - %@ is the filter name */
-"chats.filter.accessibilityLabelActive" = "Filter gesprekken, toont momenteel %@";
-
 /* Location: ChatsView.swift - Button to clear active filter */
 "chats.filter.clear" = "Filter wissen";
 
@@ -37,9 +31,6 @@
 
 /* Location: ChatsView.swift - Filter option for channels */
 "chats.filter.channels" = "Kanalen";
-
-/* Location: ChatsView.swift - Filter option for favorites */
-"chats.filter.favorites" = "Favorieten";
 
 // MARK: - Compose Menu
 
@@ -78,12 +69,6 @@
 /* Location: ChatsView.swift - Description when no channels */
 "chats.emptyState.noChannels.description" = "Neem deel aan een kanaal of maak er een";
 
-/* Location: ChatsView.swift - Title when no favorites */
-"chats.emptyState.noFavorites.title" = "Geen favorieten";
-
-/* Location: ChatsView.swift - Description when no favorites */
-"chats.emptyState.noFavorites.description" = "Markeer contacten als favoriet om ze hier te zien";
-
 /* Location: ChatsView.swift - Split view placeholder when no conversation selected */
 "chats.emptyState.selectConversation" = "Selecteer een gesprek";
 
@@ -117,28 +102,28 @@
 /* Location: RelativeTimestampText.swift - Timestamp for messages under 1 minute old */
 "chats.timestamp.now" = "Nu";
 
-// MARK: - Floating Action Buttons
+// MARK: - Scroll Buttons
 
-/* Location: ScrollToMentionFAB.swift - Accessibility label for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityLabel" = "Scroll naar je oudste ongelezen vermelding";
+/* Location: ScrollToMentionButton.swift - Accessibility label for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityLabel" = "Scroll naar je oudste ongelezen vermelding";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility hint for scroll to mention button */
-"chats.fab.scrollToMention.accessibilityHint" = "Dubbeltik om naar het bericht te navigeren";
+/* Location: ScrollToMentionButton.swift - Accessibility hint for scroll to mention button */
+"chats.scrollButton.scrollToMention.accessibilityHint" = "Dubbeltik om naar het bericht te navigeren";
 
-/* Location: ScrollToMentionFAB.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
-"chats.fab.scrollToMention.accessibilityValue" = "%d ongelezen vermeldingen";
+/* Location: ScrollToMentionButton.swift - Accessibility value for unread mention count - %d is the number of unread mentions */
+"chats.scrollButton.scrollToMention.accessibilityValue" = "%d ongelezen vermeldingen";
 
-/* Location: ScrollToBottomFAB.swift - Accessibility label for scroll to bottom button */
-"chats.fab.scrollToBottom.accessibilityLabel" = "Scroll naar nieuwste bericht";
+/* Location: ScrollToBottomButton.swift - Accessibility label for scroll to bottom button */
+"chats.scrollButton.scrollToBottom.accessibilityLabel" = "Scroll naar nieuwste bericht";
 
-/* Location: ScrollToMentionFAB.swift, ScrollToBottomFAB.swift - Badge text for 99+ unread */
-"chats.fab.badge.overflow" = "99+";
+/* Location: ScrollToMentionButton.swift, ScrollToBottomButton.swift - Badge text for 99+ unread */
+"chats.scrollButton.badge.overflow" = "99+";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility label for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
+/* Location: ScrollToDividerButton.swift - Accessibility label for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityLabel" = "Scroll to new messages";
 
-/* Location: ScrollToDividerFAB.swift - Accessibility hint for scroll to divider button */
-"chats.fab.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
+/* Location: ScrollToDividerButton.swift - Accessibility hint for scroll to divider button */
+"chats.scrollButton.scrollToDivider.accessibilityHint" = "Double-tap to scroll to the new messages divider";
 
 // MARK: - Chat View (Direct Messages)
 
@@ -934,3 +919,60 @@
 
 /* Location: BlockSenderSheet.swift - Purpose: Public key label */
 "chats.blockSender.key" = "Sleutel: %@";
+
+// MARK: - Message Actions & Notification Level
+
+/* Location: MessageActionsSheet.swift - Purpose: Sheet title */
+"chats.messageActions.title" = "Bericht";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Label for notification level */
+"chats.notificationLevel.label" = "Meldingsniveau";
+
+/* Location: NotificationLevelPicker.swift - Purpose: Accessibility hint for notification level */
+"chats.notificationLevel.hint" = "Kies wanneer je meldingen wilt ontvangen";
+
+/* Location: ConversationRow.swift - Purpose: Mentions-only indicator */
+"chats.row.mentionsOnly" = "Alleen vermeldingen";
+
+// MARK: - Reaction Badges & Actions
+
+/* Location: ReactionBadgeView.swift - Badge format: emoji + count */
+"reactions.badge" = "%@ %d";
+
+/* Location: ReactionBadgeView.swift - Badge accessibility hint */
+"reactions.badge_hint" = "Tik twee keer om te reageren, houd ingedrukt voor details";
+
+/* Location: ReactionBadgeView.swift - More badge showing additional reaction types */
+"reactions.more_badge" = "%d meer reactietypes";
+
+/* Location: ReactionBadgeView.swift - More badge accessibility hint */
+"reactions.more_badge_hint" = "Tik twee keer om alle reacties te bekijken";
+
+/* Location: EmojiPickerSheet.swift - More emojis button */
+"reactions.more_emojis" = "Meer emoji's";
+
+/* Location: ReactionBadgeView.swift - View details button */
+"reactions.view_details" = "Reactiedetails bekijken";
+
+/* Location: ReactionDetailsSheet.swift - Details sheet title */
+"reactions.details_title" = "Reacties";
+
+/* Location: ReactionSendError.swift - Send failed message */
+"reactions.send_failed" = "Reactie kon niet worden verzonden";
+
+/* Location: MessageActionsSheet.swift - Reply action */
+"reactions.reply" = "Beantwoorden";
+
+/* Location: MessageActionsSheet.swift - Copy action */
+"reactions.copy" = "Kopiëren";
+
+/* Location: MessageActionsSheet.swift - Delete action */
+"reactions.delete" = "Verwijderen";
+
+// MARK: - Malware Warning
+
+/* Location: MalwareWarningCard.swift - Warning title for flagged domains */
+"chats.malwareWarning.title" = "Link gemarkeerd als verdacht";
+
+/* Location: MalwareWarningCard.swift - Accessibility label - %@ is domain */
+"chats.malwareWarning.accessibility" = "Waarschuwing: link naar %@ gemarkeerd als verdacht";

@@ -191,3 +191,24 @@
 
 /* Status pill message when sync has failed */
 "statusPill.syncFailed" = "Sync échoué";
+
+
+// MARK: - Accessibility Toggle States
+
+/* Accessibility value for off state */
+"accessibility.off" = "Désactivé";
+
+/* Accessibility value for on state */
+"accessibility.on" = "Activé";
+
+
+// MARK: - Rate Limiting
+
+/* Error message when too many requests are sent */
+"common.error.rateLimited" = "Trop de requêtes. Veuillez réessayer dans un instant.";
+
+
+// MARK: - Reaction Notifications
+
+/* Notification body when someone reacts to your message - %1$@ is emoji, %2$@ is message text */
+"notifications.reaction.body" = "A réagi %1$@ à votre message : « %2$@ »";

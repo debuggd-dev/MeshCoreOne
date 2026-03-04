@@ -14,7 +14,7 @@ public struct MessageCacheKey: Hashable, Sendable {
 }
 
 /// Key for DM message lookup in LRU cache
-public struct DMCacheKey: Hashable, Sendable {
+public struct DirectMessageCacheKey: Hashable, Sendable {
     public let contactID: UUID
     public let messageHash: String
 
@@ -44,8 +44,8 @@ public actor MessageLRUCache {
     private var cache: [MessageCacheKey: [MessageCandidate]] = [:]
     private var order: [MessageCacheKey] = []
 
-    private var dmCache: [DMCacheKey: [MessageCandidate]] = [:]
-    private var dmOrder: [DMCacheKey] = []
+    private var dmCache: [DirectMessageCacheKey: [MessageCandidate]] = [:]
+    private var dmOrder: [DirectMessageCacheKey] = []
 
     private let capacity: Int
     private let maxCandidatesPerKey: Int
@@ -99,7 +99,7 @@ public actor MessageLRUCache {
     /// Indexes a DM message for later lookup
     public func indexDM(messageID: UUID, contactID: UUID, text: String, timestamp: UInt32) {
         let hash = ReactionParser.generateMessageHash(text: text, timestamp: timestamp)
-        let key = DMCacheKey(contactID: contactID, messageHash: hash)
+        let key = DirectMessageCacheKey(contactID: contactID, messageHash: hash)
         let candidate = MessageCandidate(messageID: messageID, text: text, timestamp: timestamp)
 
         // Update LRU order
@@ -133,7 +133,7 @@ public actor MessageLRUCache {
 
     /// Looks up DM candidates by cache key
     public func lookupDM(contactID: UUID, messageHash: String) -> [MessageCandidate] {
-        let key = DMCacheKey(contactID: contactID, messageHash: messageHash)
+        let key = DirectMessageCacheKey(contactID: contactID, messageHash: messageHash)
         return dmCache[key] ?? []
     }
 

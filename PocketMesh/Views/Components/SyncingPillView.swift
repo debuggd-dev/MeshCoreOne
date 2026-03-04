@@ -2,7 +2,6 @@ import SwiftUI
 
 /// A pill-shaped indicator that appears at the top of the app during sync and connection operations
 struct SyncingPillView: View {
-    private typealias Strings = L10n.Localizable.Common.Status
     let state: StatusPillState
     var onDisconnectedTap: (() -> Void)?
 
@@ -21,10 +20,10 @@ struct SyncingPillView: View {
     private var pillBody: some View {
         HStack(spacing: 8) {
             icon
-            Text(displayText)
+            Text(state.displayText)
                 .font(.subheadline)
-                .fontWeight(isFailure ? .bold : .medium)
-                .foregroundStyle(textColor)
+                .fontWeight(state.isFailure ? .bold : .medium)
+                .foregroundStyle(state.textColor)
                 .contentTransition(.identity)
         }
         .geometryGroup()
@@ -36,8 +35,8 @@ struct SyncingPillView: View {
                 .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(displayText)
-        .accessibilityAddTraits(isFailure ? [] : .updatesFrequently)
+        .accessibilityLabel(state.displayText)
+        .accessibilityAddTraits(state.isFailure ? [] : .updatesFrequently)
     }
 
     @ViewBuilder
@@ -64,36 +63,8 @@ struct SyncingPillView: View {
         .frame(width: 16, height: 16)
     }
 
-    private var displayText: String {
-        switch state {
-        case .failed(let message):
-            message
-        case .syncing:
-            Strings.syncing
-        case .connecting:
-            Strings.connecting
-        case .ready:
-            Strings.ready
-        case .disconnected:
-            Strings.disconnected
-        case .hidden:
-            ""
-        }
-    }
-
-    private var isFailure: Bool {
-        if case .failed = state { return true }
-        return false
-    }
-
-    private var textColor: Color {
-        if isFailure { return .red }
-        if case .disconnected = state { return .orange }
-        return .primary
-    }
-
     private var backgroundStyle: AnyShapeStyle {
-        if isFailure {
+        if state.isFailure {
             AnyShapeStyle(.red.opacity(0.15))
         } else {
             AnyShapeStyle(.regularMaterial)

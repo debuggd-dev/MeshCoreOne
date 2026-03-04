@@ -8,109 +8,6 @@ import os.log
 
 private let logger = Logger(subsystem: "com.pocketmesh", category: "TracePath")
 
-/// Represents a single hop in a trace result
-struct TraceHop: Identifiable {
-    let id = UUID()
-    let hashBytes: Data?          // nil for start/end node (local device)
-    let resolvedName: String?     // From contacts lookup
-    let snr: Double
-    let isStartNode: Bool
-    let isEndNode: Bool
-    let latitude: Double?
-    let longitude: Double?
-
-    /// Display string for hash (shows all bytes)
-    var hashDisplayString: String? {
-        hashBytes?.map { $0.hexString }.joined()
-    }
-
-    /// Whether this hop has a valid (non-zero) location.
-    /// Uses OR logic to match ContactDTO.hasLocation - if either coordinate is non-zero,
-    /// we have some location data. (0,0) is "Null Island" and extremely unlikely.
-    var hasLocation: Bool {
-        guard let lat = latitude, let lon = longitude else { return false }
-        return lat != 0 || lon != 0
-    }
-
-    /// Map SNR to 0-1 range for cellularbars variableValue
-    var signalLevel: Double {
-        Self.signalLevel(for: snr)
-    }
-
-    var signalColor: Color {
-        Self.signalColor(for: snr)
-    }
-
-    /// Shared signal level calculation for any SNR value
-    static func signalLevel(for snr: Double) -> Double {
-        if snr >= 5 { return 1.0 }
-        if snr >= -5 { return 0.66 }
-        return 0.33
-    }
-
-    /// Shared signal color calculation for any SNR value
-    static func signalColor(for snr: Double) -> Color {
-        if snr >= 5 { return .green }
-        if snr >= -5 { return .yellow }
-        return .red
-    }
-}
-
-/// Result of a trace operation
-struct TraceResult: Identifiable {
-    let id = UUID()
-    let hops: [TraceHop]
-    let durationMs: Int
-    let success: Bool
-    let errorMessage: String?
-    let tracedPathBytes: [UInt8]  // Path that was actually traced
-
-    /// Comma-separated path string for display/copy
-    var tracedPathString: String {
-        tracedPathBytes.map { $0.hexString }.joined(separator: ",")
-    }
-
-    static func timeout(attemptedPath: [UInt8]) -> TraceResult {
-        TraceResult(hops: [], durationMs: 0, success: false,
-                    errorMessage: L10n.Contacts.Contacts.Trace.Error.noResponse, tracedPathBytes: attemptedPath)
-    }
-
-    static func sendFailed(_ message: String, attemptedPath: [UInt8]) -> TraceResult {
-        TraceResult(hops: [], durationMs: 0, success: false,
-                    errorMessage: message, tracedPathBytes: attemptedPath)
-    }
-}
-
-/// Result of parsing and adding repeater codes
-struct CodeInputResult {
-    var added: [String] = []
-    var notFound: [String] = []
-    var alreadyInPath: [String] = []
-    var invalidFormat: [String] = []
-
-    var hasErrors: Bool {
-        !notFound.isEmpty || !alreadyInPath.isEmpty || !invalidFormat.isEmpty
-    }
-
-    var errorMessage: String? {
-        guard hasErrors else { return nil }
-
-        var parts: [String] = []
-
-        if !invalidFormat.isEmpty {
-            parts.append(L10n.Contacts.Contacts.CodeInput.Error.invalidFormat(invalidFormat.joined(separator: ", ")))
-        }
-        if !notFound.isEmpty {
-            parts.append(L10n.Contacts.Contacts.CodeInput.Error.notFound(notFound.joined(separator: ", ")))
-        }
-        if !alreadyInPath.isEmpty {
-            parts.append(L10n.Contacts.Contacts.CodeInput.Error.alreadyInPath(alreadyInPath.joined(separator: ", ")))
-        }
-
-        return parts.joined(separator: " · ")
-    }
-}
-
 @MainActor @Observable
 final class TracePathViewModel {
 
@@ -118,8 +15,15 @@ final class TracePathViewModel {
 
     var outboundPath: [PathHop] = []
     var availableRepeaters: [ContactDTO] = []
+    var availableRooms: [ContactDTO] = []
     var autoReturnPath = true
     private var allContacts: [ContactDTO] = []
+    var discoveredRepeaters: [DiscoveredNodeDTO] = []
+
+    /// Combined repeaters and rooms for resolution (hex codes, map pins, etc.)
+    var availableNodes: [ContactDTO] {
+        availableRepeaters + availableRooms
+    }
 
     // MARK: - Execution State
 
@@ -273,22 +177,37 @@ final class TracePathViewModel {
 
     // MARK: - Computed Properties
 
-    /// Full path: outbound + optional mirrored return (minus last hop to avoid duplicate)
-    var fullPathBytes: [UInt8] {
-        let outbound = outboundPath.map { $0.hashByte }
-        guard !outbound.isEmpty else { return [] }
+    /// Full path data: outbound + optional mirrored return (minus last hop to avoid duplicate)
+    var fullPathData: Data {
+        let outbound = outboundPath.map { $0.hashBytes }
+        guard !outbound.isEmpty else { return Data() }
 
         if autoReturnPath {
             let returnPath = outbound.reversed().dropFirst()
-            return outbound + returnPath
+            return Data((outbound + returnPath).flatMap { $0 })
         } else {
-            return outbound
+            return Data(outbound.flatMap { $0 })
         }
     }
 
-    /// Comma-separated path string for display/copy
+    /// Full path as byte array for backward compatibility
+    var fullPathBytes: [UInt8] {
+        Array(fullPathData)
+    }
+
+    /// Current hash size from device configuration (1, 2, or 3 bytes per hop)
+    var hashSize: Int {
+        appState?.connectedDevice?.hashSize ?? 1
+    }
+
+    /// Comma-separated path string for display/copy, chunked by hash size
     var fullPathString: String {
-        fullPathBytes.map { $0.hexString }.joined(separator: ",")
+        let data = fullPathData
+        let size = outboundPath.first?.hashBytes.count ?? hashSize
+        return stride(from: 0, to: data.count, by: size).map { start in
+            let end = min(start + size, data.count)
+            return data[start..<end].hexString()
+        }.joined(separator: ",")
     }
 
     /// Can run trace if path has at least one hop and not currently running
@@ -401,21 +320,29 @@ final class TracePathViewModel {
 
     // MARK: - Hash Resolution
 
-    /// Resolve a hash byte to the best matching repeater name
-    func resolveHashToName(_ hashByte: UInt8) -> String? {
-        bestRepeaterMatch(for: hashByte)?.displayName
+    /// Resolve hash bytes to the best matching node name (contacts first, then discovered)
+    func resolveHashToName(_ hashBytes: Data) -> String? {
+        resolveNode(for: hashBytes)?.resolvableName
     }
 
     private var currentUserLocation: CLLocation? {
         appState?.locationService.currentLocation
     }
 
-    private func bestRepeaterMatch(for hop: PathHop) -> ContactDTO? {
-        RepeaterResolver.bestMatch(for: hop, in: availableRepeaters, userLocation: currentUserLocation)
+    /// Try contacts first, then discovered nodes. Returns the best match from either source.
+    private func resolveNode(for hashBytes: Data) -> (any RepeaterResolvable)? {
+        if let contact = RepeaterResolver.bestMatch(for: hashBytes, in: availableNodes, userLocation: currentUserLocation) {
+            return contact
+        }
+        return RepeaterResolver.bestMatch(for: hashBytes, in: discoveredRepeaters, userLocation: currentUserLocation)
     }
 
-    private func bestRepeaterMatch(for hashByte: UInt8) -> ContactDTO? {
-        RepeaterResolver.bestMatch(for: hashByte, in: availableRepeaters, userLocation: currentUserLocation)
+    /// Try contacts first, then discovered nodes, using full PathHop for exact key match.
+    private func resolveNode(for hop: PathHop) -> (any RepeaterResolvable)? {
+        if let contact = RepeaterResolver.bestMatch(for: hop, in: availableNodes, userLocation: currentUserLocation) {
+            return contact
+        }
+        return RepeaterResolver.bestMatch(for: hop, in: discoveredRepeaters, userLocation: currentUserLocation)
     }
 
     // MARK: - Data Loading
@@ -428,20 +355,25 @@ final class TracePathViewModel {
             let contacts = try await dataStore.fetchContacts(deviceID: deviceID)
             allContacts = contacts
             availableRepeaters = contacts.filter { $0.type == .repeater }
+            availableRooms = contacts.filter { $0.type == .room }
+            let nodes = try await dataStore.fetchDiscoveredNodes(deviceID: deviceID)
+            discoveredRepeaters = nodes.filter { $0.nodeType == .repeater }
         } catch {
             logger.error("Failed to load contacts: \(error.localizedDescription)")
             allContacts = []
             availableRepeaters = []
+            availableRooms = []
+            discoveredRepeaters = []
         }
     }
 
     // MARK: - Path Manipulation
 
-    /// Add a repeater to the outbound path
-    func addRepeater(_ repeater: ContactDTO) {
+    /// Add a node to the outbound path
+    func addNode(_ node: some RepeaterResolvable) {
         clearError()
-        let hashByte = repeater.publicKey[0]
-        let hop = PathHop(hashByte: hashByte, publicKey: repeater.publicKey, resolvedName: repeater.displayName)
+        let hashBytes = Data(node.publicKey.prefix(hashSize))
+        let hop = PathHop(hashBytes: hashBytes, publicKey: node.publicKey, resolvedName: node.resolvableName)
         outboundPath.append(hop)
         activeSavedPath = nil
         pendingPathHash = nil
@@ -451,6 +383,7 @@ final class TracePathViewModel {
     /// Parse comma-separated hex codes and add matching repeaters to the path
     func addRepeatersFromCodes(_ input: String) -> CodeInputResult {
         var result = CodeInputResult()
+        let expectedHexLen = hashSize * 2
 
         let codes = input
             .split(separator: ",")
@@ -461,25 +394,41 @@ final class TracePathViewModel {
         var seen = Set<String>()
         let uniqueCodes = codes.filter { seen.insert($0).inserted }
 
-        let existingBytes = Set(outboundPath.map { $0.hashByte })
+        let existingHashes = Set(outboundPath.map { $0.hashBytes })
 
         for code in uniqueCodes {
-            // Validate hex format (exactly 2 hex characters)
-            guard code.count == 2,
-                  let byte = UInt8(code, radix: 16) else {
+            // Validate hex format (must match hash size * 2 hex characters)
+            guard code.count == expectedHexLen,
+                  code.allSatisfy(\.isHexDigit) else {
+                result.invalidFormat.append(code)
+                continue
+            }
+
+            // Parse hex string into bytes
+            var hashData = Data()
+            var idx = code.startIndex
+            while idx < code.endIndex {
+                let nextIdx = code.index(idx, offsetBy: 2)
+                guard let byte = UInt8(code[idx..<nextIdx], radix: 16) else {
+                    break
+                }
+                hashData.append(byte)
+                idx = nextIdx
+            }
+            guard hashData.count == hashSize else {
                 result.invalidFormat.append(code)
                 continue
             }
 
             // Check if already in path
-            if existingBytes.contains(byte) {
+            if existingHashes.contains(hashData) {
                 result.alreadyInPath.append(code)
                 continue
             }
 
-            // Find matching repeater (prefer closer or more recent on collisions)
-            if let repeater = bestRepeaterMatch(for: byte) {
-                let hop = PathHop(hashByte: byte, publicKey: repeater.publicKey, resolvedName: repeater.displayName)
+            // Find matching node (prefer closer or more recent on collisions)
+            if let match = resolveNode(for: hashData) {
+                let hop = PathHop(hashBytes: hashData, publicKey: match.publicKey, resolvedName: match.resolvableName)
                 outboundPath.append(hop)
                 result.added.append(code)
             } else {
@@ -570,6 +519,7 @@ final class TracePathViewModel {
                     deviceID: deviceID,
                     name: name,
                     pathBytes: Data(firstSuccess.tracedPathBytes),
+                    hashSize: hashSize,
                     initialRun: initialRun
                 )
 
@@ -616,6 +566,7 @@ final class TracePathViewModel {
                 deviceID: deviceID,
                 name: name,
                 pathBytes: Data(result.tracedPathBytes),
+                hashSize: hashSize,
                 initialRun: initialRun
             )
             activeSavedPath = savedPath
@@ -637,24 +588,28 @@ final class TracePathViewModel {
         // Reconstruct outbound path from saved bytes
         // The saved pathBytes contains full path (outbound + return)
         // We need to extract just the outbound portion
-        let fullPath = savedPath.pathHashBytes
+        let fullPath = savedPath.pathBytes
+        let size = savedPath.hashSize
         guard !fullPath.isEmpty else { return }
 
-        // Outbound is first half (rounded up)
-        let outboundCount = (fullPath.count + 1) / 2
-        let outboundBytes = Array(fullPath.prefix(outboundCount))
+        // Calculate total hops, then outbound is first half (rounded up)
+        let totalHops = fullPath.count / size
+        let outboundHopCount = (totalHops + 1) / 2
+        let outboundByteCount = outboundHopCount * size
 
-        for hashByte in outboundBytes {
-            let matchedRepeater = bestRepeaterMatch(for: hashByte)
+        for start in stride(from: 0, to: min(outboundByteCount, fullPath.count), by: size) {
+            let end = min(start + size, fullPath.count)
+            let hashBytes = Data(fullPath[start..<end])
+            let match = resolveNode(for: hashBytes)
             outboundPath.append(PathHop(
-                hashByte: hashByte,
-                publicKey: matchedRepeater?.publicKey,
-                resolvedName: matchedRepeater?.displayName
+                hashBytes: hashBytes,
+                publicKey: match?.publicKey,
+                resolvedName: match?.resolvableName
             ))
         }
 
         activeSavedPath = savedPath
-        logger.info("Loaded saved path: \(savedPath.name) with \(outboundBytes.count) hops")
+        logger.info("Loaded saved path: \(savedPath.name) with \(self.outboundPath.count) hops")
     }
 
     /// Clear the path (resets to empty state)
@@ -917,7 +872,8 @@ final class TracePathViewModel {
             logger.error("Failed to send trace: \(error.localizedDescription)")
             let failedResult = TraceResult.sendFailed(
                 L10n.Contacts.Contacts.Trace.Error.sendFailed,
-                attemptedPath: pendingPathHash ?? []
+                attemptedPath: pendingPathHash ?? [],
+                hashSize: hashSize
             )
             completedResults.append(failedResult)
             recordFailedRun(appState: appState)
@@ -938,7 +894,7 @@ final class TracePathViewModel {
                     // Timeout - resume continuation if still waiting
                     if traceContinuation != nil && pendingTag == tag {
                         logger.warning("Batch trace timeout for tag \(tag) after \(timeoutSeconds)s")
-                        let timeoutResult = TraceResult.timeout(attemptedPath: pendingPathHash ?? [])
+                        let timeoutResult = TraceResult.timeout(attemptedPath: pendingPathHash ?? [], hashSize: hashSize)
                         completedResults.append(timeoutResult)
                         recordFailedRun(appState: appState)
                         pendingPathHash = nil
@@ -1069,19 +1025,18 @@ final class TracePathViewModel {
             var latitude: Double?
             var longitude: Double?
 
-            if let bytes = node.hashBytes, let firstByte = bytes.first {
-                let matchingHop = outboundPath.first(where: { $0.hashByte == firstByte })
-                let bestMatch: ContactDTO?
-                if let hop = matchingHop {
-                    bestMatch = bestRepeaterMatch(for: hop)
-                } else {
-                    bestMatch = bestRepeaterMatch(for: firstByte)
-                }
-                resolvedName = bestMatch?.displayName ?? matchingHop?.resolvedName
+            if let bytes = node.hashBytes {
+                let matchingHop = outboundPath.first(where: { $0.hashBytes == bytes })
+                let match = matchingHop.flatMap({ resolveNode(for: $0) }) ?? resolveNode(for: bytes)
 
-                if let bestMatch, bestMatch.hasLocation {
-                    latitude = bestMatch.latitude
-                    longitude = bestMatch.longitude
+                if let match {
+                    resolvedName = match.resolvableName
+                    if match.hasLocation {
+                        latitude = match.latitude
+                        longitude = match.longitude
+                    }
+                } else {
+                    resolvedName = matchingHop?.resolvedName
                 }
             } else {
                 resolvedName = nil
@@ -1115,7 +1070,8 @@ final class TracePathViewModel {
             durationMs: durationMs,
             success: true,
             errorMessage: nil,
-            tracedPathBytes: pendingPathHash ?? []
+            tracedPathBytes: pendingPathHash ?? [],
+            hashSize: hashSize
         )
 
         // In batch mode, store result and resume continuation
@@ -1191,6 +1147,7 @@ final class TracePathViewModel {
     func setContactsForTesting(_ contacts: [ContactDTO]) {
         allContacts = contacts
         availableRepeaters = contacts.filter { $0.type == .repeater }
+        availableRooms = contacts.filter { $0.type == .room }
     }
     #endif
 }

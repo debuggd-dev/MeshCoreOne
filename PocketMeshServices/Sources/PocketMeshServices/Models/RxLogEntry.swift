@@ -183,18 +183,47 @@ public struct RxLogEntryDTO: Sendable, Identifiable, Equatable, Hashable {
 
     // MARK: - Computed Properties
 
-    /// Path nodes as hex strings for display.
-    public var pathNodesHex: [String] {
-        pathNodes.map { String(format: "%02X", $0) }
+    /// Hash size per hop in bytes (1, 2, or 3), derived from pathLength upper 2 bits.
+    /// TRACE path bytes are per-hop SNR values, always 1 byte each.
+    public var pathHashSize: Int {
+        if payloadType == .trace { return 1 }
+        return decodePathLen(pathLength)?.hashSize ?? 1
     }
 
-    /// Formatted path string for compact display.
-    public var pathDisplayString: String {
-        if pathLength == 0 {
-            return "direct"
+    /// Hop count decoded from pathLength.
+    /// For TRACE packets, pathLength is a raw byte count, not the encoded format.
+    public var hopCount: Int {
+        if payloadType == .trace { return Int(pathLength) }
+        return decodePathLen(pathLength)?.hopCount ?? 0
+    }
+
+    /// Target node hashes extracted from TRACE payload.
+    /// Layout: [tag:4][auth:4][flags:1][hashes...], hash size from flags lower 2 bits.
+    public var traceTargetHashes: [Data]? {
+        guard payloadType == .trace, packetPayload.count > 9 else { return nil }
+        let pathSz = Int(packetPayload[8] & 0x03)
+        let hashSize = 1 << pathSz
+        let hashBytes = packetPayload.dropFirst(9)
+        guard !hashBytes.isEmpty, hashBytes.count % hashSize == 0 else { return nil }
+        return stride(from: hashBytes.startIndex, to: hashBytes.endIndex, by: hashSize).map { start in
+            Data(hashBytes[start..<start + hashSize])
         }
-        let hexNodes = pathNodesHex.joined(separator: ":")
-        return "via [\(hexNodes)]"
+    }
+
+    /// Sender public key prefix for direct text messages.
+    public var senderPrefix: Data? {
+        guard !isFlood, payloadType == .textMessage else { return nil }
+        let hs = pathHashSize
+        guard packetPayload.count >= hs * 2 else { return nil }
+        return Data(packetPayload[hs..<hs * 2])
+    }
+
+    /// Recipient public key prefix for direct text messages.
+    public var recipientPrefix: Data? {
+        guard !isFlood, payloadType == .textMessage else { return nil }
+        let hs = pathHashSize
+        guard packetPayload.count >= hs * 2 else { return nil }
+        return Data(packetPayload[0..<hs])
     }
 
     /// Whether this is a flood-type route.
