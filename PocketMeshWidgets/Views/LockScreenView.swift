@@ -42,15 +42,6 @@ struct LockScreenView: View {
                 .accessibilityLabel("\(context.state.unreadCount) unread messages")
             }
 
-            if !context.state.isConnected, let disconnectedDate = context.state.disconnectedDate {
-                HStack {
-                    Spacer()
-                    Text(disconnectedDate, style: .relative)
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
-                }
-                .accessibilityLabel("Disconnected \(Text(disconnectedDate, style: .relative)) ago")
-            }
         }
         .padding()
         .accessibilityElement(children: .combine)

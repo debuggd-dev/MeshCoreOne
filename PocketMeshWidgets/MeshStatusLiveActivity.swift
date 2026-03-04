@@ -60,11 +60,6 @@ struct MeshStatusLiveActivity: Widget {
                         .accessibilityElement(children: .combine)
                     }
 
-                    if !context.state.isConnected, let date = context.state.disconnectedDate {
-                        Text(date, style: .relative)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
                 }
             } compactLeading: {
                 Image(systemName: context.state.antennaIconName)
