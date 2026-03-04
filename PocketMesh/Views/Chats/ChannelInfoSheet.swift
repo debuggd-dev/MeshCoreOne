@@ -78,6 +78,9 @@ struct ChannelInfoSheet: View {
                     Section {
                         Text(errorMessage)
                             .foregroundStyle(.red)
+                        Button(L10n.Localizable.Common.tryAgain) {
+                            Task { await deleteChannel() }
+                        }
                     }
                 }
 
