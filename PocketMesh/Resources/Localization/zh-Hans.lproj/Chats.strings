@@ -236,6 +236,9 @@
 /* Location: ChannelInfoSheet.swift - Footer explaining delete action */
 "chats.channelInfo.deleteFooter" = "删除频道，会将从您的设备中移除此频道，如果您有密钥，稍后也可以重新加入。";
 
+/* Location: ChatsView.swift - Alert title when channel deletion fails */
+"chats.channelInfo.deleteFailed.title" = "频道删除失败";
+
 /* Location: ChannelInfoSheet.swift - Error when device not connected */
 "chats.error.noDeviceConnected" = "未连接设备";
 

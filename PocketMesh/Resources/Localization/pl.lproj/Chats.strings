@@ -236,6 +236,9 @@
 /* Location: ChannelInfoSheet.swift - Footer explaining delete action */
 "chats.channelInfo.deleteFooter" = "Usunięcie usuwa ten kanał z urządzenia. Możesz dołączyć ponownie później, jeśli masz klucz tajny.";
 
+/* Location: ChatsView.swift - Alert title when channel deletion fails */
+"chats.channelInfo.deleteFailed.title" = "Nie udało się usunąć kanału";
+
 /* Location: ChannelInfoSheet.swift - Error when device not connected */
 "chats.error.noDeviceConnected" = "Brak połączonego urządzenia";
 

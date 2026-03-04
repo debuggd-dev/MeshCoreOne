@@ -236,6 +236,9 @@
 /* Location: ChannelInfoSheet.swift - Footer explaining delete action */
 "chats.channelInfo.deleteFooter" = "Verwijderen haalt dit kanaal van je apparaat. Je kunt later opnieuw deelnemen als je de geheime sleutel hebt.";
 
+/* Location: ChatsView.swift - Alert title when channel deletion fails */
+"chats.channelInfo.deleteFailed.title" = "Kanaal verwijderen mislukt";
+
 /* Location: ChannelInfoSheet.swift - Error when device not connected */
 "chats.error.noDeviceConnected" = "Geen apparaat verbonden";
 
