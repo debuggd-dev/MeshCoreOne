@@ -75,6 +75,54 @@ extension PersistenceStore {
         // swiftlint:disable:next line_length
         logger.debug("[REACTION-MATCH] Looking for message: targetSender=\(parsedReaction.targetSender), hash=\(parsedReaction.messageHash), localNodeName=\(localNodeName ?? "nil"), window=\(timestampWindow.lowerBound)...\(timestampWindow.upperBound)")
 
+        let candidates = try fetchChannelMessageCandidates(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            timestampWindow: timestampWindow,
+            limit: limit
+        )
+        logger.debug("[REACTION-MATCH] Found \(candidates.count) candidates in window")
+        guard !candidates.isEmpty else { return nil }
+
+        for candidate in candidates {
+            let direction = candidate.direction == .outgoing ? "outgoing" : "incoming"
+            let candidateHash = ReactionParser.generateMessageHash(text: candidate.text, timestamp: candidate.reactionTimestamp)
+            logger.debug("[REACTION-MATCH] Candidate: direction=\(direction), senderNodeName=\(candidate.senderNodeName ?? "nil"), hash=\(candidateHash), text=\(candidate.text.prefix(30))")
+
+            if candidate.direction == .outgoing {
+                guard let localNodeName, parsedReaction.targetSender == localNodeName else {
+                    logger.debug("[REACTION-MATCH] Skip outgoing: localNodeName=\(localNodeName ?? "nil"), targetSender=\(parsedReaction.targetSender)")
+                    continue
+                }
+            } else {
+                guard candidate.senderNodeName == parsedReaction.targetSender else {
+                    logger.debug("[REACTION-MATCH] Skip incoming: senderNodeName=\(candidate.senderNodeName ?? "nil") != targetSender=\(parsedReaction.targetSender)")
+                    continue
+                }
+            }
+
+            guard candidateHash == parsedReaction.messageHash else {
+                logger.debug("[REACTION-MATCH] Hash mismatch: \(candidateHash) != \(parsedReaction.messageHash)")
+                continue
+            }
+
+            logger.debug("[REACTION-MATCH] Found match!")
+            return candidate
+        }
+
+        logger.debug("[REACTION-MATCH] No match found")
+        return nil
+    }
+
+    /// Fetches channel message candidates within a timestamp window for meshcore-open reaction matching.
+    ///
+    /// Returns raw candidates without hash matching — the caller performs Dart hash comparison.
+    public func fetchChannelMessageCandidates(
+        deviceID: UUID,
+        channelIndex: UInt8,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) throws -> [MessageDTO] {
         let targetDeviceID = deviceID
         let targetChannelIndex: UInt8? = channelIndex
         let start = timestampWindow.lowerBound
@@ -96,53 +144,18 @@ extension PersistenceStore {
         )
         descriptor.fetchLimit = limit
 
-        let candidates = try modelContext.fetch(descriptor)
-        logger.debug("[REACTION-MATCH] Found \(candidates.count) candidates in window")
-        guard !candidates.isEmpty else { return nil }
-
-        for candidate in candidates {
-            let direction = candidate.direction == .outgoing ? "outgoing" : "incoming"
-            // Use senderTimestamp if available (for incoming messages with corrected timestamps)
-            let reactionTimestamp = candidate.senderTimestamp ?? candidate.timestamp
-            let candidateHash = ReactionParser.generateMessageHash(text: candidate.text, timestamp: reactionTimestamp)
-            logger.debug("[REACTION-MATCH] Candidate: direction=\(direction), senderNodeName=\(candidate.senderNodeName ?? "nil"), hash=\(candidateHash), text=\(candidate.text.prefix(30))")
-
-            if candidate.direction == .outgoing {
-                guard let localNodeName, parsedReaction.targetSender == localNodeName else {
-                    logger.debug("[REACTION-MATCH] Skip outgoing: localNodeName=\(localNodeName ?? "nil"), targetSender=\(parsedReaction.targetSender)")
-                    continue
-                }
-            } else {
-                guard candidate.senderNodeName == parsedReaction.targetSender else {
-                    logger.debug("[REACTION-MATCH] Skip incoming: senderNodeName=\(candidate.senderNodeName ?? "nil") != targetSender=\(parsedReaction.targetSender)")
-                    continue
-                }
-            }
-
-            guard candidateHash == parsedReaction.messageHash else {
-                logger.debug("[REACTION-MATCH] Hash mismatch: \(candidateHash) != \(parsedReaction.messageHash)")
-                continue
-            }
-
-            logger.debug("[REACTION-MATCH] Found match!")
-            return MessageDTO(from: candidate)
-        }
-
-        logger.debug("[REACTION-MATCH] No match found")
-        return nil
+        return try modelContext.fetch(descriptor).map { MessageDTO(from: $0) }
     }
 
-    /// Finds a DM message matching a reaction by hash within a timestamp window.
-    public func findDMMessageForReaction(
+    /// Fetches DM message candidates within a timestamp window for meshcore-open reaction matching.
+    ///
+    /// Returns raw candidates without hash matching — the caller performs Dart hash comparison.
+    public func fetchDMMessageCandidates(
         deviceID: UUID,
         contactID: UUID,
-        messageHash: String,
         timestampWindow: ClosedRange<UInt32>,
         limit: Int
-    ) throws -> MessageDTO? {
-        let logger = Logger(subsystem: "PocketMeshServices", category: "PersistenceStore")
-        logger.debug("[DM-REACTION-MATCH] Looking for DM: hash=\(messageHash), contactID=\(contactID)")
-
+    ) throws -> [MessageDTO] {
         let targetDeviceID = deviceID
         let targetContactID: UUID? = contactID
         let start = timestampWindow.lowerBound
@@ -164,27 +177,44 @@ extension PersistenceStore {
         )
         descriptor.fetchLimit = limit
 
-        let candidates = try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).map { MessageDTO(from: $0) }
+    }
+
+    /// Finds a DM message matching a reaction by hash within a timestamp window.
+    public func findDMMessageForReaction(
+        deviceID: UUID,
+        contactID: UUID,
+        messageHash: String,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) throws -> MessageDTO? {
+        let logger = Logger(subsystem: "PocketMeshServices", category: "PersistenceStore")
+        logger.debug("[DM-REACTION-MATCH] Looking for DM: hash=\(messageHash), contactID=\(contactID)")
+
+        let candidates = try fetchDMMessageCandidates(
+            deviceID: deviceID,
+            contactID: contactID,
+            timestampWindow: timestampWindow,
+            limit: limit
+        )
         logger.debug("[DM-REACTION-MATCH] Found \(candidates.count) candidates")
 
         for candidate in candidates {
             // Skip messages that are themselves reactions
-            if ReactionParser.parseDM(candidate.text) != nil {
+            if ReactionParser.isReactionText(candidate.text, isDM: true) {
                 logger.debug("[DM-REACTION-MATCH] Skipping candidate (is reaction): \(candidate.text.prefix(30))")
                 continue
             }
 
-            // Use senderTimestamp if available (for incoming messages with corrected timestamps)
-            let reactionTimestamp = candidate.senderTimestamp ?? candidate.timestamp
             let direction = candidate.direction == .outgoing ? "outgoing" : "incoming"
             let candidateHash = ReactionParser.generateMessageHash(
                 text: candidate.text,
-                timestamp: reactionTimestamp
+                timestamp: candidate.reactionTimestamp
             )
             logger.debug("[DM-REACTION-MATCH] Candidate: direction=\(direction), timestamp=\(candidate.timestamp), senderTimestamp=\(candidate.senderTimestamp ?? 0), hash=\(candidateHash), text=\(candidate.text.prefix(30))")
             if candidateHash == messageHash {
                 logger.debug("[DM-REACTION-MATCH] Found match: \(candidate.id)")
-                return MessageDTO(from: candidate)
+                return candidate
             } else {
                 logger.debug("[DM-REACTION-MATCH] Hash mismatch: \(candidateHash) != \(messageHash)")
             }

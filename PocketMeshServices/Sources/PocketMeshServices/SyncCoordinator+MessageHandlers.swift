@@ -479,6 +479,28 @@ extension SyncCoordinator {
         deviceID: UUID,
         services: ServiceContainer
     ) async -> Bool {
+        // Try meshcore-open v3 format
+        if let mcoReaction = MeshCoreOpenReactionParser.parse(text) {
+            return await handleMCODMReaction(
+                mcoReaction,
+                rawText: text,
+                contact: contact,
+                deviceID: deviceID,
+                services: services
+            )
+        }
+
+        // Try meshcore-open v1 format
+        if let v1Reaction = MeshCoreOpenReactionParser.parseV1(text) {
+            return await handleMCOV1DMReaction(
+                v1Reaction,
+                rawText: text,
+                contact: contact,
+                deviceID: deviceID,
+                services: services
+            )
+        }
+
         guard let parsed = ReactionParser.parseDM(text) else { return false }
 
         // Try to find target in cache first
@@ -503,15 +525,13 @@ extension SyncCoordinator {
         }
 
         // Try persistence fallback
-        let now = UInt32(Date().timeIntervalSince1970)
-        let windowStart = now > reactionTimestampWindowSeconds ? now - reactionTimestampWindowSeconds : 0
-        let windowEnd = now + reactionTimestampWindowSeconds
+        let timestampWindow = reactionTimestampWindow()
 
         if let targetMessage = try? await services.dataStore.findDMMessageForReaction(
             deviceID: deviceID,
             contactID: contact.id,
             messageHash: parsed.messageHash,
-            timestampWindow: windowStart...windowEnd,
+            timestampWindow: timestampWindow,
             limit: 200
         ) {
             let reactionDTO = ReactionDTO(
@@ -555,6 +575,33 @@ extension SyncCoordinator {
         deviceID: UUID,
         services: ServiceContainer
     ) async -> Bool {
+        // Try meshcore-open v3 format
+        if let mcoReaction = MeshCoreOpenReactionParser.parse(text) {
+            return await handleMCOChannelReaction(
+                mcoReaction,
+                rawText: text,
+                channelIndex: channelIndex,
+                senderNodeName: senderNodeName,
+                selfNodeName: selfNodeName,
+                receiveTime: receiveTime,
+                deviceID: deviceID,
+                services: services
+            )
+        }
+
+        // Try meshcore-open v1 format
+        if let v1Reaction = MeshCoreOpenReactionParser.parseV1(text) {
+            return await handleMCOV1ChannelReaction(
+                v1Reaction,
+                rawText: text,
+                channelIndex: channelIndex,
+                senderNodeName: senderNodeName,
+                selfNodeName: selfNodeName,
+                deviceID: deviceID,
+                services: services
+            )
+        }
+
         guard let parsed = services.reactionService.tryProcessAsReaction(text) else { return false }
 
         let senderName = senderNodeName ?? "Unknown"
@@ -579,9 +626,7 @@ extension SyncCoordinator {
             return true
         }
 
-        let now = UInt32(receiveTime.timeIntervalSince1970)
-        let windowStart = now > reactionTimestampWindowSeconds ? now - reactionTimestampWindowSeconds : 0
-        let windowEnd = now + reactionTimestampWindowSeconds
+        let timestampWindow = reactionTimestampWindow(at: receiveTime)
 
         logger.debug("DB lookup: selfNodeName='\(selfNodeName)', targetSender=\(parsed.targetSender), hash=\(parsed.messageHash)")
 
@@ -590,7 +635,7 @@ extension SyncCoordinator {
             channelIndex: channelIndex,
             parsedReaction: parsed,
             localNodeName: selfNodeName.isEmpty ? nil : selfNodeName,
-            timestampWindow: windowStart...windowEnd,
+            timestampWindow: timestampWindow,
             limit: 200
         ) {
             let targetMessageID = targetMessage.id
@@ -746,6 +791,250 @@ extension SyncCoordinator {
             "Unresolved channel notification summary: total=\(sortedIndices.count), indices=\(sortedIndices)"
         )
         lastUnresolvedChannelSummaryAt = now
+    }
+
+    /// Computes a symmetric timestamp window around the given time for reaction matching.
+    private func reactionTimestampWindow(at time: Date = Date()) -> ClosedRange<UInt32> {
+        reactionTimestampWindow(anchor: UInt32(time.timeIntervalSince1970))
+    }
+
+    /// Computes a symmetric timestamp window around a specific anchor timestamp.
+    private func reactionTimestampWindow(anchor: UInt32) -> ClosedRange<UInt32> {
+        let start = anchor > reactionTimestampWindowSeconds ? anchor - reactionTimestampWindowSeconds : 0
+        return start...(anchor + reactionTimestampWindowSeconds)
+    }
+
+    // MARK: - meshcore-open Reaction Handlers
+
+    /// Handles a meshcore-open DM reaction by computing Dart hashes against DB candidates.
+    ///
+    /// No LRU cache or pending queue — if no match is found, the reaction is silently dropped.
+    private func handleMCODMReaction(
+        _ mcoReaction: ParsedMCOReaction,
+        rawText: String,
+        contact: ContactDTO,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        let timestampWindow = reactionTimestampWindow()
+
+        guard let candidates = try? await services.dataStore.fetchDMMessageCandidates(
+            deviceID: deviceID,
+            contactID: contact.id,
+            timestampWindow: timestampWindow,
+            limit: 200
+        ), !candidates.isEmpty else {
+            logger.debug("MCO DM reaction \(mcoReaction.emoji): no candidates in window")
+            return true
+        }
+
+        for candidate in candidates {
+            // Skip messages that are themselves reactions
+            if ReactionParser.isReactionText(candidate.text, isDM: true) { continue }
+
+            let candidateHash = MeshCoreOpenReactionParser.computeReactionHash(
+                timestamp: candidate.reactionTimestamp,
+                senderName: nil,
+                text: candidate.text
+            )
+
+            guard candidateHash == mcoReaction.dartHash else { continue }
+
+            let reactionDTO = ReactionDTO(
+                messageID: candidate.id,
+                emoji: mcoReaction.emoji,
+                senderName: contact.displayName,
+                messageHash: mcoReaction.dartHash,
+                rawText: rawText,
+                contactID: contact.id,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved MCO DM reaction \(mcoReaction.emoji) to message \(candidate.id)")
+            }
+            return true
+        }
+
+        logger.debug("MCO DM reaction \(mcoReaction.emoji): no hash match found")
+        return true
+    }
+
+    /// Handles a meshcore-open channel reaction by computing Dart hashes against DB candidates.
+    ///
+    /// No LRU cache or pending queue — if no match is found, the reaction is silently dropped.
+    private func handleMCOChannelReaction(
+        _ mcoReaction: ParsedMCOReaction,
+        rawText: String,
+        channelIndex: UInt8,
+        senderNodeName: String?,
+        selfNodeName: String,
+        receiveTime: Date,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        let senderName = senderNodeName ?? "Unknown"
+        let timestampWindow = reactionTimestampWindow(at: receiveTime)
+
+        guard let candidates = try? await services.dataStore.fetchChannelMessageCandidates(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            timestampWindow: timestampWindow,
+            limit: 200
+        ), !candidates.isEmpty else {
+            logger.debug("MCO channel reaction \(mcoReaction.emoji): no candidates in window")
+            return true
+        }
+
+        for candidate in candidates {
+            // Skip messages that are themselves reactions
+            if ReactionParser.isReactionText(candidate.text, isDM: false) { continue }
+
+            // For channel messages, the Dart hash includes the sender name
+            let candidateSenderName: String?
+            if candidate.direction == .outgoing {
+                candidateSenderName = selfNodeName.isEmpty ? nil : selfNodeName
+            } else {
+                candidateSenderName = candidate.senderNodeName
+            }
+
+            let candidateHash = MeshCoreOpenReactionParser.computeReactionHash(
+                timestamp: candidate.reactionTimestamp,
+                senderName: candidateSenderName,
+                text: candidate.text
+            )
+
+            guard candidateHash == mcoReaction.dartHash else { continue }
+
+            let reactionDTO = ReactionDTO(
+                messageID: candidate.id,
+                emoji: mcoReaction.emoji,
+                senderName: senderName,
+                messageHash: mcoReaction.dartHash,
+                rawText: rawText,
+                channelIndex: channelIndex,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved MCO channel reaction \(mcoReaction.emoji) to message \(candidate.id)")
+            }
+            return true
+        }
+
+        logger.debug("MCO channel reaction \(mcoReaction.emoji): no hash match found")
+        return true
+    }
+
+    // MARK: - meshcore-open V1 Reaction Handlers
+
+    /// Handles a meshcore-open v1 DM reaction by matching timestamp + Dart text hash.
+    private func handleMCOV1DMReaction(
+        _ v1Reaction: ParsedMCOReactionV1,
+        rawText: String,
+        contact: ContactDTO,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        let timestampWindow = reactionTimestampWindow(
+            anchor: v1Reaction.timestampSeconds
+        )
+
+        guard let candidates = try? await services.dataStore.fetchDMMessageCandidates(
+            deviceID: deviceID,
+            contactID: contact.id,
+            timestampWindow: timestampWindow,
+            limit: 200
+        ), !candidates.isEmpty else {
+            logger.debug("MCO v1 DM reaction \(v1Reaction.emoji): no candidates in window")
+            return true
+        }
+
+        for candidate in candidates {
+            if ReactionParser.isReactionText(candidate.text, isDM: true) { continue }
+
+            let textHash = MeshCoreOpenReactionParser.dartStringHash(candidate.text)
+            guard textHash == v1Reaction.textHash else { continue }
+
+            let reactionDTO = ReactionDTO(
+                messageID: candidate.id,
+                emoji: v1Reaction.emoji,
+                senderName: contact.displayName,
+                messageHash: v1Reaction.messageIdHash,
+                rawText: rawText,
+                contactID: contact.id,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved MCO v1 DM reaction \(v1Reaction.emoji) to message \(candidate.id)")
+            }
+            return true
+        }
+
+        logger.debug("MCO v1 DM reaction \(v1Reaction.emoji): no hash match found")
+        return true
+    }
+
+    /// Handles a meshcore-open v1 channel reaction by matching timestamp + Dart sender/text hashes.
+    private func handleMCOV1ChannelReaction(
+        _ v1Reaction: ParsedMCOReactionV1,
+        rawText: String,
+        channelIndex: UInt8,
+        senderNodeName: String?,
+        selfNodeName: String,
+        deviceID: UUID,
+        services: ServiceContainer
+    ) async -> Bool {
+        let senderName = senderNodeName ?? "Unknown"
+        let timestampWindow = reactionTimestampWindow(
+            anchor: v1Reaction.timestampSeconds
+        )
+
+        guard let candidates = try? await services.dataStore.fetchChannelMessageCandidates(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            timestampWindow: timestampWindow,
+            limit: 200
+        ), !candidates.isEmpty else {
+            logger.debug("MCO v1 channel reaction \(v1Reaction.emoji): no candidates in window")
+            return true
+        }
+
+        for candidate in candidates {
+            if ReactionParser.isReactionText(candidate.text, isDM: false) { continue }
+
+            // Verify sender name hash
+            let candidateSenderName: String?
+            if candidate.direction == .outgoing {
+                candidateSenderName = selfNodeName.isEmpty ? nil : selfNodeName
+            } else {
+                candidateSenderName = candidate.senderNodeName
+            }
+
+            if let name = candidateSenderName {
+                let nameHash = MeshCoreOpenReactionParser.dartStringHash(name)
+                guard nameHash == v1Reaction.senderNameHash else { continue }
+            }
+
+            // Verify text hash
+            let textHash = MeshCoreOpenReactionParser.dartStringHash(candidate.text)
+            guard textHash == v1Reaction.textHash else { continue }
+
+            let reactionDTO = ReactionDTO(
+                messageID: candidate.id,
+                emoji: v1Reaction.emoji,
+                senderName: senderName,
+                messageHash: v1Reaction.messageIdHash,
+                rawText: rawText,
+                channelIndex: channelIndex,
+                deviceID: deviceID
+            )
+            if await persistReactionIfNew(reactionDTO, services: services) {
+                logger.debug("Saved MCO v1 channel reaction \(v1Reaction.emoji) to message \(candidate.id)")
+            }
+            return true
+        }
+
+        logger.debug("MCO v1 channel reaction \(v1Reaction.emoji): no hash match found")
+        return true
     }
 
     nonisolated static func parseChannelMessage(_ text: String) -> (senderNodeName: String?, messageText: String) {

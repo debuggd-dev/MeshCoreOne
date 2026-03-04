@@ -94,21 +94,14 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
         timestampWindow: ClosedRange<UInt32>,
         limit: Int
     ) async throws -> MessageDTO? {
-        if let error = stubbedFetchMessageError {
-            throw error
-        }
+        let candidates = try await fetchChannelMessageCandidates(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            timestampWindow: timestampWindow,
+            limit: limit
+        )
 
-        let candidates = messages.values.filter {
-            $0.deviceID == deviceID &&
-            $0.channelIndex == channelIndex &&
-            timestampWindow.contains($0.timestamp)
-        }
-        .sorted {
-            if $0.timestamp != $1.timestamp { return $0.timestamp > $1.timestamp }
-            return $0.createdAt > $1.createdAt
-        }
-
-        for candidate in candidates.prefix(limit) {
+        for candidate in candidates {
             if candidate.direction == .outgoing {
                 guard let localNodeName, parsedReaction.targetSender == localNodeName else {
                     continue
@@ -121,7 +114,7 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
 
             let hash = ReactionParser.generateMessageHash(
                 text: candidate.text,
-                timestamp: candidate.timestamp
+                timestamp: candidate.reactionTimestamp
             )
             guard hash == parsedReaction.messageHash else { continue }
 
@@ -131,18 +124,40 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
         return nil
     }
 
-    public func findDMMessageForReaction(
+    public func fetchChannelMessageCandidates(
         deviceID: UUID,
-        contactID: UUID,
-        messageHash: String,
+        channelIndex: UInt8,
         timestampWindow: ClosedRange<UInt32>,
         limit: Int
-    ) async throws -> MessageDTO? {
+    ) async throws -> [MessageDTO] {
         if let error = stubbedFetchMessageError {
             throw error
         }
 
-        let candidates = messages.values.filter {
+        return messages.values.filter {
+            $0.deviceID == deviceID &&
+            $0.channelIndex == channelIndex &&
+            timestampWindow.contains($0.timestamp)
+        }
+        .sorted {
+            if $0.timestamp != $1.timestamp { return $0.timestamp > $1.timestamp }
+            return $0.createdAt > $1.createdAt
+        }
+        .prefix(limit)
+        .map { $0 }
+    }
+
+    public func fetchDMMessageCandidates(
+        deviceID: UUID,
+        contactID: UUID,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> [MessageDTO] {
+        if let error = stubbedFetchMessageError {
+            throw error
+        }
+
+        return messages.values.filter {
             $0.deviceID == deviceID &&
             $0.contactID == contactID &&
             timestampWindow.contains($0.timestamp)
@@ -151,11 +166,31 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
             if $0.timestamp != $1.timestamp { return $0.timestamp > $1.timestamp }
             return $0.createdAt > $1.createdAt
         }
+        .prefix(limit)
+        .map { $0 }
+    }
 
-        for candidate in candidates.prefix(limit) {
+    public func findDMMessageForReaction(
+        deviceID: UUID,
+        contactID: UUID,
+        messageHash: String,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> MessageDTO? {
+        let candidates = try await fetchDMMessageCandidates(
+            deviceID: deviceID,
+            contactID: contactID,
+            timestampWindow: timestampWindow,
+            limit: limit
+        )
+
+        for candidate in candidates {
+            // Skip messages that are themselves reactions
+            if ReactionParser.isReactionText(candidate.text, isDM: true) { continue }
+
             let hash = ReactionParser.generateMessageHash(
                 text: candidate.text,
-                timestamp: candidate.timestamp
+                timestamp: candidate.reactionTimestamp
             )
             if hash == messageHash {
                 return candidate

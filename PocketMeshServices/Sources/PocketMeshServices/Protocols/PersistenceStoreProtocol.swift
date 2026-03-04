@@ -47,6 +47,22 @@ public protocol PersistenceStoreProtocol: Actor {
         limit: Int
     ) async throws -> MessageDTO?
 
+    /// Fetches channel message candidates for meshcore-open reaction matching
+    func fetchChannelMessageCandidates(
+        deviceID: UUID,
+        channelIndex: UInt8,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> [MessageDTO]
+
+    /// Fetches DM message candidates for meshcore-open reaction matching
+    func fetchDMMessageCandidates(
+        deviceID: UUID,
+        contactID: UUID,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> [MessageDTO]
+
     /// Finds a DM message matching a reaction by hash within a timestamp window
     func findDMMessageForReaction(
         deviceID: UUID,
