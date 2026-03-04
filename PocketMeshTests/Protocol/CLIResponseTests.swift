@@ -269,16 +269,16 @@ struct CLIResponseTests {
     }
 
     @Test func parse_emptyAfterStrip() {
-        // When input is "> ", trimming whitespace first gives ">" (no space),
-        // which doesn't match the "> " prefix, so result is raw ">"
+        // When input is "> ", trimming whitespace gives ">", which is the bare
+        // CLI prompt character — treated as empty content
         let result = CLIResponse.parse("> ")
-        #expect(result == .raw(">"))
+        #expect(result == .raw(""))
     }
 
     @Test func parse_justPrompt() {
-        // Just the prompt character without space
+        // Just the prompt character without space — treated as empty content
         let result = CLIResponse.parse(">")
-        #expect(result == .raw(">"))
+        #expect(result == .raw(""))
     }
 
     // MARK: - Query Hint Matching (Integration)
