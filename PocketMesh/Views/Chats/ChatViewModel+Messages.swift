@@ -586,6 +586,10 @@ extension ChatViewModel {
             // Prepend older messages (they're chronologically earlier)
             messages.insert(contentsOf: olderMessages, at: 0)
 
+            // Re-run same-sender reordering across the page boundary to handle
+            // clusters that were split between the existing and newly loaded pages
+            messages = PersistenceStore.reorderSameSenderClusters(messages)
+
             // Update lookup dictionary
             for message in olderMessages {
                 messagesByID[message.id] = message

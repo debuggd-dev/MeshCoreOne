@@ -285,8 +285,8 @@ final class ChatViewModel {
             return DisplayFlags(showTimestamp: true, showDirectionGap: false, showSenderName: true)
         }
 
-        // Time gap calculation (shared by timestamp and sender name logic)
-        let timeGap = abs(Int(message.timestamp) - Int(previous.timestamp))
+        // Time gap calculation based on receive time (consistent with sort order)
+        let timeGap = abs(Int(message.createdAt.timeIntervalSince(previous.createdAt)))
 
         // Timestamp: gap > 5 minutes
         let showTimestamp = timeGap > messageGroupingGapSeconds

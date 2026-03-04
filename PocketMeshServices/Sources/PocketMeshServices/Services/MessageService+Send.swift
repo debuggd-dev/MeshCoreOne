@@ -42,7 +42,7 @@ extension MessageService {
         let messageID = UUID()
         let timestamp = UInt32(Date().timeIntervalSince1970)
 
-        // Save message to store as pending FIRST
+        // Save message to store as pending first
         let messageDTO = createOutgoingMessage(
             id: messageID,
             deviceID: contact.deviceID,
@@ -140,7 +140,7 @@ extension MessageService {
         let messageID = UUID()
         let timestamp = UInt32(Date().timeIntervalSince1970)
 
-        // Save message to store as pending FIRST
+        // Save message to store as pending first
         let messageDTO = createOutgoingMessage(
             id: messageID,
             deviceID: contact.deviceID,
@@ -525,7 +525,7 @@ extension MessageService {
         let messageID = UUID()
         let timestamp = UInt32(Date().timeIntervalSince1970)
 
-        // Save message to store as pending FIRST
+        // Save message to store as pending first
         let messageDTO = createOutgoingChannelMessage(
             id: messageID,
             deviceID: deviceID,
@@ -562,8 +562,7 @@ extension MessageService {
     ///
     /// This is used for "Send Again" - it re-transmits the same message
     /// rather than creating a duplicate. Uses a new timestamp so the mesh
-    /// treats it as a fresh broadcast, and updates the stored timestamp
-    /// so the message moves to the bottom of the chat.
+    /// treats it as a fresh broadcast.
     public func resendChannelMessage(messageID: UUID) async throws {
         guard let message = try await dataStore.fetchMessage(id: messageID) else {
             throw MessageServiceError.sendFailed("Message not found")
@@ -582,7 +581,7 @@ extension MessageService {
             timestamp: now
         )
 
-        // Update stored timestamp (moves message to bottom of chat)
+        // Update stored timestamp so the mesh treats this as a new broadcast
         try await dataStore.updateMessageTimestamp(id: messageID, timestamp: newTimestamp)
 
         // Increment send count

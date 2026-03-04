@@ -22,7 +22,9 @@ public enum MessageDirection: Int, Sendable, Codable {
 @Model
 public final class Message {
     #Index<Message>(
+        [\.deviceID, \.channelIndex, \.createdAt],
         [\.deviceID, \.channelIndex, \.timestamp],
+        [\.contactID, \.createdAt],
         [\.contactID, \.containsSelfMention, \.mentionSeen],
         [\.deviceID, \.channelIndex, \.containsSelfMention, \.mentionSeen]
     )
@@ -249,10 +251,6 @@ public extension Message {
         status == .failed
     }
 
-    /// Date representation of timestamp
-    var date: Date {
-        Date(timeIntervalSince1970: TimeInterval(timestamp))
-    }
 }
 
 // MARK: - Sendable DTO
@@ -427,7 +425,13 @@ public struct MessageDTO: Sendable, Equatable, Hashable, Identifiable {
         status == .failed
     }
 
+    /// Date used for display and sorting (local receive time)
     public var date: Date {
+        createdAt
+    }
+
+    /// Date derived from the sender's device clock (may differ from `date` if the sender's clock is skewed)
+    public var senderDate: Date {
         Date(timeIntervalSince1970: TimeInterval(timestamp))
     }
 
