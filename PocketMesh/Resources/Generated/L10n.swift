@@ -127,6 +127,10 @@ public enum L10n {
           /// Location: ChannelInfoSheet.swift - Confirmation dialog title
           public static let title = L10n.tr("Chats", "chats.channelInfo.deleteConfirm.title", fallback: "Delete Channel")
         }
+        public enum DeleteFailed {
+          /// Location: ChatsView.swift - Alert title when channel deletion fails
+          public static let title = L10n.tr("Chats", "chats.channelInfo.deleteFailed.title", fallback: "Channel Deletion Failed")
+        }
       }
       public enum ChannelOptions {
         /// Location: ChannelOptionsSheet.swift - Loading indicator text
@@ -1661,7 +1665,7 @@ public enum L10n {
           /// Location: TracePathListView.swift - Purpose: Code input footer
           public static let codeFooter = L10n.tr("Contacts", "contacts.trace.list.codeFooter", fallback: "Press Return to add repeaters")
           /// Location: TracePathListView.swift - Purpose: Code input placeholder
-          public static let codePlaceholder = L10n.tr("Contacts", "contacts.trace.list.codePlaceholder", fallback: "Example: A1, 2B, 9S")
+          public static let codePlaceholder = L10n.tr("Contacts", "contacts.trace.list.codePlaceholder", fallback: "Example: A1, 2B")
           /// Location: TracePathListView.swift - Purpose: Copy path button
           public static let copyPath = L10n.tr("Contacts", "contacts.trace.list.copyPath", fallback: "Copy Path")
           /// Location: TracePathListView.swift - Purpose: Empty path instruction
