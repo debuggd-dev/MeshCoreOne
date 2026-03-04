@@ -204,6 +204,16 @@ struct ChatsView: View {
         let message: String
     }
 
+    private enum ChannelDeleteError: LocalizedError {
+        case servicesUnavailable
+
+        var errorDescription: String? {
+            switch self {
+            case .servicesUnavailable: L10n.Chats.Chats.Error.servicesUnavailable
+            }
+        }
+    }
+
     private func loadConversations() async {
         guard let deviceID = appState.currentDeviceID else { return }
         viewModel.configure(appState: appState)
@@ -280,18 +290,8 @@ struct ChatsView: View {
     }
 
     private func deleteDirectConversation(_ contact: ContactDTO) {
-        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .direct(contact) {
-            selectedRoute = nil
-            appState.navigation.chatsSelectedRoute = nil
-        }
-
+        clearNavigationIfActive(.direct(contact))
         viewModel.removeConversation(.direct(contact))
-
-        if !shouldUseSplitView && activeRoute == .direct(contact) {
-            navigationPath.removeLast(navigationPath.count)
-            activeRoute = nil
-            appState.navigation.tabBarVisibility = .visible
-        }
 
         Task {
             try? await viewModel.deleteConversation(for: contact)
@@ -304,16 +304,7 @@ struct ChatsView: View {
         Task {
             do {
                 try await deleteChannel(channel)
-
-                if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .channel(channel) {
-                    selectedRoute = nil
-                    appState.navigation.chatsSelectedRoute = nil
-                }
-                if !shouldUseSplitView && activeRoute == .channel(channel) {
-                    navigationPath.removeLast(navigationPath.count)
-                    activeRoute = nil
-                    appState.navigation.tabBarVisibility = .visible
-                }
+                clearNavigationIfActive(.channel(channel))
                 await loadConversations()
             } catch {
                 channelDeleteFailure = ChannelDeleteFailure(
@@ -340,18 +331,8 @@ struct ChatsView: View {
             await appState.services?.notificationService.updateBadgeCount()
 
             await MainActor.run {
-                if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .room(session) {
-                    selectedRoute = nil
-                    appState.navigation.chatsSelectedRoute = nil
-                }
-
+                clearNavigationIfActive(.room(session))
                 viewModel.removeConversation(.room(session))
-
-                if !shouldUseSplitView && activeRoute == .room(session) {
-                    navigationPath.removeLast(navigationPath.count)
-                    activeRoute = nil
-                    appState.navigation.tabBarVisibility = .visible
-                }
             }
         } catch {
             chatsViewLogger.error("Failed to delete room: \(error)")
@@ -359,7 +340,9 @@ struct ChatsView: View {
     }
 
     private func deleteChannel(_ channel: ChannelDTO) async throws {
-        guard let channelService = appState.services?.channelService else { return }
+        guard let channelService = appState.services?.channelService else {
+            throw ChannelDeleteError.servicesUnavailable
+        }
         try await channelService.clearChannel(
             deviceID: channel.deviceID,
             index: channel.index
@@ -369,6 +352,18 @@ struct ChatsView: View {
             deviceID: channel.deviceID
         )
         await appState.services?.notificationService.updateBadgeCount()
+    }
+
+    private func clearNavigationIfActive(_ route: ChatRoute) {
+        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == route {
+            selectedRoute = nil
+            appState.navigation.chatsSelectedRoute = nil
+        }
+        if !shouldUseSplitView && activeRoute == route {
+            navigationPath.removeLast(navigationPath.count)
+            activeRoute = nil
+            appState.navigation.tabBarVisibility = .visible
+        }
     }
 
     private func handlePendingNavigation() {
