@@ -8,12 +8,14 @@ private let logger = Logger(subsystem: "com.pocketmesh", category: "LocationSett
 struct LocationSettingsSection: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Binding var showingLocationPicker: Bool
     @State private var shareLocation = false
     @State private var autoUpdateLocation = false
     @State private var gpsSource: GPSSource = .phone
     @State private var deviceHasGPS = false
     @State private var showError: String?
+    @State private var showLocationDeniedAlert = false
     @State private var retryAlert = RetryAlertState()
     @State private var isSaving = false
     @State private var didLoad = false
@@ -65,6 +67,11 @@ struct LocationSettingsSection: View {
             }
             .onChange(of: autoUpdateLocation) { _, newValue in
                 guard let deviceID = appState.connectedDevice?.id else { return }
+                if newValue, gpsSource == .phone, appState.locationService.isLocationDenied {
+                    autoUpdateLocation = false
+                    showLocationDeniedAlert = true
+                    return
+                }
                 devicePreferenceStore.setAutoUpdateLocationEnabled(newValue, deviceID: deviceID)
                 if newValue {
                     if gpsSource == .phone {
@@ -77,23 +84,35 @@ struct LocationSettingsSection: View {
             }
             .radioDisabled(for: appState.connectionState, or: isSaving)
 
-            // GPS Source (only show picker when device has GPS hardware)
-            if autoUpdateLocation, deviceHasGPS {
-                Picker(L10n.Settings.Location.gpsSource, selection: $gpsSource) {
-                    Text(L10n.Settings.Location.GpsSource.phone).tag(GPSSource.phone)
-                    Text(L10n.Settings.Location.GpsSource.device).tag(GPSSource.device)
-                }
-                .onChange(of: gpsSource) { _, newValue in
-                    guard let deviceID = appState.connectedDevice?.id else { return }
-                    devicePreferenceStore.setGPSSource(newValue, deviceID: deviceID)
-                    if newValue == .phone {
-                        appState.locationService.requestPermissionIfNeeded()
-                        disableDeviceGPS()
-                    } else if newValue == .device {
-                        enableDeviceGPS()
+            // GPS Source
+            if autoUpdateLocation {
+                if deviceHasGPS {
+                    Picker(L10n.Settings.Location.gpsSource, selection: $gpsSource) {
+                        Text(L10n.Settings.Location.GpsSource.phone).tag(GPSSource.phone)
+                        Text(L10n.Settings.Location.GpsSource.device).tag(GPSSource.device)
+                    }
+                    .onChange(of: gpsSource) { _, newValue in
+                        guard let deviceID = appState.connectedDevice?.id else { return }
+                        if newValue == .phone, appState.locationService.isLocationDenied {
+                            gpsSource = .device
+                            showLocationDeniedAlert = true
+                            return
+                        }
+                        devicePreferenceStore.setGPSSource(newValue, deviceID: deviceID)
+                        if newValue == .phone {
+                            appState.locationService.requestPermissionIfNeeded()
+                            disableDeviceGPS()
+                        } else if newValue == .device {
+                            enableDeviceGPS()
+                        }
+                    }
+                    .radioDisabled(for: appState.connectionState, or: isSaving)
+                } else {
+                    LabeledContent(L10n.Settings.Location.gpsSource) {
+                        Text(L10n.Settings.Location.GpsSource.phone)
+                            .foregroundStyle(.secondary)
                     }
                 }
-                .radioDisabled(for: appState.connectionState, or: isSaving)
             }
         } header: {
             Text(L10n.Settings.Location.header)
@@ -120,6 +139,16 @@ struct LocationSettingsSection: View {
         }
         .errorAlert($showError)
         .retryAlert(retryAlert)
+        .alert(L10n.Onboarding.Permissions.LocationAlert.title, isPresented: $showLocationDeniedAlert) {
+            Button(L10n.Onboarding.Permissions.LocationAlert.openSettings) {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button(L10n.Localizable.Common.cancel, role: .cancel) { }
+        } message: {
+            Text(L10n.Onboarding.Permissions.LocationAlert.message)
+        }
     }
 
     private var startupTaskID: String {
