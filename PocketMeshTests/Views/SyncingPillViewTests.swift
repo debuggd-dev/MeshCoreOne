@@ -2,41 +2,6 @@ import Testing
 import SwiftUI
 @testable import PocketMesh
 
-// Mirrors SyncingPillView's private display logic for testability
-private extension StatusPillState {
-    var displayText: String {
-        switch self {
-        case .failed(let message): message
-        case .syncing: L10n.Localizable.Common.Status.syncing
-        case .connecting: L10n.Localizable.Common.Status.connecting
-        case .ready: L10n.Localizable.Common.Status.ready
-        case .disconnected: L10n.Localizable.Common.Status.disconnected
-        case .hidden: ""
-        }
-    }
-
-    var systemImageName: String {
-        switch self {
-        case .failed: "exclamationmark.triangle.fill"
-        case .disconnected: "exclamationmark.triangle"
-        case .ready: "checkmark.circle"
-        case .connecting, .syncing: "arrow.trianglehead.2.clockwise"
-        case .hidden: ""
-        }
-    }
-
-    var isFailure: Bool {
-        if case .failed = self { return true }
-        return false
-    }
-
-    var textColor: Color {
-        if isFailure { return .red }
-        if case .disconnected = self { return .orange }
-        return .primary
-    }
-}
-
 @Suite("SyncingPillView Tests")
 struct SyncingPillViewTests {
 
