@@ -81,6 +81,9 @@ struct LocationSettingsSection: View {
                 if !newValue, gpsSource == .device {
                     disableDeviceGPS()
                 }
+                if shareLocation {
+                    updateShareLocation(shareLocation)
+                }
             }
             .radioDisabled(for: appState.connectionState, or: isSaving)
 
@@ -104,6 +107,9 @@ struct LocationSettingsSection: View {
                             disableDeviceGPS()
                         } else if newValue == .device {
                             enableDeviceGPS()
+                        }
+                        if shareLocation {
+                            updateShareLocation(shareLocation)
                         }
                     }
                     .radioDisabled(for: appState.connectionState, or: isSaving)
@@ -159,7 +165,7 @@ struct LocationSettingsSection: View {
 
     private func loadPreferences() {
         if let device = appState.connectedDevice {
-            shareLocation = device.advertLocationPolicy == 1
+            shareLocation = device.sharesLocationPublicly
             autoUpdateLocation = devicePreferenceStore.isAutoUpdateLocationEnabled(deviceID: device.id)
             gpsSource = devicePreferenceStore.gpsSource(deviceID: device.id)
         }
@@ -214,6 +220,11 @@ struct LocationSettingsSection: View {
     private func updateShareLocation(_ share: Bool) {
         guard let device = appState.connectedDevice,
               let settingsService = appState.services?.settingsService else { return }
+        let policy = selectedAdvertLocationPolicy(share: share)
+
+        if device.advertLocationPolicy == policy.rawValue {
+            return
+        }
 
         isSaving = true
         Task {
@@ -226,7 +237,7 @@ struct LocationSettingsSection: View {
                 _ = try await settingsService.setOtherParamsVerified(
                     autoAddContacts: !device.manualAddContacts,
                     telemetryModes: telemetryModes,
-                    shareLocationPublicly: share,
+                    advertLocationPolicy: policy,
                     multiAcks: device.multiAcks
                 )
                 retryAlert.reset()
@@ -243,5 +254,13 @@ struct LocationSettingsSection: View {
             }
             isSaving = false
         }
+    }
+
+    private func selectedAdvertLocationPolicy(share: Bool) -> AdvertLocationPolicy {
+        guard share else { return .none }
+        if autoUpdateLocation, deviceHasGPS, gpsSource == .device {
+            return .share
+        }
+        return .prefs
     }
 }

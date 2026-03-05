@@ -137,7 +137,7 @@ struct TelemetrySettingsSection: View {
                 _ = try await settingsService.setOtherParamsVerified(
                     autoAddContacts: !device.manualAddContacts,
                     telemetryModes: modes,
-                    shareLocationPublicly: device.advertLocationPolicy == 1,
+                    advertLocationPolicy: AdvertLocationPolicy(rawValue: device.advertLocationPolicy) ?? .none,
                     multiAcks: device.multiAcks
                 )
                 retryAlert.reset()

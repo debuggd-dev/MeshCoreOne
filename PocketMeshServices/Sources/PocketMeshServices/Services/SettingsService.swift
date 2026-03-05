@@ -255,6 +255,19 @@ public struct TelemetryModes: Sendable, Equatable {
     }
 }
 
+// MARK: - Advert Location Policy
+
+/// Location inclusion policy for advertisements.
+public enum AdvertLocationPolicy: UInt8, Sendable, CaseIterable {
+    case none = 0
+    case share = 1
+    case prefs = 2
+
+    public var isEnabled: Bool {
+        self != .none
+    }
+}
+
 // MARK: - Settings Events
 
 /// Events emitted by SettingsService when device settings change.
@@ -383,7 +396,7 @@ public actor SettingsService {
     public func setOtherParams(
         autoAddContacts: Bool,
         telemetryModes: TelemetryModes,
-        shareLocationPublicly: Bool,
+        advertLocationPolicy: AdvertLocationPolicy,
         multiAcks: UInt8
     ) async throws {
         do {
@@ -392,12 +405,28 @@ public actor SettingsService {
                 telemetryModeEnvironment: telemetryModes.environment,
                 telemetryModeLocation: telemetryModes.location,
                 telemetryModeBase: telemetryModes.base,
-                advertisementLocationPolicy: shareLocationPublicly ? 1 : 0,
+                advertisementLocationPolicy: advertLocationPolicy.rawValue,
                 multiAcks: multiAcks
             )
         } catch let error as MeshCoreError {
             throw SettingsServiceError.sessionError(error)
         }
+    }
+
+    /// Compatibility overload: map boolean sharing to `prefs` policy when enabled.
+    @available(*, deprecated, message: "Use advertLocationPolicy overload instead")
+    public func setOtherParams(
+        autoAddContacts: Bool,
+        telemetryModes: TelemetryModes,
+        shareLocationPublicly: Bool,
+        multiAcks: UInt8
+    ) async throws {
+        try await setOtherParams(
+            autoAddContacts: autoAddContacts,
+            telemetryModes: telemetryModes,
+            advertLocationPolicy: shareLocationPublicly ? .prefs : .none,
+            multiAcks: multiAcks
+        )
     }
 
     // MARK: - Factory Reset
@@ -596,13 +625,13 @@ public actor SettingsService {
     public func setOtherParamsVerified(
         autoAddContacts: Bool,
         telemetryModes: TelemetryModes,
-        shareLocationPublicly: Bool,
+        advertLocationPolicy: AdvertLocationPolicy,
         multiAcks: UInt8
     ) async throws -> MeshCore.SelfInfo {
         try await setOtherParams(
             autoAddContacts: autoAddContacts,
             telemetryModes: telemetryModes,
-            shareLocationPublicly: shareLocationPublicly,
+            advertLocationPolicy: advertLocationPolicy,
             multiAcks: multiAcks
         )
 
@@ -618,6 +647,22 @@ public actor SettingsService {
 
         eventContinuation?.yield(.deviceUpdated(selfInfo))
         return selfInfo
+    }
+
+    /// Compatibility overload: map boolean sharing to `prefs` policy when enabled.
+    @available(*, deprecated, message: "Use advertLocationPolicy overload instead")
+    public func setOtherParamsVerified(
+        autoAddContacts: Bool,
+        telemetryModes: TelemetryModes,
+        shareLocationPublicly: Bool,
+        multiAcks: UInt8
+    ) async throws -> MeshCore.SelfInfo {
+        try await setOtherParamsVerified(
+            autoAddContacts: autoAddContacts,
+            telemetryModes: telemetryModes,
+            advertLocationPolicy: shareLocationPublicly ? .prefs : .none,
+            multiAcks: multiAcks
+        )
     }
 
     // MARK: - Auto-Add Config

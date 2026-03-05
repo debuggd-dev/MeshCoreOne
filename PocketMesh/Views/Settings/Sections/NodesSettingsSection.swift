@@ -173,7 +173,7 @@ struct NodesSettingsSection: View {
                 _ = try await settingsService.setOtherParamsVerified(
                     autoAddContacts: !manualAdd,
                     telemetryModes: modes,
-                    shareLocationPublicly: device.advertLocationPolicy == 1,
+                    advertLocationPolicy: AdvertLocationPolicy(rawValue: device.advertLocationPolicy) ?? .none,
                     multiAcks: device.multiAcks
                 )
 
