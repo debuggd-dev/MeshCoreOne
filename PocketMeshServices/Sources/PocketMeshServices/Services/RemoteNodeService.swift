@@ -798,8 +798,9 @@ public actor RemoteNodeService {
 
             Task { [self] in
                 // Send CLI command
+                let sentInfo: MessageSentInfo
                 do {
-                    _ = try await session.sendCommand(to: remoteSession.publicKey, command: command)
+                    sentInfo = try await session.sendCommand(to: remoteSession.publicKey, command: command)
                 } catch {
                     // Send failed - remove our specific request and resume with error
                     if var requests = pendingCLIRequests[destinationPrefix],
@@ -812,9 +813,13 @@ public actor RemoteNodeService {
                     return
                 }
 
+                // Use firmware-suggested timeout (2x for round-trip), with caller timeout as floor
+                let firmwareTimeout = Duration.milliseconds(Int(sentInfo.suggestedTimeoutMs) * 2)
+                let effectiveTimeout = max(timeout, firmwareTimeout)
+
                 // Actively poll for response instead of passive wait
                 // Device may buffer responses without immediately sending messagesWaiting notification
-                let (seconds, attoseconds) = timeout.components
+                let (seconds, attoseconds) = effectiveTimeout.components
                 let deadline = Date().addingTimeInterval(TimeInterval(seconds) + TimeInterval(attoseconds) / 1e18)
                 while Date() < deadline {
                     // Check if our specific request was already satisfied
@@ -884,8 +889,9 @@ public actor RemoteNodeService {
 
                 Task { [self] in
                     // Send CLI command
+                    let sentInfo: MessageSentInfo
                     do {
-                        _ = try await session.sendCommand(to: remoteSession.publicKey, command: command)
+                        sentInfo = try await session.sendCommand(to: remoteSession.publicKey, command: command)
                     } catch {
                         // Send failed - remove pending request and resume with error
                         if let pending = pendingRawCLIRequests.removeValue(forKey: destinationPrefix) {
@@ -895,8 +901,12 @@ public actor RemoteNodeService {
                         return
                     }
 
+                    // Use firmware-suggested timeout (2x for round-trip), with caller timeout as floor
+                    let firmwareTimeout = Duration.milliseconds(Int(sentInfo.suggestedTimeoutMs) * 2)
+                    let effectiveTimeout = max(timeout, firmwareTimeout)
+
                     // Poll for response
-                    let (seconds, attoseconds) = timeout.components
+                    let (seconds, attoseconds) = effectiveTimeout.components
                     let deadline = Date().addingTimeInterval(TimeInterval(seconds) + TimeInterval(attoseconds) / 1e18)
                     while Date() < deadline {
                         // Check if our request was already satisfied
