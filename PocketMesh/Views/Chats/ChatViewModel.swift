@@ -3,6 +3,12 @@ import UIKit
 import PocketMeshServices
 import OSLog
 
+/// Decoded preview hero image and icon, stored together to batch Observable notifications
+struct DecodedPreviewAssets {
+    var image: UIImage?
+    var icon: UIImage?
+}
+
 /// ViewModel for chat operations
 @Observable
 @MainActor
@@ -170,11 +176,8 @@ final class ChatViewModel {
     /// Pre-decoded UIImage per message (avoids decoding in view body)
     var decodedImages: [UUID: UIImage] = [:]
 
-    /// Pre-decoded link preview hero images (avoids UIImage(data:) in view body)
-    var decodedPreviewImages: [UUID: UIImage] = [:]
-
-    /// Pre-decoded link preview icons (avoids UIImage(data:) in view body)
-    var decodedPreviewIcons: [UUID: UIImage] = [:]
+    /// Pre-decoded link preview assets (single dictionary to batch Observable notifications)
+    var decodedPreviewAssets: [UUID: DecodedPreviewAssets] = [:]
 
     /// Tracks in-flight legacy preview decode tasks to prevent duplicates
     var legacyPreviewDecodeInFlight: Set<UUID> = []

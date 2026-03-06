@@ -121,8 +121,9 @@ extension ChatViewModel {
             return await Task.detached { ImageURLDetector.downsampledImage(from: data) }.value
         }()
         let (hero, icon) = await (heroResult, iconResult)
-        if let hero { decodedPreviewImages[messageID] = hero }
-        if let icon { decodedPreviewIcons[messageID] = icon }
+        if hero != nil || icon != nil {
+            decodedPreviewAssets[messageID] = DecodedPreviewAssets(image: hero, icon: icon)
+        }
     }
 
     /// Rebuild a single display item with current preview state (O(1) lookup)
@@ -164,8 +165,7 @@ extension ChatViewModel {
         previewFetchTasks.removeAll()
         previewStates.removeAll()
         loadedPreviews.removeAll()
-        decodedPreviewImages.removeAll()
-        decodedPreviewIcons.removeAll()
+        decodedPreviewAssets.removeAll()
         legacyPreviewDecodeInFlight.removeAll()
         cachedURLs.removeAll()
         formattedTexts.removeAll()
@@ -176,8 +176,7 @@ extension ChatViewModel {
     func cleanupPreviewState(for messageID: UUID) {
         previewStates.removeValue(forKey: messageID)
         loadedPreviews.removeValue(forKey: messageID)
-        decodedPreviewImages.removeValue(forKey: messageID)
-        decodedPreviewIcons.removeValue(forKey: messageID)
+        decodedPreviewAssets.removeValue(forKey: messageID)
         formattedTexts.removeValue(forKey: messageID)
         previewFetchTasks[messageID]?.cancel()
         previewFetchTasks.removeValue(forKey: messageID)
@@ -193,34 +192,42 @@ extension ChatViewModel {
 
     /// Returns the pre-decoded link preview hero image for a message
     func decodedPreviewImage(for messageID: UUID) -> UIImage? {
-        decodedPreviewImages[messageID]
+        decodedPreviewAssets[messageID]?.image
     }
 
     /// Returns the pre-decoded link preview icon for a message
     func decodedPreviewIcon(for messageID: UUID) -> UIImage? {
-        decodedPreviewIcons[messageID]
+        decodedPreviewAssets[messageID]?.icon
     }
 
     /// Pre-decode images for legacy messages with embedded preview data
     func decodeLegacyPreviewImages() {
         for message in messages where message.linkPreviewURL != nil {
             let id = message.id
-            guard decodedPreviewImages[id] == nil || decodedPreviewIcons[id] == nil,
+            let existing = decodedPreviewAssets[id]
+            let needsImageDecode = message.linkPreviewImageData != nil && existing?.image == nil
+            let needsIconDecode = message.linkPreviewIconData != nil && existing?.icon == nil
+            guard needsImageDecode || needsIconDecode,
                   !legacyPreviewDecodeInFlight.contains(id) else { continue }
 
             let imageData = message.linkPreviewImageData
             let iconData = message.linkPreviewIconData
-            guard imageData != nil || iconData != nil else { continue }
 
             legacyPreviewDecodeInFlight.insert(id)
             Task {
-                if let imageData {
-                    let decoded = await Task.detached { ImageURLDetector.downsampledImage(from: imageData) }.value
-                    if let decoded { self.decodedPreviewImages[id] = decoded }
+                async let heroResult: UIImage? = if needsImageDecode, let imageData {
+                    await Task.detached { ImageURLDetector.downsampledImage(from: imageData) }.value
+                } else {
+                    existing?.image
                 }
-                if let iconData {
-                    let decoded = await Task.detached { ImageURLDetector.downsampledImage(from: iconData) }.value
-                    if let decoded { self.decodedPreviewIcons[id] = decoded }
+                async let iconResult: UIImage? = if needsIconDecode, let iconData {
+                    await Task.detached { ImageURLDetector.downsampledImage(from: iconData) }.value
+                } else {
+                    existing?.icon
+                }
+                let (hero, icon) = await (heroResult, iconResult)
+                if hero != nil || icon != nil {
+                    self.decodedPreviewAssets[id] = DecodedPreviewAssets(image: hero, icon: icon)
                 }
                 self.legacyPreviewDecodeInFlight.remove(id)
             }
