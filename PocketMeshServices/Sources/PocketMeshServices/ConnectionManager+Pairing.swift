@@ -305,9 +305,14 @@ extension ConnectionManager {
     /// Called by SettingsService after auto-add config is successfully changed.
     public func updateAutoAddConfig(_ config: MeshCore.AutoAddConfig) {
         guard let device = connectedDevice else { return }
-        connectedDevice = device.copy {
+        let updated = device.copy {
             $0.autoAddConfig = config.bitmask
             $0.autoAddMaxHops = config.maxHops
+        }
+        connectedDevice = updated
+
+        Task {
+            do { try await services?.dataStore.saveDevice(updated) } catch { logger.error("Failed to persist auto-add config: \(error)") }
         }
     }
 
