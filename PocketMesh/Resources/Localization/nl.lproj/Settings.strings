@@ -505,22 +505,22 @@
 "nodes.overwriteOldestDescription" = "Wanneer de opslag vol is, het oudste niet-favoriete knooppunt vervangen";
 
 /* Picker label for max hop distance */
-"nodes.maxHops" = "Max Hop Distance";
+"nodes.maxHops" = "Max. hopafstand";
 
 /* No limit option */
-"nodes.maxHops.noLimit" = "No Limit";
+"nodes.maxHops.noLimit" = "Geen limiet";
 
 /* Direct only option (0 hops) */
-"nodes.maxHops.directOnly" = "Direct Only";
+"nodes.maxHops.directOnly" = "Alleen direct";
 
 /* Singular 1 hop option */
-"nodes.maxHops.oneHop" = "1 Hop";
+"nodes.maxHops.oneHop" = "1 hop";
 
 /* Plural hops format string */
-"nodes.maxHops.hops" = "%d Hops";
+"nodes.maxHops.hops" = "%d hops";
 
 /* Footer text when hop limit is active */
-"nodes.maxHops.footerActive" = "Nodes beyond the selected hop distance will not be auto-added.";
+"nodes.maxHops.footerActive" = "Knooppunten voorbij de geselecteerde hopafstand worden niet automatisch toegevoegd.";
 
 
 // MARK: - Auto-Remove Old Nodes Section

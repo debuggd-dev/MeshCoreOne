@@ -505,22 +505,22 @@
 "nodes.overwriteOldestDescription" = "Lorsque le stockage est plein, remplacer le nœud non favori le plus ancien";
 
 /* Picker label for max hop distance */
-"nodes.maxHops" = "Max Hop Distance";
+"nodes.maxHops" = "Distance max. de sauts";
 
 /* No limit option */
-"nodes.maxHops.noLimit" = "No Limit";
+"nodes.maxHops.noLimit" = "Aucune limite";
 
 /* Direct only option (0 hops) */
-"nodes.maxHops.directOnly" = "Direct Only";
+"nodes.maxHops.directOnly" = "Direct uniquement";
 
 /* Singular 1 hop option */
-"nodes.maxHops.oneHop" = "1 Hop";
+"nodes.maxHops.oneHop" = "1 saut";
 
 /* Plural hops format string */
-"nodes.maxHops.hops" = "%d Hops";
+"nodes.maxHops.hops" = "%d sauts";
 
 /* Footer text when hop limit is active */
-"nodes.maxHops.footerActive" = "Nodes beyond the selected hop distance will not be auto-added.";
+"nodes.maxHops.footerActive" = "Les nœuds au-delà de la distance de sauts sélectionnée ne seront pas ajoutés automatiquement.";
 
 
 // MARK: - Auto-Remove Old Nodes Section

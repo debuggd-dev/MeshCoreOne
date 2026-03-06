@@ -492,22 +492,22 @@
 "nodes.overwriteOldestDescription" = "当存储已满时，替换最旧的非收藏节点";
 
 /* Picker label for max hop distance */
-"nodes.maxHops" = "Max Hop Distance";
+"nodes.maxHops" = "最大跳数距离";
 
 /* No limit option */
-"nodes.maxHops.noLimit" = "No Limit";
+"nodes.maxHops.noLimit" = "无限制";
 
 /* Direct only option (0 hops) */
-"nodes.maxHops.directOnly" = "Direct Only";
+"nodes.maxHops.directOnly" = "仅直连";
 
 /* Singular 1 hop option */
-"nodes.maxHops.oneHop" = "1 Hop";
+"nodes.maxHops.oneHop" = "1 跳";
 
 /* Plural hops format string */
-"nodes.maxHops.hops" = "%d Hops";
+"nodes.maxHops.hops" = "%d 跳";
 
 /* Footer text when hop limit is active */
-"nodes.maxHops.footerActive" = "Nodes beyond the selected hop distance will not be auto-added.";
+"nodes.maxHops.footerActive" = "超出所选跳数距离的节点将不会被自动添加。";
 
 
 // MARK: - Auto-Remove Old Nodes Section

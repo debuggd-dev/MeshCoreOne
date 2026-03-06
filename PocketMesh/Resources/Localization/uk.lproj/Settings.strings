@@ -505,22 +505,22 @@
 "nodes.overwriteOldestDescription" = "Коли сховище заповнене, замінити найстаріший необраний вузол";
 
 /* Picker label for max hop distance */
-"nodes.maxHops" = "Max Hop Distance";
+"nodes.maxHops" = "Макс. відстань хопів";
 
 /* No limit option */
-"nodes.maxHops.noLimit" = "No Limit";
+"nodes.maxHops.noLimit" = "Без обмежень";
 
 /* Direct only option (0 hops) */
-"nodes.maxHops.directOnly" = "Direct Only";
+"nodes.maxHops.directOnly" = "Тільки прямі";
 
 /* Singular 1 hop option */
-"nodes.maxHops.oneHop" = "1 Hop";
+"nodes.maxHops.oneHop" = "1 хоп";
 
 /* Plural hops format string */
-"nodes.maxHops.hops" = "%d Hops";
+"nodes.maxHops.hops" = "%d хопів";
 
 /* Footer text when hop limit is active */
-"nodes.maxHops.footerActive" = "Nodes beyond the selected hop distance will not be auto-added.";
+"nodes.maxHops.footerActive" = "Вузли за межами обраної відстані хопів не будуть додані автоматично.";
 
 
 // MARK: - Auto-Remove Old Nodes Section
