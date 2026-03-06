@@ -35,6 +35,8 @@ struct ChatView: View {
 
     @AppStorage("showInlineImages") private var showInlineImages = true
     @AppStorage("autoPlayGIFs") private var autoPlayGIFs = true
+    @AppStorage("showIncomingPath") private var showIncomingPath = false
+    @AppStorage("showIncomingHopCount") private var showIncomingHopCount = false
 
     init(contact: ContactDTO, parentViewModel: ChatViewModel? = nil) {
         self._contact = State(initialValue: contact)
@@ -48,6 +50,8 @@ struct ChatView: View {
             deviceName: appState.connectedDevice?.nodeName ?? "Me",
             showInlineImages: showInlineImages,
             autoPlayGIFs: autoPlayGIFs,
+            showIncomingPath: showIncomingPath,
+            showIncomingHopCount: showIncomingHopCount,
             isAtBottom: $isAtBottom,
             unreadCount: $unreadCount,
             scrollToBottomRequest: $scrollToBottomRequest,
@@ -413,6 +417,8 @@ private struct ChatMessagesContent: View {
     let deviceName: String
     let showInlineImages: Bool
     let autoPlayGIFs: Bool
+    let showIncomingPath: Bool
+    let showIncomingHopCount: Bool
     @Binding var isAtBottom: Bool
     @Binding var unreadCount: Int
     @Binding var scrollToBottomRequest: Int
@@ -532,6 +538,8 @@ private struct ChatMessagesContent: View {
                     isGIF: viewModel.isGIFImage(for: message.id),
                     showInlineImages: showInlineImages,
                     autoPlayGIFs: autoPlayGIFs,
+                    showIncomingPath: showIncomingPath,
+                    showIncomingHopCount: showIncomingHopCount,
                     formattedText: viewModel.formattedText(
                         for: message.id,
                         text: message.text,

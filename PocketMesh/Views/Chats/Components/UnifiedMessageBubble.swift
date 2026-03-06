@@ -70,6 +70,8 @@ struct MessageDisplayState {
     var isGIF: Bool = false
     var showInlineImages: Bool = false
     var autoPlayGIFs: Bool = true
+    var showIncomingPath: Bool = false
+    var showIncomingHopCount: Bool = false
     var formattedText: AttributedString?
 }
 
@@ -251,9 +253,6 @@ private struct BubbleContent: View {
     let displayState: MessageDisplayState
     let callbacks: MessageBubbleCallbacks
 
-    @AppStorage("showIncomingPath") private var showIncomingPath = false
-    @AppStorage("showIncomingHopCount") private var showIncomingHopCount = false
-
     private var textColor: Color {
         message.isOutgoing ? .white : .primary
     }
@@ -275,12 +274,12 @@ private struct BubbleContent: View {
             VStack(alignment: .leading, spacing: 4) {
                 MessageText(message.text, baseColor: textColor, isOutgoing: message.isOutgoing, currentUserName: deviceName, precomputedText: displayState.formattedText)
 
-                if !message.isOutgoing && (showIncomingHopCount && !isDirect || showIncomingPath) {
+                if !message.isOutgoing && (displayState.showIncomingHopCount && !isDirect || displayState.showIncomingPath) {
                     HStack(spacing: 4) {
-                        if showIncomingHopCount && !isDirect {
+                        if displayState.showIncomingHopCount && !isDirect {
                             BubbleHopCountFooter(pathLength: message.pathLength)
                         }
-                        if showIncomingPath {
+                        if displayState.showIncomingPath {
                             BubblePathFooter(message: message)
                         }
                     }

@@ -42,6 +42,8 @@ struct ChannelChatView: View {
 
     @AppStorage("showInlineImages") private var showInlineImages = true
     @AppStorage("autoPlayGIFs") private var autoPlayGIFs = true
+    @AppStorage("showIncomingPath") private var showIncomingPath = false
+    @AppStorage("showIncomingHopCount") private var showIncomingHopCount = false
 
     init(channel: ChannelDTO, parentViewModel: ChatViewModel? = nil) {
         self.channel = channel
@@ -353,6 +355,8 @@ struct ChannelChatView: View {
             deviceName: appState.connectedDevice?.nodeName ?? "Me",
             showInlineImages: showInlineImages,
             autoPlayGIFs: autoPlayGIFs,
+            showIncomingPath: showIncomingPath,
+            showIncomingHopCount: showIncomingHopCount,
             isAtBottom: $isAtBottom,
             unreadCount: $unreadCount,
             scrollToBottomRequest: $scrollToBottomRequest,
@@ -547,6 +551,8 @@ private struct ChannelMessagesContent: View {
     let deviceName: String
     let showInlineImages: Bool
     let autoPlayGIFs: Bool
+    let showIncomingPath: Bool
+    let showIncomingHopCount: Bool
     @Binding var isAtBottom: Bool
     @Binding var unreadCount: Int
     @Binding var scrollToBottomRequest: Int
@@ -672,6 +678,8 @@ private struct ChannelMessagesContent: View {
                     isGIF: viewModel.isGIFImage(for: message.id),
                     showInlineImages: showInlineImages,
                     autoPlayGIFs: autoPlayGIFs,
+                    showIncomingPath: showIncomingPath,
+                    showIncomingHopCount: showIncomingHopCount,
                     formattedText: viewModel.formattedText(
                         for: message.id,
                         text: message.text,
