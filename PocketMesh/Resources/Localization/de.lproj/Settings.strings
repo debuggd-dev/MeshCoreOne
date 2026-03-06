@@ -978,6 +978,15 @@
 /* GPS source option: device GPS */
 "location.gpsSource.device" = "Geräte-GPS";
 
+/* Section header for device GPS controls */
+"location.deviceGps.header" = "Geräte-GPS";
+
+/* Toggle label for device GPS power */
+"location.deviceGps.toggle" = "Geräte-GPS aktivieren";
+
+/* Footer for device GPS controls */
+"location.deviceGps.footer" = "Schaltet das eingebaute GPS des Funkgeräts ein oder aus. Das Speichern eines manuellen Kartenstandorts schaltet das Geräte-GPS aus.";
+
 /* Detail text when location is being shared publicly */
 "location.sharingPublicly" = "Öffentlich teilen";
 

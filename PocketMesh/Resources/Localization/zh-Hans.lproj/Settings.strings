@@ -709,6 +709,15 @@
 /* GPS source option: device GPS */
 "location.gpsSource.device" = "设备 GPS";
 
+/* Section header for device GPS controls */
+"location.deviceGps.header" = "设备 GPS";
+
+/* Toggle label for device GPS power */
+"location.deviceGps.toggle" = "启用设备 GPS";
+
+/* Footer for device GPS controls */
+"location.deviceGps.footer" = "打开或关闭无线电的内置 GPS。保存手动地图位置将关闭设备 GPS。";
+
 /* Detail text when location is being shared publicly */
 "location.sharingPublicly" = "公开分享";
 

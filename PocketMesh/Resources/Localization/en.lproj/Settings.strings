@@ -746,7 +746,7 @@
 "location.deviceGps.toggle" = "Enable Device GPS";
 
 /* Footer for device GPS controls */
-"location.deviceGps.footer" = "Turns the radio's built-in GPS on or off. Saving a manual map location turns Device GPS off and leaves it off.";
+"location.deviceGps.footer" = "Turns the radio's built-in GPS on or off. Saving a manual map location turns Device GPS off.";
 
 /* Detail text when location is being shared publicly */
 "location.sharingPublicly" = "Sharing publicly";

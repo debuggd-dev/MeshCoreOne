@@ -978,6 +978,15 @@
 /* GPS source option: device GPS */
 "location.gpsSource.device" = "GPS пристрою";
 
+/* Section header for device GPS controls */
+"location.deviceGps.header" = "GPS пристрою";
+
+/* Toggle label for device GPS power */
+"location.deviceGps.toggle" = "Увімкнути GPS пристрою";
+
+/* Footer for device GPS controls */
+"location.deviceGps.footer" = "Вмикає або вимикає вбудований GPS радіостанції. Збереження місцезнаходження вручну на мапі вимикає GPS пристрою.";
+
 /* Detail text when location is being shared publicly */
 "location.sharingPublicly" = "Публічний доступ";
 

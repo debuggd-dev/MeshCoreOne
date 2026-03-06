@@ -3362,7 +3362,7 @@ public enum L10n {
       public static let sharingPublicly = L10n.tr("Settings", "location.sharingPublicly", fallback: "Sharing publicly")
       public enum DeviceGps {
         /// Footer for device GPS controls
-        public static let footer = L10n.tr("Settings", "location.deviceGps.footer", fallback: "Turns the radio's built-in GPS on or off. Saving a manual map location turns Device GPS off and leaves it off.")
+        public static let footer = L10n.tr("Settings", "location.deviceGps.footer", fallback: "Turns the radio's built-in GPS on or off. Saving a manual map location turns Device GPS off.")
         /// Section header for device GPS controls
         public static let header = L10n.tr("Settings", "location.deviceGps.header", fallback: "Device GPS")
         /// Toggle label for device GPS power
