@@ -521,6 +521,7 @@ private struct ChatMessagesContent: View {
                     showDirectionGap: item.showDirectionGap,
                     showSenderName: item.showSenderName,
                     showNewMessagesDivider: item.showNewMessagesDivider,
+                    detectedURL: item.detectedURL,
                     previewState: item.previewState,
                     loadedPreview: item.loadedPreview,
                     isImageURL: item.isImageURL,

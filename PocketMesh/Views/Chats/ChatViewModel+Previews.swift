@@ -147,6 +147,7 @@ extension ChatViewModel {
         previewFetchTasks.removeAll()
         previewStates.removeAll()
         loadedPreviews.removeAll()
+        cachedURLs.removeAll()
         clearImageState()
     }
 

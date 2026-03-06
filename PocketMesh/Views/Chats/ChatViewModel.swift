@@ -180,6 +180,9 @@ final class ChatViewModel {
     /// Key format: "{messageID}-{emoji}"
     var inFlightReactions: Set<String> = []
 
+    /// Cached URL detection results to avoid re-running NSDataDetector on rebuilds
+    var cachedURLs: [UUID: URL?] = [:]
+
     // MARK: - Pagination State
 
     /// Whether currently fetching older messages (exposed for UI binding)

@@ -449,6 +449,8 @@ extension ChatViewModel {
             LinkPreviewService.extractFirstURL(from: text)
         }.value
 
+        cachedURLs[messageID] = detectedURL
+
         guard let index = displayItemIndexByID[messageID] else { return }
         let item = displayItems[index]
         displayItems[index] = MessageDisplayItem(
@@ -907,16 +909,29 @@ extension ChatViewModel {
     // MARK: - Display Items
 
     /// Build display items with pre-computed properties.
+    /// Uses cached URL results for previously processed messages and defers
+    /// async detection for new messages to avoid blocking the main actor.
     func buildDisplayItems() {
         messagesByID = Dictionary(uniqueKeysWithValues: messages.map { ($0.id, $0) })
 
-        let urls = messages.map { LinkPreviewService.extractFirstURL(from: $0.text) }
+        var uncachedMessageIDs: [(UUID, String)] = []
 
         displayItems = messages.enumerated().map { index, message in
             // Compute all display flags in single pass to avoid redundant array lookups
             let previous: MessageDTO? = index > 0 ? messages[index - 1] : nil
             let flags = Self.computeDisplayFlags(for: message, previous: previous)
-            let url = urls[index]
+
+            // Use cached URL if available, otherwise nil (async detection below)
+            let url: URL?
+            if let cached = cachedURLs[message.id] {
+                url = cached
+            } else if previewStates[message.id] != nil || loadedPreviews[message.id] != nil {
+                // Message already had a preview fetched — URL was already detected
+                url = nil
+            } else {
+                url = nil
+                uncachedMessageIDs.append((message.id, message.text))
+            }
 
             return MessageDisplayItem(
                 messageID: message.id,
@@ -941,6 +956,16 @@ extension ChatViewModel {
 
         // Build O(1) index lookup
         displayItemIndexByID = Dictionary(uniqueKeysWithValues: displayItems.enumerated().map { ($0.element.messageID, $0.offset) })
+
+        // Async URL detection for messages without cached results
+        if !uncachedMessageIDs.isEmpty {
+            let messagesToDetect = uncachedMessageIDs
+            Task {
+                for (messageID, text) in messagesToDetect {
+                    await updateURLForDisplayItem(messageID: messageID, text: text)
+                }
+            }
+        }
     }
 
     /// Get full message DTO for a display item.
