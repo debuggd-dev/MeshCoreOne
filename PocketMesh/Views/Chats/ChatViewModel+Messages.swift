@@ -708,63 +708,67 @@ extension ChatViewModel {
         return nil
     }
 
-    /// Load last message previews for all conversations
+    /// Load last message previews for all conversations.
+    /// Uses batch fetch methods to minimize actor hops (2 hops instead of N).
     func loadLastMessagePreviews() async {
         guard let dataStore else { return }
 
-        // Load contact message previews
-        for contact in conversations {
+        // Batch fetch contact message previews (single actor hop)
+        if !conversations.isEmpty {
             do {
-                // Fetch extra messages in case recent ones are reactions
-                let messages = try await dataStore.fetchMessages(contactID: contact.id, limit: 10)
+                let contactMessages = try await dataStore.fetchLastMessages(contactIDs: conversations.map(\.id), limit: 10)
+                for contact in conversations {
+                    guard let messages = contactMessages[contact.id] else { continue }
 
-                // Find the last non-reaction message (skip outgoing reactions unless failed)
-                let lastMessage = messages.last { message in
-                    guard message.direction == .outgoing,
-                          ReactionParser.parseDM(message.text) != nil else {
-                        return true
+                    // Find the last non-reaction message (skip outgoing reactions unless failed)
+                    let lastMessage = messages.last { message in
+                        guard message.direction == .outgoing,
+                              ReactionParser.parseDM(message.text) != nil else {
+                            return true
+                        }
+                        return message.status == .failed
                     }
-                    return message.status == .failed
-                }
 
-                if let lastMessage {
-                    lastMessageCache[contact.id] = lastMessage
+                    if let lastMessage {
+                        lastMessageCache[contact.id] = lastMessage
+                    }
                 }
             } catch {
-                // Silently ignore errors for preview loading
+                logger.warning("Failed to load contact message previews: \(error)")
             }
         }
 
-        // Load channel message previews (filter out blocked senders)
-        let blockedNames = await syncCoordinator?.blockedSenderNames() ?? []
-        for channel in channels {
+        // Batch fetch channel message previews (single actor hop)
+        if !channels.isEmpty {
+            let blockedNames = await syncCoordinator?.blockedSenderNames() ?? []
             do {
-                // Fetch extra messages in case recent ones are from blocked senders
-                let messages = try await dataStore.fetchMessages(deviceID: channel.deviceID, channelIndex: channel.index, limit: 20)
+                let channelParams = channels.map { (deviceID: $0.deviceID, channelIndex: $0.index, id: $0.id) }
+                let channelMessages = try await dataStore.fetchLastChannelMessages(channels: channelParams, limit: 20)
+                for channel in channels {
+                    guard let messages = channelMessages[channel.id] else { continue }
 
-                // Filter out messages from blocked senders and outgoing reactions
-                let lastMessage = messages.last { message in
-                    // Skip blocked senders
-                    if let senderName = message.senderNodeName,
-                       blockedNames.contains(senderName) {
-                        return false
+                    // Filter out messages from blocked senders and outgoing reactions
+                    let lastMessage = messages.last { message in
+                        if let senderName = message.senderNodeName,
+                           blockedNames.contains(senderName) {
+                            return false
+                        }
+                        if message.direction == .outgoing,
+                           ReactionParser.parse(message.text) != nil,
+                           message.status != .failed {
+                            return false
+                        }
+                        return true
                     }
-                    // Skip outgoing reactions (unless failed)
-                    if message.direction == .outgoing,
-                       ReactionParser.parse(message.text) != nil,
-                       message.status != .failed {
-                        return false
-                    }
-                    return true
-                }
 
-                if let lastMessage {
-                    lastMessageCache[channel.id] = lastMessage
-                } else {
-                    lastMessageCache.removeValue(forKey: channel.id)
+                    if let lastMessage {
+                        lastMessageCache[channel.id] = lastMessage
+                    } else {
+                        lastMessageCache.removeValue(forKey: channel.id)
+                    }
                 }
             } catch {
-                // Silently ignore errors for preview loading
+                logger.warning("Failed to load channel message previews: \(error)")
             }
         }
     }
