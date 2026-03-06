@@ -55,6 +55,7 @@ extension ChatViewModel {
         // Update state based on result
         switch result {
         case .loaded(let dto):
+            await decodeAndStorePreviewImages(from: dto, for: messageID)
             previewStates[messageID] = .loaded
             loadedPreviews[messageID] = dto
             // VoiceOver announcement for dynamic content
@@ -92,6 +93,7 @@ extension ChatViewModel {
 
         switch result {
         case .loaded(let dto):
+            await decodeAndStorePreviewImages(from: dto, for: messageID)
             previewStates[messageID] = .loaded
             loadedPreviews[messageID] = dto
             // VoiceOver announcement for dynamic content
@@ -106,6 +108,21 @@ extension ChatViewModel {
         }
 
         rebuildDisplayItem(for: messageID)
+    }
+
+    /// Decode preview hero image and icon off the main thread and store results
+    private func decodeAndStorePreviewImages(from dto: LinkPreviewDataDTO, for messageID: UUID) async {
+        async let heroResult: UIImage? = {
+            guard let data = dto.imageData else { return nil }
+            return await Task.detached { ImageURLDetector.downsampledImage(from: data) }.value
+        }()
+        async let iconResult: UIImage? = {
+            guard let data = dto.iconData else { return nil }
+            return await Task.detached { ImageURLDetector.downsampledImage(from: data) }.value
+        }()
+        let (hero, icon) = await (heroResult, iconResult)
+        if let hero { decodedPreviewImages[messageID] = hero }
+        if let icon { decodedPreviewIcons[messageID] = icon }
     }
 
     /// Rebuild a single display item with current preview state (O(1) lookup)
@@ -147,6 +164,9 @@ extension ChatViewModel {
         previewFetchTasks.removeAll()
         previewStates.removeAll()
         loadedPreviews.removeAll()
+        decodedPreviewImages.removeAll()
+        decodedPreviewIcons.removeAll()
+        legacyPreviewDecodeInFlight.removeAll()
         cachedURLs.removeAll()
         clearImageState()
     }
@@ -155,6 +175,8 @@ extension ChatViewModel {
     func cleanupPreviewState(for messageID: UUID) {
         previewStates.removeValue(forKey: messageID)
         loadedPreviews.removeValue(forKey: messageID)
+        decodedPreviewImages.removeValue(forKey: messageID)
+        decodedPreviewIcons.removeValue(forKey: messageID)
         previewFetchTasks[messageID]?.cancel()
         previewFetchTasks.removeValue(forKey: messageID)
         cleanupImageState(for: messageID)
@@ -165,6 +187,42 @@ extension ChatViewModel {
     /// Returns the pre-decoded UIImage for a message, if available
     func decodedImage(for messageID: UUID) -> UIImage? {
         decodedImages[messageID]
+    }
+
+    /// Returns the pre-decoded link preview hero image for a message
+    func decodedPreviewImage(for messageID: UUID) -> UIImage? {
+        decodedPreviewImages[messageID]
+    }
+
+    /// Returns the pre-decoded link preview icon for a message
+    func decodedPreviewIcon(for messageID: UUID) -> UIImage? {
+        decodedPreviewIcons[messageID]
+    }
+
+    /// Pre-decode images for legacy messages with embedded preview data
+    func decodeLegacyPreviewImages() {
+        for message in messages where message.linkPreviewURL != nil {
+            let id = message.id
+            guard decodedPreviewImages[id] == nil || decodedPreviewIcons[id] == nil,
+                  !legacyPreviewDecodeInFlight.contains(id) else { continue }
+
+            let imageData = message.linkPreviewImageData
+            let iconData = message.linkPreviewIconData
+            guard imageData != nil || iconData != nil else { continue }
+
+            legacyPreviewDecodeInFlight.insert(id)
+            Task {
+                if let imageData {
+                    let decoded = await Task.detached { ImageURLDetector.downsampledImage(from: imageData) }.value
+                    if let decoded { self.decodedPreviewImages[id] = decoded }
+                }
+                if let iconData {
+                    let decoded = await Task.detached { ImageURLDetector.downsampledImage(from: iconData) }.value
+                    if let decoded { self.decodedPreviewIcons[id] = decoded }
+                }
+                self.legacyPreviewDecodeInFlight.remove(id)
+            }
+        }
     }
 
     /// Returns whether the image for a message is a GIF

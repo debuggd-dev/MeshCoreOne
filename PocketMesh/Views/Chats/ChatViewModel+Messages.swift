@@ -970,6 +970,9 @@ extension ChatViewModel {
                 }
             }
         }
+
+        // Pre-decode legacy preview images off the main thread
+        decodeLegacyPreviewImages()
     }
 
     /// Get full message DTO for a display item.

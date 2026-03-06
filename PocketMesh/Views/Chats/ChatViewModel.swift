@@ -170,6 +170,15 @@ final class ChatViewModel {
     /// Pre-decoded UIImage per message (avoids decoding in view body)
     var decodedImages: [UUID: UIImage] = [:]
 
+    /// Pre-decoded link preview hero images (avoids UIImage(data:) in view body)
+    var decodedPreviewImages: [UUID: UIImage] = [:]
+
+    /// Pre-decoded link preview icons (avoids UIImage(data:) in view body)
+    var decodedPreviewIcons: [UUID: UIImage] = [:]
+
+    /// Tracks in-flight legacy preview decode tasks to prevent duplicates
+    var legacyPreviewDecodeInFlight: Set<UUID> = []
+
     /// Whether each image message is a GIF (computed once during decode)
     var imageIsGIF: [UUID: Bool] = [:]
 

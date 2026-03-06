@@ -666,6 +666,8 @@ private struct ChannelMessagesContent: View {
                     loadedPreview: item.loadedPreview,
                     isImageURL: item.isImageURL,
                     decodedImage: viewModel.decodedImage(for: message.id),
+                    decodedPreviewImage: viewModel.decodedPreviewImage(for: message.id),
+                    decodedPreviewIcon: viewModel.decodedPreviewIcon(for: message.id),
                     isGIF: viewModel.isGIFImage(for: message.id),
                     showInlineImages: showInlineImages,
                     autoPlayGIFs: autoPlayGIFs

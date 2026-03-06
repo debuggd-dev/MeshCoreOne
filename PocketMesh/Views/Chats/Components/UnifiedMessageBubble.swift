@@ -65,6 +65,8 @@ struct MessageDisplayState {
     var loadedPreview: LinkPreviewDataDTO?
     var isImageURL: Bool = false
     var decodedImage: UIImage?
+    var decodedPreviewImage: UIImage?
+    var decodedPreviewIcon: UIImage?
     var isGIF: Bool = false
     var showInlineImages: Bool = false
     var autoPlayGIFs: Bool = true
@@ -370,8 +372,8 @@ private struct BubbleLinkPreviewContent: View {
                 LinkPreviewCard(
                     url: url,
                     title: preview.title,
-                    imageData: preview.imageData,
-                    iconData: preview.iconData,
+                    image: displayState.decodedPreviewImage,
+                    icon: displayState.decodedPreviewIcon,
                     onTap: { openURL(url) }
                 )
             }
@@ -402,8 +404,8 @@ private struct BubbleLinkPreviewContent: View {
                 LinkPreviewCard(
                     url: url,
                     title: message.linkPreviewTitle,
-                    imageData: message.linkPreviewImageData,
-                    iconData: message.linkPreviewIconData,
+                    image: displayState.decodedPreviewImage,
+                    icon: displayState.decodedPreviewIcon,
                     onTap: { openURL(url) }
                 )
             } else if let url = displayState.detectedURL {
