@@ -161,8 +161,7 @@ struct BLEStatusIndicatorView: View {
                     longitude: location.coordinate.longitude
                 )
             case .device:
-                try await settingsService?.setCustomVar(key: "gps", value: "1")
-                try await settingsService?.refreshDeviceInfo()
+                _ = try await settingsService?.setDeviceGPSEnabledVerified(true)
             }
         } catch {
             logger.warning("Failed to update location from GPS: \(error.localizedDescription)")

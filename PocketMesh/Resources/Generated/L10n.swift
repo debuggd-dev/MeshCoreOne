@@ -3360,6 +3360,14 @@ public enum L10n {
       public static let notSharing = L10n.tr("Settings", "location.notSharing", fallback: "Not sharing")
       /// Detail text when location is being shared publicly
       public static let sharingPublicly = L10n.tr("Settings", "location.sharingPublicly", fallback: "Sharing publicly")
+      public enum DeviceGps {
+        /// Footer for device GPS controls
+        public static let footer = L10n.tr("Settings", "location.deviceGps.footer", fallback: "Turns the radio's built-in GPS on or off. Saving a manual map location turns Device GPS off and leaves it off.")
+        /// Section header for device GPS controls
+        public static let header = L10n.tr("Settings", "location.deviceGps.header", fallback: "Device GPS")
+        /// Toggle label for device GPS power
+        public static let toggle = L10n.tr("Settings", "location.deviceGps.toggle", fallback: "Enable Device GPS")
+      }
       public enum GpsSource {
         /// GPS source option: device GPS
         public static let device = L10n.tr("Settings", "location.gpsSource.device", fallback: "Device GPS")

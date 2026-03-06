@@ -221,15 +221,42 @@ extension LocationPickerView {
         let initialCoord = device.map {
             CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude)
         }
+        let devicePreferenceStore = DevicePreferenceStore()
 
         return LocationPickerView(initialCoordinate: initialCoord) { coordinate in
             guard let settingsService = appState.services?.settingsService else {
                 throw SettingsServiceError.notConnected
             }
-            _ = try await settingsService.setLocationVerified(
+            let previousDevice = appState.connectedDevice
+            let verifiedInfo = try await settingsService.setManualLocationVerified(
                 latitude: coordinate.latitude,
                 longitude: coordinate.longitude
             )
+
+            guard let previousDevice else { return }
+
+            let wasUsingDeviceGPSAutoUpdate =
+                devicePreferenceStore.isAutoUpdateLocationEnabled(deviceID: previousDevice.id) &&
+                devicePreferenceStore.gpsSource(deviceID: previousDevice.id) == .device
+
+            if wasUsingDeviceGPSAutoUpdate {
+                devicePreferenceStore.setAutoUpdateLocationEnabled(false, deviceID: previousDevice.id)
+            }
+
+            if previousDevice.sharesLocationPublicly,
+               previousDevice.advertLocationPolicy == AdvertLocationPolicy.share.rawValue {
+                let telemetryModes = TelemetryModes(
+                    base: verifiedInfo.telemetryModeBase,
+                    location: verifiedInfo.telemetryModeLocation,
+                    environment: verifiedInfo.telemetryModeEnvironment
+                )
+                _ = try await settingsService.setOtherParamsVerified(
+                    autoAddContacts: !verifiedInfo.manualAddContacts,
+                    telemetryModes: telemetryModes,
+                    advertLocationPolicy: .prefs,
+                    multiAcks: verifiedInfo.multiAcks
+                )
+            }
         }
     }
 }

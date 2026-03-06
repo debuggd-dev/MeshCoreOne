@@ -10,6 +10,7 @@ public enum SettingsServiceError: Error, LocalizedError, Sendable {
     case invalidResponse
     case sessionError(MeshCoreError)
     case verificationFailed(expected: String, actual: String)
+    case deviceGPSVerificationFailed(expectedEnabled: Bool, actualEnabled: Bool)
 
     public var errorDescription: String? {
         switch self {
@@ -19,6 +20,10 @@ public enum SettingsServiceError: Error, LocalizedError, Sendable {
         case .sessionError(let error): return error.localizedDescription
         case .verificationFailed(let expected, let actual):
             return "Setting was not saved. Expected '\(expected)' but device reports '\(actual)'."
+        case .deviceGPSVerificationFailed(let expectedEnabled, let actualEnabled):
+            let expected = expectedEnabled ? "On" : "Off"
+            let actual = actualEnabled ? "On" : "Off"
+            return "Device GPS setting was not saved. Expected '\(expected)' but device reports '\(actual)'."
         }
     }
 
@@ -268,6 +273,16 @@ public enum AdvertLocationPolicy: UInt8, Sendable, CaseIterable {
     }
 }
 
+public struct DeviceGPSState: Sendable, Equatable {
+    public let isSupported: Bool
+    public let isEnabled: Bool
+
+    public init(isSupported: Bool, isEnabled: Bool) {
+        self.isSupported = isSupported
+        self.isEnabled = isEnabled
+    }
+}
+
 // MARK: - Settings Events
 
 /// Events emitted by SettingsService when device settings change.
@@ -506,6 +521,10 @@ public actor SettingsService {
         // Calculate the scaled values we're actually sending
         let scaledLatSent = Int32(latitude * 1_000_000)
         let scaledLonSent = Int32(longitude * 1_000_000)
+        
+        // DEBUG: Log when attempting to clear location
+        let isClearingLocation = scaledLatSent == 0 && scaledLonSent == 0
+        logger.debug("[Location] setLocationVerified called - lat: \(latitude), lon: \(longitude), isClearing: \(isClearingLocation)")
 
         try await setLocation(latitude: latitude, longitude: longitude)
 
@@ -522,6 +541,11 @@ public actor SettingsService {
 
         guard latDiff <= tolerance && lonDiff <= tolerance else {
             logger.error("[Location] Verification failed - sent: (\(scaledLatSent), \(scaledLonSent)), received: (\(scaledLatReceived), \(scaledLonReceived)), diff: (lat=\(latDiff), lon=\(lonDiff))")
+            
+            // DEBUG: Additional context for clearing location failure
+            if isClearingLocation {
+                logger.warning("[Location] Clear location failed - device reports non-zero coordinates. Device may have active GPS or firmware doesn't support (0,0).")
+            }
 
             let expectedLat = Double(scaledLatSent) / 1_000_000
             let expectedLon = Double(scaledLonSent) / 1_000_000
@@ -533,6 +557,15 @@ public actor SettingsService {
 
         eventContinuation?.yield(.deviceUpdated(selfInfo))
         return selfInfo
+    }
+
+    /// Set a manual location, turning off device GPS first when needed so the value persists.
+    public func setManualLocationVerified(latitude: Double, longitude: Double) async throws -> MeshCore.SelfInfo {
+        let gpsState = try await getDeviceGPSState()
+        if gpsState.isSupported, gpsState.isEnabled {
+            _ = try await setDeviceGPSEnabledVerified(false)
+        }
+        return try await setLocationVerified(latitude: latitude, longitude: longitude)
     }
 
     /// Set radio parameters with verification
@@ -805,6 +838,11 @@ public actor SettingsService {
         }
     }
 
+    public func getDeviceGPSState() async throws -> DeviceGPSState {
+        let vars = try await getCustomVars()
+        return Self.deviceGPSState(from: vars)
+    }
+
     /// Set a custom variable on device
     public func setCustomVar(key: String, value: String) async throws {
         do {
@@ -812,6 +850,27 @@ public actor SettingsService {
         } catch let error as MeshCoreError {
             throw SettingsServiceError.sessionError(error)
         }
+    }
+
+    public func setDeviceGPSEnabledVerified(_ enabled: Bool) async throws -> DeviceGPSState {
+        try await setCustomVar(key: "gps", value: enabled ? "1" : "0")
+
+        let state = try await getDeviceGPSState()
+        guard state.isSupported else {
+            throw SettingsServiceError.deviceGPSVerificationFailed(
+                expectedEnabled: enabled,
+                actualEnabled: false
+            )
+        }
+        guard state.isEnabled == enabled else {
+            throw SettingsServiceError.deviceGPSVerificationFailed(
+                expectedEnabled: enabled,
+                actualEnabled: state.isEnabled
+            )
+        }
+
+        try await refreshDeviceInfo()
+        return state
     }
 
     // MARK: - Private Key Management
@@ -843,5 +902,12 @@ public actor SettingsService {
         } catch let error as MeshCoreError {
             throw SettingsServiceError.sessionError(error)
         }
+    }
+
+    private static func deviceGPSState(from vars: [String: String]) -> DeviceGPSState {
+        guard let value = vars["gps"] else {
+            return DeviceGPSState(isSupported: false, isEnabled: false)
+        }
+        return DeviceGPSState(isSupported: true, isEnabled: value == "1")
     }
 }

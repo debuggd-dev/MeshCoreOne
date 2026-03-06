@@ -106,6 +106,18 @@ struct ErrorLocalizationTests {
         #expect(serviceError.localizedDescription == "Not connected to device.")
     }
 
+    @Test("SettingsServiceError.deviceGPSVerificationFailed is human-readable")
+    func settingsServiceDeviceGPSVerificationFailed() {
+        let serviceError: SettingsServiceError = .deviceGPSVerificationFailed(
+            expectedEnabled: false,
+            actualEnabled: true
+        )
+        #expect(
+            serviceError.localizedDescription ==
+                "Device GPS setting was not saved. Expected 'Off' but device reports 'On'."
+        )
+    }
+
     @Test("RemoteNodeError.sessionError passes through without prefix")
     func remoteNodeSessionPassThrough() {
         let meshError: MeshCoreError = .bluetoothPoweredOff
