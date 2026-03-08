@@ -215,6 +215,10 @@ public final class ConnectionManager {
     /// The user's connection intent. Replaces shouldBeConnected, userExplicitlyDisconnected, and pendingForceFullSync.
     var connectionIntent: ConnectionIntent = .none
 
+    /// The device being actively connected via connect(to:).
+    /// Nil during auto-reconnect (tracked by reconnectionCoordinator.reconnectingDeviceID instead).
+    var connectingDeviceID: UUID?
+
     // MARK: - Callbacks
 
     /// Called when connection is ready and services are available.
@@ -804,6 +808,7 @@ public final class ConnectionManager {
     func cleanupConnection() async {
         logger.info("[BLE] cleanupConnection: state → .disconnected")
         connectionState = .disconnected
+        connectingDeviceID = nil
         connectedDevice = nil
         allowedRepeatFreqRanges = []
         await cleanupResources()
@@ -846,7 +851,8 @@ public final class ConnectionManager {
     internal func setTestState(
         connectionState: ConnectionState? = nil,
         currentTransportType: TransportType?? = nil,
-        connectionIntent: ConnectionIntent? = nil
+        connectionIntent: ConnectionIntent? = nil,
+        connectingDeviceID: UUID?? = nil
     ) {
         suppressInvariantChecks = true
         defer { suppressInvariantChecks = false }
@@ -859,6 +865,9 @@ public final class ConnectionManager {
         }
         if let intent = connectionIntent {
             self.connectionIntent = intent
+        }
+        if let deviceID = connectingDeviceID {
+            self.connectingDeviceID = deviceID
         }
     }
     #endif

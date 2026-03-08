@@ -314,6 +314,8 @@ extension ConnectionManager {
         var lastError: Error = ConnectionError.connectionFailed("Unknown error")
 
         for attempt in 1...maxAttempts {
+            guard connectingDeviceID == deviceID else { throw CancellationError() }
+
             do {
                 try await performConnection(deviceID: deviceID)
 
@@ -325,6 +327,7 @@ extension ConnectionManager {
 
             } catch {
                 lastError = error
+                guard connectingDeviceID == deviceID else { throw error }
 
                 // BLE precondition failures won't resolve between retries.
                 // Exit without retrying or tripping the circuit breaker so that
@@ -490,6 +493,15 @@ extension ConnectionManager {
 
     /// Handles unexpected connection loss
     func handleConnectionLoss(deviceID: UUID, error: Error?) async {
+        // Don't clobber a newer connection attempt
+        if connectionState == .connecting {
+            let activeID = connectingDeviceID ?? reconnectionCoordinator.reconnectingDeviceID
+            if let activeID, activeID != deviceID {
+                logger.info("[BLE] Ignoring connection loss for \(deviceID.uuidString.prefix(8)) — connecting to \(activeID.uuidString.prefix(8))")
+                return
+            }
+        }
+
         let stateBeforeLoss = connectionState
         var errorInfo = "none"
         if let error = error as NSError? {
@@ -518,6 +530,7 @@ extension ConnectionManager {
 
         logger.warning("[BLE] State → .disconnected (connection loss for device: \(deviceID.uuidString.prefix(8)))")
         connectionState = .disconnected
+        if connectingDeviceID == deviceID { connectingDeviceID = nil }
         connectedDevice = nil
         allowedRepeatFreqRanges = []
         services = nil
