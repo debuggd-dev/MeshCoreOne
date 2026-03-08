@@ -507,6 +507,7 @@ extension ConnectionManager {
 
         connectionIntent = .wantsConnection()
         persistIntent()
+        connectingDeviceID = MockDataProvider.simulatorDeviceID
         connectionState = .connecting
 
         do {
@@ -544,11 +545,12 @@ extension ConnectionManager {
             // Notify observers
             await onConnectionReady?()
 
+            connectingDeviceID = nil
             connectionState = .ready
             await onDeviceSynced?()
             logger.info("Simulator connection complete")
         } catch {
-            // Cleanup on failure
+            connectingDeviceID = nil
             await cleanupConnection()
             throw error
         }
