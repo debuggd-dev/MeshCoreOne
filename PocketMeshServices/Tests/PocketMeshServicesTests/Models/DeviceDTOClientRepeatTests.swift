@@ -75,6 +75,29 @@ struct DeviceDTOClientRepeatTests {
         #expect(device.supportsClientRepeat == true)
     }
 
+    // MARK: - advert location policy
+
+    @Test("sharesLocationPublicly is false for policy none")
+    func sharesLocationPublicly_none() {
+        let device = makeDevice().copy { $0.advertLocationPolicy = 0 }
+        #expect(device.sharesLocationPublicly == false)
+        #expect(device.advertLocationPolicyMode == .none)
+    }
+
+    @Test("sharesLocationPublicly is true for policy share")
+    func sharesLocationPublicly_share() {
+        let device = makeDevice().copy { $0.advertLocationPolicy = 1 }
+        #expect(device.sharesLocationPublicly == true)
+        #expect(device.advertLocationPolicyMode == .share)
+    }
+
+    @Test("sharesLocationPublicly is true for policy prefs")
+    func sharesLocationPublicly_prefs() {
+        let device = makeDevice().copy { $0.advertLocationPolicy = 2 }
+        #expect(device.sharesLocationPublicly == true)
+        #expect(device.advertLocationPolicyMode == .prefs)
+    }
+
     // MARK: - copy
 
     @Test("copy mutates only specified fields")

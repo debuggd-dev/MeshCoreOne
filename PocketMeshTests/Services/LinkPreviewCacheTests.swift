@@ -251,6 +251,8 @@ private actor MockPreviewDataStore: PersistenceStoreProtocol {
     func fetchMessage(ackCode: UInt32) async throws -> MessageDTO? { nil }
     func fetchMessages(contactID: UUID, limit: Int, offset: Int) async throws -> [MessageDTO] { [] }
     func fetchMessages(deviceID: UUID, channelIndex: UInt8, limit: Int, offset: Int) async throws -> [MessageDTO] { [] }
+    func fetchLastMessages(contactIDs: [UUID], limit: Int) throws -> [UUID: [MessageDTO]] { [:] }
+    func fetchLastChannelMessages(channels: [(deviceID: UUID, channelIndex: UInt8, id: UUID)], limit: Int) throws -> [UUID: [MessageDTO]] { [:] }
     func updateMessageStatus(id: UUID, status: MessageStatus) async throws {}
     func updateMessageAck(id: UUID, ackCode: UInt32, status: MessageStatus, roundTripTime: UInt32?) async throws {}
     func updateMessageByAckCode(_ ackCode: UInt32, status: MessageStatus, roundTripTime: UInt32?) async throws {}
@@ -358,6 +360,8 @@ private actor MockPreviewDataStore: PersistenceStoreProtocol {
     func updateMessageReactionSummary(messageID: UUID, summary: String?) async throws {}
     func deleteReactionsForMessage(messageID: UUID) async throws {}
     func findChannelMessageForReaction(deviceID: UUID, channelIndex: UInt8, parsedReaction: ParsedReaction, localNodeName: String?, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> MessageDTO? { nil }
+    func fetchChannelMessageCandidates(deviceID: UUID, channelIndex: UInt8, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> [MessageDTO] { [] }
+    func fetchDMMessageCandidates(deviceID: UUID, contactID: UUID, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> [MessageDTO] { [] }
     func findDMMessageForReaction(deviceID: UUID, contactID: UUID, messageHash: String, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> MessageDTO? { nil }
 
     // Notification Level

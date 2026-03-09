@@ -849,6 +849,10 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     private func performStatusRequest(from publicKey: Data) async throws -> StatusResponse {
         let data = PacketBuilder.binaryRequest(to: publicKey, type: .status)
         let publicKeyPrefix = Data(publicKey.prefix(6))
+        let prefixHex = publicKeyPrefix.map { String(format: "%02x", $0) }.joined()
+        let startTime = ContinuousClock.now
+
+        logger.info("Status request to \(prefixHex): sending")
 
         // Subscribe BEFORE sending to avoid race condition where binaryResponse
         // arrives before we can register the pending request
@@ -861,7 +865,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         return try await withThrowingTaskGroup(of: StatusResponse?.self) { group in
             let (timeoutStream, timeoutContinuation) = AsyncStream<TimeInterval>.makeStream()
 
-            group.addTask {
+            group.addTask { [logger] in
                 var expectedAck: Data?
 
                 for await event in events {
@@ -872,7 +876,8 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                         // Capture the expectedAck from firmware's MSG_SENT response
                         expectedAck = info.expectedAck
                         // Signal dynamic timeout to timeout task
-                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 1.2
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
+                        logger.info("Status request to \(prefixHex): messageSent received, suggestedTimeoutMs=\(info.suggestedTimeoutMs), effective timeout=\(String(format: "%.1f", timeout))s")
                         timeoutContinuation.yield(timeout)
                         timeoutContinuation.finish()
 
@@ -889,10 +894,14 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                         ) else {
                             return nil
                         }
+                        let elapsed = ContinuousClock.now - startTime
+                        logger.info("Status request to \(prefixHex): response received in \(elapsed)")
                         return response
 
                     case .statusResponse(let response):
                         // Handle already-routed response (if routing happens elsewhere)
+                        let elapsed = ContinuousClock.now - startTime
+                        logger.info("Status request to \(prefixHex): routed response received in \(elapsed)")
                         return response
 
                     default:
@@ -903,14 +912,19 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                 return nil
             }
 
-            group.addTask { [clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
+            group.addTask { [logger, clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
                 // Wait for dynamic timeout from event task, or use default
                 var timeout = defaultTimeout
+                var usedFirmwareTimeout = false
                 for await t in timeoutStream {
                     timeout = t
+                    usedFirmwareTimeout = true
                     break
                 }
+                logger.info("Status request to \(prefixHex): timeout task sleeping for \(String(format: "%.1f", timeout))s (\(usedFirmwareTimeout ? "firmware" : "default"))")
                 try await clock.sleep(for: .seconds(timeout))
+                let elapsed = ContinuousClock.now - startTime
+                logger.warning("Status request to \(prefixHex): timed out after \(elapsed)")
                 return nil
             }
 
@@ -1162,10 +1176,10 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
 
     /// Gets the current auto-add configuration from the device.
     ///
-    /// - Returns: The auto-add config bitmask.
+    /// - Returns: The auto-add configuration (bitmask + max hops).
     /// - Throws: ``MeshCoreError/timeout`` if the device doesn't respond.
     ///           ``MeshCoreError/deviceError(code:)`` if the device returns an error.
-    public func getAutoAddConfig() async throws -> UInt8 {
+    public func getAutoAddConfig() async throws -> AutoAddConfig {
         try await sendAndWaitWithError(PacketBuilder.getAutoAddConfig()) { event in
             if case .autoAddConfig(let config) = event { return config }
             return nil
@@ -1174,10 +1188,10 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
 
     /// Sets the auto-add configuration on the device.
     ///
-    /// - Parameter config: The bitmask (0x01=overwrite, 0x02=contacts, 0x04=repeaters, 0x08=rooms).
+    /// - Parameter config: The auto-add configuration (bitmask + max hops).
     /// - Throws: ``MeshCoreError/timeout`` if the device doesn't respond.
     ///           ``MeshCoreError/deviceError(code:)`` if the device returns an error.
-    public func setAutoAddConfig(_ config: UInt8) async throws {
+    public func setAutoAddConfig(_ config: AutoAddConfig) async throws {
         try await sendAndWaitWithError(PacketBuilder.setAutoAddConfig(config)) { event in
             if case .ok = event { return () }
             return nil
@@ -1516,11 +1530,12 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
     /// until `.noMoreMessages` is returned to drain the queue.
     /// Use ``startAutoMessageFetching()`` to automate this process.
     ///
+    /// - Parameter timeout: Optional timeout override in seconds. Uses `configuration.defaultTimeout` when `nil`.
     /// - Returns: A ``MessageResult`` containing either a contact message, channel message,
     ///            or indication that no more messages are waiting.
     /// - Throws: ``MeshCoreError`` if the fetch fails.
-    public func getMessage() async throws -> MessageResult {
-        let timeoutSeconds = configuration.defaultTimeout
+    public func getMessage(timeout: TimeInterval? = nil) async throws -> MessageResult {
+        let timeoutSeconds = timeout ?? configuration.defaultTimeout
 
         let stream = await dispatcher.subscribe { event in
             switch event {
@@ -1800,6 +1815,10 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         let telemetryPayload = Data([0x00, 0x00, 0x00, 0x00])
         let data = PacketBuilder.binaryRequest(to: publicKey, type: .telemetry, payload: telemetryPayload)
         let publicKeyPrefix = Data(publicKey.prefix(6))
+        let prefixHex = publicKeyPrefix.map { String(format: "%02x", $0) }.joined()
+        let startTime = ContinuousClock.now
+
+        logger.info("Telemetry request to \(prefixHex): sending")
 
         // Subscribe BEFORE sending to avoid race condition where binaryResponse
         // arrives before we can register the pending request
@@ -1812,7 +1831,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         return try await withThrowingTaskGroup(of: TelemetryResponse?.self) { group in
             let (timeoutStream, timeoutContinuation) = AsyncStream<TimeInterval>.makeStream()
 
-            group.addTask {
+            group.addTask { [logger] in
                 var expectedAck: Data?
 
                 for await event in events {
@@ -1823,7 +1842,8 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                         // Capture the expectedAck from firmware's MSG_SENT response
                         expectedAck = info.expectedAck
                         // Signal dynamic timeout to timeout task
-                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 1.2
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
+                        logger.info("Telemetry request to \(prefixHex): messageSent received, suggestedTimeoutMs=\(info.suggestedTimeoutMs), effective timeout=\(String(format: "%.1f", timeout))s")
                         timeoutContinuation.yield(timeout)
                         timeoutContinuation.finish()
 
@@ -1838,10 +1858,14 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                             responseData,
                             publicKeyPrefix: publicKeyPrefix
                         )
+                        let elapsed = ContinuousClock.now - startTime
+                        logger.info("Telemetry request to \(prefixHex): response received in \(elapsed)")
                         return response
 
                     case .telemetryResponse(let response):
                         // Handle already-routed response (if routing happens elsewhere)
+                        let elapsed = ContinuousClock.now - startTime
+                        logger.info("Telemetry request to \(prefixHex): routed response received in \(elapsed)")
                         return response
 
                     default:
@@ -1852,14 +1876,19 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                 return nil
             }
 
-            group.addTask { [clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
+            group.addTask { [logger, clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
                 // Wait for dynamic timeout from event task, or use default
                 var timeout = defaultTimeout
+                var usedFirmwareTimeout = false
                 for await t in timeoutStream {
                     timeout = t
+                    usedFirmwareTimeout = true
                     break
                 }
+                logger.info("Telemetry request to \(prefixHex): timeout task sleeping for \(String(format: "%.1f", timeout))s (\(usedFirmwareTimeout ? "firmware" : "default"))")
                 try await clock.sleep(for: .seconds(timeout))
+                let elapsed = ContinuousClock.now - startTime
+                logger.warning("Telemetry request to \(prefixHex): timed out after \(elapsed)")
                 return nil
             }
 
@@ -1928,7 +1957,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                     case .messageSent(let info):
                         expectedAck = info.expectedAck
                         // Signal dynamic timeout to timeout task
-                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 1.2
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
                         timeoutContinuation.yield(timeout)
                         timeoutContinuation.finish()
 
@@ -2004,7 +2033,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                     case .messageSent(let info):
                         expectedAck = info.expectedAck
                         // Signal dynamic timeout to timeout task
-                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 1.2
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
                         timeoutContinuation.yield(timeout)
                         timeoutContinuation.finish()
 
@@ -2112,7 +2141,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
                     case .messageSent(let info):
                         expectedAck = info.expectedAck
                         // Signal dynamic timeout to timeout task
-                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 1.2
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
                         timeoutContinuation.yield(timeout)
                         timeoutContinuation.finish()
 

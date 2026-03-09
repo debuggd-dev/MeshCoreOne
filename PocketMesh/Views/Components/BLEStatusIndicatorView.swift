@@ -1,6 +1,7 @@
 import OSLog
 import SwiftUI
 import TipKit
+import CoreLocation
 import PocketMeshServices
 
 private let logger = Logger(subsystem: "com.pocketmesh", category: "BLEStatus")
@@ -113,7 +114,7 @@ struct BLEStatusIndicatorView: View {
 
     private var autoUpdateGPSSource: GPSSource? {
         guard let device = appState.connectedDevice,
-              device.sharesLocationPublicly,
+              device.advertLocationPolicy > 0,
               devicePreferenceStore.isAutoUpdateLocationEnabled(deviceID: device.id) else {
             return nil
         }
@@ -146,14 +147,24 @@ struct BLEStatusIndicatorView: View {
         do {
             switch source {
             case .phone:
-                let location = try await appState.locationService.requestCurrentLocation()
+                let location: CLLocation
+                do {
+                    location = try await appState.locationService.requestCurrentLocation()
+                } catch {
+                    guard let currentLocation = appState.locationService.currentLocation else {
+                        throw error
+                    }
+                    location = currentLocation
+                }
                 _ = try await settingsService?.setLocationVerified(
                     latitude: location.coordinate.latitude,
                     longitude: location.coordinate.longitude
                 )
             case .device:
-                try await settingsService?.setCustomVar(key: "gps", value: "1")
-                try await settingsService?.refreshDeviceInfo()
+                let gpsState = try await settingsService?.getDeviceGPSState()
+                if gpsState?.isEnabled != true {
+                    _ = try await settingsService?.setDeviceGPSEnabledVerified(true)
+                }
             }
         } catch {
             logger.warning("Failed to update location from GPS: \(error.localizedDescription)")

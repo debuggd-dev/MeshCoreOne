@@ -386,7 +386,7 @@ public actor NodeConfigService {
         try await settingsService.setOtherParams(
             autoAddContacts: manualAdd == 0,
             telemetryModes: TelemetryModes(base: telBase, location: telLocation, environment: telEnvironment),
-            shareLocationPublicly: advertPolicy > 0,
+            advertLocationPolicy: AdvertLocationPolicy(rawValue: advertPolicy) ?? .none,
             multiAcks: multiAcks
         )
     }

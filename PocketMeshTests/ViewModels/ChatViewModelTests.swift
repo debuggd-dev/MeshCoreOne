@@ -31,14 +31,17 @@ private func createTestContact(
 
 private func createTestMessage(
     timestamp: UInt32,
+    createdAt: Date? = nil,
     text: String = "Test message"
 ) -> MessageDTO {
+    let resolvedCreatedAt = createdAt ?? Date(timeIntervalSince1970: TimeInterval(timestamp))
     let message = Message(
         id: UUID(),
         deviceID: UUID(),
         contactID: UUID(),
         text: text,
         timestamp: timestamp,
+        createdAt: resolvedCreatedAt,
         directionRawValue: MessageDirection.outgoing.rawValue,
         statusRawValue: MessageStatus.sent.rawValue
     )
@@ -47,6 +50,7 @@ private func createTestMessage(
 
 private func createChannelMessage(
     timestamp: UInt32,
+    createdAt: Date? = nil,
     senderName: String? = nil,
     isOutgoing: Bool = false,
     text: String = "Test message"
@@ -58,7 +62,7 @@ private func createChannelMessage(
         channelIndex: 0,
         text: text,
         timestamp: timestamp,
-        createdAt: Date(),
+        createdAt: createdAt ?? Date(timeIntervalSince1970: TimeInterval(timestamp)),
         direction: isOutgoing ? .outgoing : .incoming,
         status: isOutgoing ? .sent : .delivered,
         textType: .plain,
@@ -188,6 +192,30 @@ struct ChatViewModelTests {
         ]
 
         #expect(ChatViewModel.computeDisplayFlags(for: messages[0], previous: nil).showTimestamp == true)
+    }
+
+    @Test("Time gap uses createdAt not timestamp when they diverge")
+    func timeGapUsesCreatedAtNotTimestamp() {
+        // Sender timestamps are 10 minutes apart, but messages arrived 1 second apart
+        let base = Date(timeIntervalSince1970: 1000)
+        let msg1 = createTestMessage(timestamp: 1000, createdAt: base)
+        let msg2 = createTestMessage(timestamp: 1600, createdAt: base.addingTimeInterval(1))
+
+        let flags = ChatViewModel.computeDisplayFlags(for: msg2, previous: msg1)
+        // createdAt gap is 1s (no timestamp shown), even though sender timestamps differ by 600s
+        #expect(flags.showTimestamp == false)
+    }
+
+    @Test("Time gap triggers timestamp when createdAt gap is large despite close sender timestamps")
+    func timeGapTriggersOnCreatedAtGap() {
+        // Sender timestamps are 1 second apart, but messages arrived 6 minutes apart
+        let base = Date(timeIntervalSince1970: 1000)
+        let msg1 = createTestMessage(timestamp: 1000, createdAt: base)
+        let msg2 = createTestMessage(timestamp: 1001, createdAt: base.addingTimeInterval(361))
+
+        let flags = ChatViewModel.computeDisplayFlags(for: msg2, previous: msg1)
+        // createdAt gap is 361s (> 300s), so timestamp should show
+        #expect(flags.showTimestamp == true)
     }
 
     @Test("Large time gaps show timestamp")

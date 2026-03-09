@@ -37,6 +37,14 @@ public protocol PersistenceStoreProtocol: Actor {
     /// Fetch messages for a channel
     func fetchMessages(deviceID: UUID, channelIndex: UInt8, limit: Int, offset: Int) async throws -> [MessageDTO]
 
+    /// Batch fetch last messages for multiple contacts in a single actor call.
+    /// Avoids N actor hops when loading message previews for the conversation list.
+    func fetchLastMessages(contactIDs: [UUID], limit: Int) throws -> [UUID: [MessageDTO]]
+
+    /// Batch fetch last messages for multiple channels in a single actor call.
+    /// Each tuple contains (deviceID, channelIndex, id) where id is used as the dictionary key.
+    func fetchLastChannelMessages(channels: [(deviceID: UUID, channelIndex: UInt8, id: UUID)], limit: Int) throws -> [UUID: [MessageDTO]]
+
     /// Finds a channel message matching a parsed reaction within a timestamp window
     func findChannelMessageForReaction(
         deviceID: UUID,
@@ -46,6 +54,22 @@ public protocol PersistenceStoreProtocol: Actor {
         timestampWindow: ClosedRange<UInt32>,
         limit: Int
     ) async throws -> MessageDTO?
+
+    /// Fetches channel message candidates for meshcore-open reaction matching
+    func fetchChannelMessageCandidates(
+        deviceID: UUID,
+        channelIndex: UInt8,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> [MessageDTO]
+
+    /// Fetches DM message candidates for meshcore-open reaction matching
+    func fetchDMMessageCandidates(
+        deviceID: UUID,
+        contactID: UUID,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) async throws -> [MessageDTO]
 
     /// Finds a DM message matching a reaction by hash within a timestamp window
     func findDMMessageForReaction(

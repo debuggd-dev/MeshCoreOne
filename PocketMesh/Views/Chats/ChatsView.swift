@@ -23,6 +23,8 @@ struct ChatsView: View {
     @State private var roomToAuthenticate: RemoteNodeSessionDTO?
     @State private var roomToDelete: RemoteNodeSessionDTO?
     @State private var showRoomDeleteAlert = false
+    @State private var showChannelDeleteFailed = false
+    @State private var channelDeleteFailure: ChannelDeleteFailure?
     @State private var pendingChatContact: ContactDTO?
     @State private var pendingChannel: ChannelDTO?
     @State private var hashtagToJoin: HashtagJoinRequest?
@@ -183,6 +185,33 @@ struct ChatsView: View {
         } message: {
             Text(L10n.Chats.Chats.Alert.LeaveRoom.message)
         }
+        .alert(
+            L10n.Chats.Chats.ChannelInfo.DeleteFailed.title,
+            isPresented: $showChannelDeleteFailed,
+            presenting: channelDeleteFailure
+        ) { failure in
+            Button(L10n.Localizable.Common.tryAgain) {
+                deleteChannelConversation(failure.channel)
+            }
+            Button(L10n.Chats.Chats.Common.ok, role: .cancel) { }
+        } message: { failure in
+            Text(failure.message)
+        }
+    }
+
+    private struct ChannelDeleteFailure {
+        let channel: ChannelDTO
+        let message: String
+    }
+
+    private enum ChannelDeleteError: LocalizedError {
+        case servicesUnavailable
+
+        var errorDescription: String? {
+            switch self {
+            case .servicesUnavailable: L10n.Chats.Chats.Error.servicesUnavailable
+            }
+        }
     }
 
     private func loadConversations() async {
@@ -252,7 +281,6 @@ struct ChatsView: View {
             deleteDirectConversation(contact)
 
         case .channel(let channel):
-            routeBeingDeleted = .channel(channel)
             deleteChannelConversation(channel)
 
         case .room(let session):
@@ -262,18 +290,8 @@ struct ChatsView: View {
     }
 
     private func deleteDirectConversation(_ contact: ContactDTO) {
-        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .direct(contact) {
-            selectedRoute = nil
-            appState.navigation.chatsSelectedRoute = nil
-        }
-
+        clearNavigationIfActive(.direct(contact))
         viewModel.removeConversation(.direct(contact))
-
-        if !shouldUseSplitView && activeRoute == .direct(contact) {
-            navigationPath.removeLast(navigationPath.count)
-            activeRoute = nil
-            appState.navigation.tabBarVisibility = .visible
-        }
 
         Task {
             try? await viewModel.deleteConversation(for: contact)
@@ -283,23 +301,18 @@ struct ChatsView: View {
     }
 
     private func deleteChannelConversation(_ channel: ChannelDTO) {
-        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .channel(channel) {
-            selectedRoute = nil
-            appState.navigation.chatsSelectedRoute = nil
-        }
-
-        viewModel.removeConversation(.channel(channel))
-
-        if !shouldUseSplitView && activeRoute == .channel(channel) {
-            navigationPath.removeLast(navigationPath.count)
-            activeRoute = nil
-            appState.navigation.tabBarVisibility = .visible
-        }
-
         Task {
-            await deleteChannel(channel)
-            await loadConversations()
-            routeBeingDeleted = nil
+            do {
+                try await deleteChannel(channel)
+                clearNavigationIfActive(.channel(channel))
+                await loadConversations()
+            } catch {
+                channelDeleteFailure = ChannelDeleteFailure(
+                    channel: channel,
+                    message: error.localizedDescription
+                )
+                showChannelDeleteFailed = true
+            }
         }
     }
 
@@ -318,40 +331,38 @@ struct ChatsView: View {
             await appState.services?.notificationService.updateBadgeCount()
 
             await MainActor.run {
-                if shouldUseSplitView && appState.navigation.chatsSelectedRoute == .room(session) {
-                    selectedRoute = nil
-                    appState.navigation.chatsSelectedRoute = nil
-                }
-
+                clearNavigationIfActive(.room(session))
                 viewModel.removeConversation(.room(session))
-
-                if !shouldUseSplitView && activeRoute == .room(session) {
-                    navigationPath.removeLast(navigationPath.count)
-                    activeRoute = nil
-                    appState.navigation.tabBarVisibility = .visible
-                }
             }
         } catch {
             chatsViewLogger.error("Failed to delete room: \(error)")
         }
     }
 
-    private func deleteChannel(_ channel: ChannelDTO) async {
-        guard let channelService = appState.services?.channelService else { return }
+    private func deleteChannel(_ channel: ChannelDTO) async throws {
+        guard let channelService = appState.services?.channelService else {
+            throw ChannelDeleteError.servicesUnavailable
+        }
+        try await channelService.clearChannel(
+            deviceID: channel.deviceID,
+            index: channel.index
+        )
+        await appState.services?.notificationService.removeDeliveredNotifications(
+            forChannelIndex: channel.index,
+            deviceID: channel.deviceID
+        )
+        await appState.services?.notificationService.updateBadgeCount()
+    }
 
-        do {
-            try await channelService.clearChannel(
-                deviceID: channel.deviceID,
-                index: channel.index
-            )
-            await appState.services?.notificationService.removeDeliveredNotifications(
-                forChannelIndex: channel.index,
-                deviceID: channel.deviceID
-            )
-            await appState.services?.notificationService.updateBadgeCount()
-        } catch {
-            chatsViewLogger.error("Failed to delete channel: \(error)")
-            await loadConversations()
+    private func clearNavigationIfActive(_ route: ChatRoute) {
+        if shouldUseSplitView && appState.navigation.chatsSelectedRoute == route {
+            selectedRoute = nil
+            appState.navigation.chatsSelectedRoute = nil
+        }
+        if !shouldUseSplitView && activeRoute == route {
+            navigationPath.removeLast(navigationPath.count)
+            activeRoute = nil
+            appState.navigation.tabBarVisibility = .visible
         }
     }
 

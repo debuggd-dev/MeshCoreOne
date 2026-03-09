@@ -9,6 +9,7 @@ private let logger = Logger(subsystem: "com.pocketmesh", category: "ChatView")
 struct ChatView: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.linkPreviewCache) private var linkPreviewCache
 
     @State private var contact: ContactDTO
@@ -34,6 +35,8 @@ struct ChatView: View {
 
     @AppStorage("showInlineImages") private var showInlineImages = true
     @AppStorage("autoPlayGIFs") private var autoPlayGIFs = true
+    @AppStorage("showIncomingPath") private var showIncomingPath = false
+    @AppStorage("showIncomingHopCount") private var showIncomingHopCount = false
 
     init(contact: ContactDTO, parentViewModel: ChatViewModel? = nil) {
         self._contact = State(initialValue: contact)
@@ -47,6 +50,8 @@ struct ChatView: View {
             deviceName: appState.connectedDevice?.nodeName ?? "Me",
             showInlineImages: showInlineImages,
             autoPlayGIFs: autoPlayGIFs,
+            showIncomingPath: showIncomingPath,
+            showIncomingHopCount: showIncomingHopCount,
             isAtBottom: $isAtBottom,
             unreadCount: $unreadCount,
             scrollToBottomRequest: $scrollToBottomRequest,
@@ -97,6 +102,7 @@ struct ChatView: View {
                     handleMessageAction(action, for: message)
                 }
             )
+            .environment(\.horizontalSizeClass, horizontalSizeClass)
         }
         .fullScreenCover(item: $imageViewerData) { data in
             FullScreenImageViewer(data: data)
@@ -351,7 +357,8 @@ struct ChatView: View {
             text: $viewModel.composingText,
             isFocused: $isInputFocused,
             placeholder: L10n.Chats.Chats.Input.Placeholder.directMessage,
-            maxBytes: ProtocolLimits.maxDirectMessageLength
+            maxBytes: ProtocolLimits.maxDirectMessageLength,
+            isEncrypted: true
         ) { text in
             scrollToBottomRequest += 1
             Task { await viewModel.sendMessage(text: text) }
@@ -411,6 +418,8 @@ private struct ChatMessagesContent: View {
     let deviceName: String
     let showInlineImages: Bool
     let autoPlayGIFs: Bool
+    let showIncomingPath: Bool
+    let showIncomingHopCount: Bool
     @Binding var isAtBottom: Bool
     @Binding var unreadCount: Int
     @Binding var scrollToBottomRequest: Int
@@ -425,6 +434,7 @@ private struct ChatMessagesContent: View {
     let onMentionSeen: (UUID) async -> Void
     let onScrollToMention: () -> Void
 
+    @Environment(\.colorSchemeContrast) private var colorSchemeContrast
     @State private var hasDismissedDividerFAB = false
 
     private var showDividerFAB: Bool {
@@ -519,13 +529,25 @@ private struct ChatMessagesContent: View {
                     showDirectionGap: item.showDirectionGap,
                     showSenderName: item.showSenderName,
                     showNewMessagesDivider: item.showNewMessagesDivider,
+                    detectedURL: item.detectedURL,
                     previewState: item.previewState,
                     loadedPreview: item.loadedPreview,
                     isImageURL: item.isImageURL,
                     decodedImage: viewModel.decodedImage(for: message.id),
+                    decodedPreviewImage: viewModel.decodedPreviewImage(for: message.id),
+                    decodedPreviewIcon: viewModel.decodedPreviewIcon(for: message.id),
                     isGIF: viewModel.isGIFImage(for: message.id),
                     showInlineImages: showInlineImages,
-                    autoPlayGIFs: autoPlayGIFs
+                    autoPlayGIFs: autoPlayGIFs,
+                    showIncomingPath: showIncomingPath,
+                    showIncomingHopCount: showIncomingHopCount,
+                    formattedText: viewModel.formattedText(
+                        for: message.id,
+                        text: message.text,
+                        isOutgoing: message.isOutgoing,
+                        currentUserName: deviceName,
+                        isHighContrast: colorSchemeContrast == .increased
+                    )
                 ),
                 callbacks: MessageBubbleCallbacks(
                     onRetry: {

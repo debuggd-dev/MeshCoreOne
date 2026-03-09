@@ -102,6 +102,13 @@ public struct ParsedDMReaction: Sendable, Equatable {
 /// Format: `{emoji}@[{sender}]\nxxxxxxxx`
 public enum ReactionParser {
 
+    /// Returns true if the text matches any known reaction format (PocketMesh or meshcore-open).
+    public static func isReactionText(_ text: String, isDM: Bool) -> Bool {
+        if MeshCoreOpenReactionParser.parse(text) != nil { return true }
+        if MeshCoreOpenReactionParser.parseV1(text) != nil { return true }
+        return isDM ? parseDM(text) != nil : parse(text) != nil
+    }
+
     /// Parses reaction text, returns nil if format doesn't match
     public static func parse(_ text: String) -> ParsedReaction? {
         // Step 1: Split on last newline to get hash

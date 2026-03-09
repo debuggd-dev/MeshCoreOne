@@ -155,7 +155,7 @@
 "chats.contactInfo.hasLocation" = "Has location";
 
 /* Location: ChatView.swift - Input bar placeholder for direct messages */
-"chats.input.placeholder.directMessage" = "Private Message";
+"chats.input.placeholder.directMessage" = "Direct Message";
 
 // MARK: - Channel Chat View
 
@@ -235,6 +235,9 @@
 
 /* Location: ChannelInfoSheet.swift - Footer explaining delete action */
 "chats.channelInfo.deleteFooter" = "Deleting removes this channel from your device. You can rejoin later if you have the secret key.";
+
+/* Location: ChatsView.swift - Alert title when channel deletion fails */
+"chats.channelInfo.deleteFailed.title" = "Channel Deletion Failed";
 
 /* Location: ChannelInfoSheet.swift - Error when device not connected */
 "chats.error.noDeviceConnected" = "No device connected";
@@ -747,6 +750,12 @@
 
 /* Location: ChatInputBar.swift - Accessibility hint when message is empty */
 "chats.input.typeFirst" = "Type a message first";
+
+/* Location: ChatInputBar.swift - Accessibility label for encrypted indicator */
+"chats.input.encrypted" = "Encrypted";
+
+/* Location: ChatInputBar.swift - Accessibility label for not encrypted indicator */
+"chats.input.notEncrypted" = "Not encrypted";
 
 // MARK: - Message Path Sheet
 

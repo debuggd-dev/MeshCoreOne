@@ -57,6 +57,8 @@ private func createTestMessage(
     contactID: UUID,
     deviceID: UUID,
     timestamp: UInt32,
+    createdAt: Date = Date(),
+    direction: MessageDirection = .incoming,
     text: String = "Test message"
 ) -> MessageDTO {
     MessageDTO(
@@ -66,8 +68,8 @@ private func createTestMessage(
         channelIndex: nil,
         text: text,
         timestamp: timestamp,
-        createdAt: Date(),
-        direction: .incoming,
+        createdAt: createdAt,
+        direction: direction,
         status: .delivered,
         textType: .plain,
         ackCode: nil,
@@ -142,6 +144,26 @@ actor PaginationTestDataStore: PersistenceStoreProtocol {
 
     func fetchMessage(ackCode: UInt32) async throws -> MessageDTO? {
         messages.values.first { $0.ackCode == ackCode }
+    }
+
+    func fetchLastMessages(contactIDs: [UUID], limit: Int) throws -> [UUID: [MessageDTO]] {
+        var result: [UUID: [MessageDTO]] = [:]
+        for contactID in contactIDs {
+            let filtered = messages.values.filter { $0.contactID == contactID }
+                .sorted { $0.timestamp < $1.timestamp }
+            result[contactID] = Array(filtered.prefix(limit))
+        }
+        return result
+    }
+
+    func fetchLastChannelMessages(channels: [(deviceID: UUID, channelIndex: UInt8, id: UUID)], limit: Int) throws -> [UUID: [MessageDTO]] {
+        var result: [UUID: [MessageDTO]] = [:]
+        for channel in channels {
+            let filtered = messages.values.filter { $0.deviceID == channel.deviceID && $0.channelIndex == channel.channelIndex }
+                .sorted { $0.timestamp < $1.timestamp }
+            result[channel.id] = Array(filtered.prefix(limit))
+        }
+        return result
     }
 
     func fetchMessages(contactID: UUID, limit: Int, offset: Int) async throws -> [MessageDTO] {
@@ -335,6 +357,8 @@ actor PaginationTestDataStore: PersistenceStoreProtocol {
     func updateMessageReactionSummary(messageID: UUID, summary: String?) async throws {}
     func deleteReactionsForMessage(messageID: UUID) async throws {}
     func findChannelMessageForReaction(deviceID: UUID, channelIndex: UInt8, parsedReaction: ParsedReaction, localNodeName: String?, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> MessageDTO? { nil }
+    func fetchChannelMessageCandidates(deviceID: UUID, channelIndex: UInt8, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> [MessageDTO] { [] }
+    func fetchDMMessageCandidates(deviceID: UUID, contactID: UUID, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> [MessageDTO] { [] }
     func findDMMessageForReaction(deviceID: UUID, contactID: UUID, messageHash: String, timestampWindow: ClosedRange<UInt32>, limit: Int) async throws -> MessageDTO? { nil }
 
     // MARK: - Notification Level
@@ -707,5 +731,111 @@ struct ChatViewModelDisplayItemsPaginationTests {
         #expect(viewModel.displayItems.count == 2)
         let foundMessage = viewModel.message(for: viewModel.displayItems[0])
         #expect(foundMessage?.id == message1.id)
+    }
+}
+
+// MARK: - Cross-Boundary Reordering Tests
+
+@Suite("Same-Sender Cluster Reordering Across Page Boundaries")
+@MainActor
+struct CrossBoundaryReorderingTests {
+
+    @Test("Reordering fixes same-sender cluster split across pagination boundary")
+    func reorderingFixesSplitCluster() {
+        // Scenario: Sender sends msg1 (t=100), msg2 (t=101), msg3 (t=102) rapidly.
+        // Mesh delivers them out of order: msg3, msg1, msg2.
+        // msg3 ends up on page 2 (older), msg1 and msg2 on page 1 (newer).
+        //
+        // Each page is reordered independently, but the cross-boundary cluster
+        // (msg3 on page 2, msg1+msg2 on page 1) is NOT reordered until merge.
+
+        let deviceID = UUID()
+        let contactID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+
+        // Page 2 (older, loaded second via loadOlderMessages): msg3 arrived first
+        let msg3 = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 102,
+            createdAt: base.addingTimeInterval(0),  // received first
+            text: "msg3"
+        )
+
+        // Page 1 (newer, loaded first): msg1 and msg2 arrived later
+        let msg1 = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 100,
+            createdAt: base.addingTimeInterval(2),  // received second
+            text: "msg1"
+        )
+        let msg2 = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 101,
+            createdAt: base.addingTimeInterval(3),  // received third
+            text: "msg2"
+        )
+
+        // Simulate independent per-page reordering (as production does)
+        let page2Reordered = MessageDTO.reorderSameSenderClusters([msg3])  // single msg, no-op
+        let page1Reordered = MessageDTO.reorderSameSenderClusters([msg1, msg2])  // already ordered
+
+        // Merge: prepend older page
+        var merged = page2Reordered
+        merged.append(contentsOf: page1Reordered)
+
+        // Without cross-boundary reordering: msg3, msg1, msg2 (receive order at boundary)
+        #expect(merged.map(\.text) == ["msg3", "msg1", "msg2"])
+
+        // After re-running reorderSameSenderClusters on the full merged array
+        let fixed = MessageDTO.reorderSameSenderClusters(merged)
+
+        // All three are from the same sender (DM, same direction), within 5s window,
+        // so they're reordered by sender timestamp: msg1, msg2, msg3
+        #expect(fixed.map(\.text) == ["msg1", "msg2", "msg3"])
+    }
+
+    @Test("Reordering does not merge clusters beyond the 5-second window")
+    func reorderingRespectsWindowAtBoundary() {
+        let deviceID = UUID()
+        let contactID = UUID()
+        let base = Date(timeIntervalSince1970: 1_000_000)
+
+        // Page 2 message: received well before the page 1 messages (>5s gap)
+        let oldMsg = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 100,
+            createdAt: base.addingTimeInterval(0),
+            text: "old"
+        )
+
+        // Page 1 messages: received 10 seconds later
+        let newMsg1 = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 99,  // earlier sender timestamp but later receive
+            createdAt: base.addingTimeInterval(10),
+            text: "new1"
+        )
+        let newMsg2 = createTestMessage(
+            contactID: contactID,
+            deviceID: deviceID,
+            timestamp: 102,
+            createdAt: base.addingTimeInterval(11),
+            text: "new2"
+        )
+
+        // Merge: prepend older page
+        var merged = [oldMsg]
+        merged.append(contentsOf: [newMsg1, newMsg2])
+
+        let result = MessageDTO.reorderSameSenderClusters(merged)
+
+        // The 10-second gap between oldMsg and newMsg1 exceeds the 5s window,
+        // so they should NOT be clustered — order stays as-is
+        #expect(result.map(\.text) == ["old", "new1", "new2"])
     }
 }

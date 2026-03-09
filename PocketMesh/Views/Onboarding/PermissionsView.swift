@@ -94,7 +94,7 @@ struct PermissionsView: View {
         }
         .alert(L10n.Onboarding.Permissions.LocationAlert.title, isPresented: $showingLocationAlert) {
             Button(L10n.Onboarding.Permissions.LocationAlert.openSettings) {
-                if let url = URL(string: "app-settings:") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
                     openURL(url)
                 }
             }

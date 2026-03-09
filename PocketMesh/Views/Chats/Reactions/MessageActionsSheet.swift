@@ -17,6 +17,7 @@ struct MessageActionsSheet: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     let message: MessageDTO
     let senderName: String
     let recentEmojis: [String]
@@ -103,7 +104,7 @@ struct MessageActionsSheet: View {
             }
         }
         .presentationDetents(
-            (UIDevice.current.userInterfaceIdiom == .pad || dynamicTypeSize.isAccessibilitySize)
+            (horizontalSizeClass == .regular || dynamicTypeSize.isAccessibilitySize)
                 ? [.large] : [.medium, .large]
         )
         .presentationContentInteraction(.scrolls)
@@ -192,8 +193,7 @@ private struct ActionsTimestampLabel: View {
     let message: MessageDTO
 
     var body: some View {
-        Text(message.isOutgoing ? message.date : message.createdAt,
-             format: .dateTime.hour().minute())
+        Text(message.date, format: .dateTime.hour().minute())
             .font(.subheadline)
             .foregroundStyle(.secondary)
     }
@@ -413,7 +413,7 @@ private struct ActionsOutgoingDetailsRows: View {
 
     var body: some View {
         ActionInfoRow(text: L10n.Chats.Chats.Message.Info.sent(
-            message.date.formatted(date: .abbreviated, time: .shortened)))
+            message.senderDate.formatted(date: .abbreviated, time: .shortened)))
 
         if let rtt = message.roundTripTime {
             ActionInfoRow(text: L10n.Chats.Chats.Message.Info.roundTrip(Int(rtt)))
@@ -438,7 +438,7 @@ private struct ActionsIncomingDetailsRows: View {
         )
 
         let sentText = L10n.Chats.Chats.Message.Info.sent(
-            message.date.formatted(date: .abbreviated, time: .shortened))
+            message.senderDate.formatted(date: .abbreviated, time: .shortened))
         let adjusted = message.timestampCorrected ? " " + L10n.Chats.Chats.Message.Info.adjusted : ""
         ActionInfoRow(text: sentText + adjusted)
 
@@ -532,6 +532,7 @@ private struct ActionInfoRow: View {
         message: MessageDTO(from: message),
         senderName: "My Device",
         recentEmojis: RecentEmojisStore.defaultEmojis,
+
         onAction: { print("Action: \($0)") }
     )
 }
@@ -551,6 +552,7 @@ private struct ActionInfoRow: View {
         message: MessageDTO(from: message),
         senderName: "Alice",
         recentEmojis: RecentEmojisStore.defaultEmojis,
+
         onAction: { print("Action: \($0)") }
     )
 }

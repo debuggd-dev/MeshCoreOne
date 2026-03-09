@@ -8,12 +8,15 @@ private let logger = Logger(subsystem: "com.pocketmesh", category: "LocationSett
 struct LocationSettingsSection: View {
     @Environment(\.appState) private var appState
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
     @Binding var showingLocationPicker: Bool
     @State private var shareLocation = false
     @State private var autoUpdateLocation = false
     @State private var gpsSource: GPSSource = .phone
     @State private var deviceHasGPS = false
+    @State private var deviceGPSEnabled = false
     @State private var showError: String?
+    @State private var showLocationDeniedAlert = false
     @State private var retryAlert = RetryAlertState()
     @State private var isSaving = false
     @State private var didLoad = false
@@ -21,84 +24,86 @@ struct LocationSettingsSection: View {
     private let devicePreferenceStore = DevicePreferenceStore()
 
     private var shouldPollDeviceGPS: Bool {
-        autoUpdateLocation && gpsSource == .device
+        autoUpdateLocation && gpsSource == .device && deviceGPSEnabled
     }
 
     var body: some View {
-        Section {
-            // Set Location
-            Button {
-                showingLocationPicker = true
-            } label: {
-                HStack {
-                    TintedLabel(L10n.Settings.Node.setLocation, systemImage: "mappin.and.ellipse")
-                    Spacer()
-                    if let device = appState.connectedDevice,
-                       device.latitude != 0 || device.longitude != 0 {
-                        Text(L10n.Settings.Node.locationSet)
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text(L10n.Settings.Node.locationNotSet)
+        Group {
+            Section {
+                Button {
+                    showingLocationPicker = true
+                } label: {
+                    HStack {
+                        TintedLabel(L10n.Settings.Node.setLocation, systemImage: "mappin.and.ellipse")
+                        Spacer()
+                        if let device = appState.connectedDevice,
+                           device.latitude != 0 || device.longitude != 0 {
+                            Text(L10n.Settings.Node.locationSet)
+                                .foregroundStyle(.secondary)
+                        } else {
+                            Text(L10n.Settings.Node.locationNotSet)
+                                .foregroundStyle(.tertiary)
+                        }
+                        Image(systemName: "chevron.right")
+                            .font(.caption)
                             .foregroundStyle(.tertiary)
                     }
-                    Image(systemName: "chevron.right")
-                        .font(.caption)
-                        .foregroundStyle(.tertiary)
                 }
-            }
-            .foregroundStyle(.primary)
-            .radioDisabled(for: appState.connectionState, or: isSaving || autoUpdateLocation)
+                .foregroundStyle(.primary)
+                .radioDisabled(for: appState.connectionState, or: isSaving || autoUpdateLocation)
 
-            // Share Location Publicly
-            Toggle(isOn: $shareLocation) {
-                TintedLabel(L10n.Settings.Node.shareLocationPublicly, systemImage: "location")
-            }
-            .onChange(of: shareLocation) { _, newValue in
-                guard didLoad else { return }
-                updateShareLocation(newValue)
-            }
-            .radioDisabled(for: appState.connectionState, or: isSaving)
-
-            // Auto-Update Location
-            Toggle(isOn: $autoUpdateLocation) {
-                TintedLabel(L10n.Settings.Location.autoUpdate, systemImage: "location.circle")
-            }
-            .onChange(of: autoUpdateLocation) { _, newValue in
-                guard let deviceID = appState.connectedDevice?.id else { return }
-                devicePreferenceStore.setAutoUpdateLocationEnabled(newValue, deviceID: deviceID)
-                if newValue {
-                    if gpsSource == .phone {
-                        appState.locationService.requestPermissionIfNeeded()
-                    }
+                Toggle(isOn: $shareLocation) {
+                    TintedLabel(L10n.Settings.Node.shareLocationPublicly, systemImage: "location")
                 }
-                if !newValue, gpsSource == .device {
-                    disableDeviceGPS()
-                }
-            }
-            .radioDisabled(for: appState.connectionState, or: isSaving)
-
-            // GPS Source (only show picker when device has GPS hardware)
-            if autoUpdateLocation, deviceHasGPS {
-                Picker(L10n.Settings.Location.gpsSource, selection: $gpsSource) {
-                    Text(L10n.Settings.Location.GpsSource.phone).tag(GPSSource.phone)
-                    Text(L10n.Settings.Location.GpsSource.device).tag(GPSSource.device)
-                }
-                .onChange(of: gpsSource) { _, newValue in
-                    guard let deviceID = appState.connectedDevice?.id else { return }
-                    devicePreferenceStore.setGPSSource(newValue, deviceID: deviceID)
-                    if newValue == .phone {
-                        appState.locationService.requestPermissionIfNeeded()
-                        disableDeviceGPS()
-                    } else if newValue == .device {
-                        enableDeviceGPS()
-                    }
+                .onChange(of: shareLocation) { _, newValue in
+                    guard didLoad else { return }
+                    updateShareLocation(newValue)
                 }
                 .radioDisabled(for: appState.connectionState, or: isSaving)
+
+                Toggle(isOn: $autoUpdateLocation) {
+                    TintedLabel(L10n.Settings.Location.autoUpdate, systemImage: "location.circle")
+                }
+                .onChange(of: autoUpdateLocation) { _, newValue in
+                    handleAutoUpdateChange(newValue)
+                }
+                .radioDisabled(for: appState.connectionState, or: isSaving)
+
+                if autoUpdateLocation {
+                    if deviceHasGPS {
+                        Picker(L10n.Settings.Location.gpsSource, selection: $gpsSource) {
+                            Text(L10n.Settings.Location.GpsSource.phone).tag(GPSSource.phone)
+                            Text(L10n.Settings.Location.GpsSource.device).tag(GPSSource.device)
+                        }
+                        .onChange(of: gpsSource) { oldValue, newValue in
+                            handleGPSSourceChange(from: oldValue, to: newValue)
+                        }
+                        .radioDisabled(for: appState.connectionState, or: isSaving)
+                    } else {
+                        LabeledContent(L10n.Settings.Location.gpsSource) {
+                            Text(L10n.Settings.Location.GpsSource.phone)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            } header: {
+                Text(L10n.Settings.Location.header)
+            } footer: {
+                Text(L10n.Settings.Location.footer)
             }
-        } header: {
-            Text(L10n.Settings.Location.header)
-        } footer: {
-            Text(L10n.Settings.Location.footer)
+
+            if deviceHasGPS {
+                Section {
+                    Toggle(isOn: deviceGPSBinding) {
+                        TintedLabel(L10n.Settings.Location.DeviceGps.toggle, systemImage: "location.circle")
+                    }
+                    .radioDisabled(for: appState.connectionState, or: isSaving)
+                } header: {
+                    Text(L10n.Settings.Location.DeviceGps.header)
+                } footer: {
+                    Text(L10n.Settings.Location.DeviceGps.footer)
+                }
+            }
         }
         .task(id: startupTaskID) {
             loadPreferences()
@@ -106,7 +111,7 @@ struct LocationSettingsSection: View {
                 logger.debug("Deferring location settings startup reads until sync is less contended")
                 return
             }
-            await queryDeviceGPSCapability()
+            await loadDeviceGPSState()
         }
         .task(id: shouldPollDeviceGPS) {
             guard shouldPollDeviceGPS,
@@ -120,64 +125,128 @@ struct LocationSettingsSection: View {
         }
         .errorAlert($showError)
         .retryAlert(retryAlert)
+        .alert(L10n.Onboarding.Permissions.LocationAlert.title, isPresented: $showLocationDeniedAlert) {
+            Button(L10n.Onboarding.Permissions.LocationAlert.openSettings) {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    openURL(url)
+                }
+            }
+            Button(L10n.Localizable.Common.cancel, role: .cancel) { }
+        } message: {
+            Text(L10n.Onboarding.Permissions.LocationAlert.message)
+        }
     }
 
     private var startupTaskID: String {
         let deviceID = appState.connectedDevice?.id.uuidString ?? "none"
         let syncPhase = appState.connectionUI.currentSyncPhase.map { String(describing: $0) } ?? "none"
-        return "\(deviceID)-\(String(describing: appState.connectionState))-\(syncPhase)"
+        return "\(deviceID)-\(String(describing: appState.connectionState))-\(syncPhase)-picker:\(showingLocationPicker)"
+    }
+
+    private var deviceGPSBinding: Binding<Bool> {
+        Binding(
+            get: { deviceGPSEnabled },
+            set: { updateDeviceGPSToggle($0) }
+        )
     }
 
     private func loadPreferences() {
         if let device = appState.connectedDevice {
-            shareLocation = device.advertLocationPolicy == 1
+            shareLocation = device.sharesLocationPublicly
             autoUpdateLocation = devicePreferenceStore.isAutoUpdateLocationEnabled(deviceID: device.id)
             gpsSource = devicePreferenceStore.gpsSource(deviceID: device.id)
         }
         didLoad = true
     }
 
-    private func queryDeviceGPSCapability() async {
+    private func loadDeviceGPSState() async {
         guard appState.canRunSettingsStartupReads else { return }
         guard let settingsService = appState.services?.settingsService else { return }
         do {
-            let vars = try await settingsService.getCustomVars()
-            deviceHasGPS = vars.keys.contains("gps")
-            // If device GPS is already active, default to device source on first visit
+            let state = try await settingsService.getDeviceGPSState()
+            deviceHasGPS = state.isSupported
+            deviceGPSEnabled = state.isEnabled
             if let deviceID = appState.connectedDevice?.id,
-               vars["gps"] == "1",
+               state.isEnabled,
                !devicePreferenceStore.hasSetGPSSource(deviceID: deviceID) {
                 gpsSource = .device
                 devicePreferenceStore.setGPSSource(.device, deviceID: deviceID)
             }
-            // Refresh device info to pick up GPS-derived coordinates
-            if vars["gps"] == "1" {
+            if state.isEnabled {
                 try? await settingsService.refreshDeviceInfo()
             }
         } catch {
             deviceHasGPS = false
+            deviceGPSEnabled = false
         }
     }
 
-    private func enableDeviceGPS() {
-        guard let settingsService = appState.services?.settingsService else { return }
-        Task {
-            do {
-                try await settingsService.setCustomVar(key: "gps", value: "1")
-                try await settingsService.refreshDeviceInfo()
-            } catch {
-                logger.warning("Failed to enable device GPS: \(error.localizedDescription)")
+    private func handleAutoUpdateChange(_ newValue: Bool) {
+        guard let deviceID = appState.connectedDevice?.id else { return }
+        if newValue, gpsSource == .phone, appState.locationService.isLocationDenied {
+            autoUpdateLocation = false
+            showLocationDeniedAlert = true
+            return
+        }
+        devicePreferenceStore.setAutoUpdateLocationEnabled(newValue, deviceID: deviceID)
+        if newValue, gpsSource == .phone {
+            appState.locationService.requestPermissionIfNeeded()
+        }
+        if gpsSource == .device {
+            if newValue {
+                saveDeviceGPS(
+                    true,
+                    onFailure: {
+                        autoUpdateLocation = false
+                        devicePreferenceStore.setAutoUpdateLocationEnabled(false, deviceID: deviceID)
+                    }
+                )
+            } else if deviceGPSEnabled {
+                saveDeviceGPS(false)
             }
         }
+        if shareLocation {
+            updateShareLocation(shareLocation)
+        }
     }
 
-    private func disableDeviceGPS() {
-        guard let settingsService = appState.services?.settingsService else { return }
-        Task {
-            do {
-                try await settingsService.setCustomVar(key: "gps", value: "0")
-            } catch {
-                logger.warning("Failed to disable device GPS: \(error.localizedDescription)")
+    private func handleGPSSourceChange(from oldValue: GPSSource, to newValue: GPSSource) {
+        guard let deviceID = appState.connectedDevice?.id else { return }
+        if newValue == .phone, appState.locationService.isLocationDenied {
+            gpsSource = oldValue
+            showLocationDeniedAlert = true
+            return
+        }
+
+        devicePreferenceStore.setGPSSource(newValue, deviceID: deviceID)
+        if newValue == .phone {
+            appState.locationService.requestPermissionIfNeeded()
+            if deviceGPSEnabled {
+                saveDeviceGPS(false)
+            }
+        } else if autoUpdateLocation {
+            saveDeviceGPS(
+                true,
+                onFailure: {
+                    gpsSource = oldValue
+                    devicePreferenceStore.setGPSSource(oldValue, deviceID: deviceID)
+                }
+            )
+        }
+
+        if shareLocation {
+            updateShareLocation(shareLocation)
+        }
+    }
+
+    private func updateDeviceGPSToggle(_ enabled: Bool) {
+        guard let deviceID = appState.connectedDevice?.id else { return }
+        let shouldDisableAutoUpdate = !enabled && autoUpdateLocation && gpsSource == .device
+        saveDeviceGPS(enabled) {
+            if shouldDisableAutoUpdate {
+                autoUpdateLocation = false
+                devicePreferenceStore.setAutoUpdateLocationEnabled(false, deviceID: deviceID)
+                try await applyDeviceGPSDisabledSharePolicyIfNeeded()
             }
         }
     }
@@ -185,21 +254,16 @@ struct LocationSettingsSection: View {
     private func updateShareLocation(_ share: Bool) {
         guard let device = appState.connectedDevice,
               let settingsService = appState.services?.settingsService else { return }
+        let policy = selectedAdvertLocationPolicy(share: share)
+
+        if device.advertLocationPolicyMode == policy {
+            return
+        }
 
         isSaving = true
         Task {
             do {
-                let telemetryModes = TelemetryModes(
-                    base: device.telemetryModeBase,
-                    location: device.telemetryModeLoc,
-                    environment: device.telemetryModeEnv
-                )
-                _ = try await settingsService.setOtherParamsVerified(
-                    autoAddContacts: !device.manualAddContacts,
-                    telemetryModes: telemetryModes,
-                    shareLocationPublicly: share,
-                    multiAcks: device.multiAcks
-                )
+                try await applyShareLocationPolicy(policy, using: device, settingsService: settingsService)
                 retryAlert.reset()
             } catch let error as SettingsServiceError where error.isRetryable {
                 shareLocation = !share
@@ -214,5 +278,76 @@ struct LocationSettingsSection: View {
             }
             isSaving = false
         }
+    }
+
+    private func selectedAdvertLocationPolicy(share: Bool) -> AdvertLocationPolicy {
+        guard share else { return .none }
+        if autoUpdateLocation, deviceHasGPS, gpsSource == .device {
+            return .share
+        }
+        return .prefs
+    }
+
+    private func saveDeviceGPS(
+        _ enabled: Bool,
+        onSuccess: (@MainActor () async throws -> Void)? = nil,
+        onFailure: (@MainActor () -> Void)? = nil
+    ) {
+        guard let settingsService = appState.services?.settingsService else { return }
+
+        let previousEnabled = deviceGPSEnabled
+        isSaving = true
+
+        Task {
+            do {
+                let state = try await settingsService.setDeviceGPSEnabledVerified(enabled)
+                deviceHasGPS = state.isSupported
+                deviceGPSEnabled = state.isEnabled
+                if let onSuccess {
+                    try await onSuccess()
+                }
+                retryAlert.reset()
+            } catch let error as SettingsServiceError where error.isRetryable {
+                deviceGPSEnabled = previousEnabled
+                onFailure?()
+                retryAlert.show(
+                    message: error.errorDescription ?? L10n.Settings.Alert.Retry.fallbackMessage,
+                    onRetry: { saveDeviceGPS(enabled, onSuccess: onSuccess, onFailure: onFailure) },
+                    onMaxRetriesExceeded: { dismiss() }
+                )
+            } catch {
+                deviceGPSEnabled = previousEnabled
+                onFailure?()
+                showError = error.localizedDescription
+            }
+            isSaving = false
+        }
+    }
+
+    private func applyDeviceGPSDisabledSharePolicyIfNeeded() async throws {
+        guard shareLocation,
+              let device = appState.connectedDevice,
+              device.advertLocationPolicyMode == .share,
+              let settingsService = appState.services?.settingsService else { return }
+
+        try await applyShareLocationPolicy(.prefs, using: device, settingsService: settingsService)
+    }
+
+    private func applyShareLocationPolicy(
+        _ policy: AdvertLocationPolicy,
+        using device: DeviceDTO,
+        settingsService: SettingsService
+    ) async throws {
+        let telemetryModes = TelemetryModes(
+            base: device.telemetryModeBase,
+            location: device.telemetryModeLoc,
+            environment: device.telemetryModeEnv
+        )
+        _ = try await settingsService.setOtherParamsVerified(
+            autoAddContacts: !device.manualAddContacts,
+            telemetryModes: telemetryModes,
+            advertLocationPolicy: policy,
+            multiAcks: device.multiAcks
+        )
     }
 }

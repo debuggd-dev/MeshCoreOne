@@ -3,6 +3,12 @@ import UIKit
 import PocketMeshServices
 import OSLog
 
+/// Decoded preview hero image and icon, stored together to batch Observable notifications
+struct DecodedPreviewAssets {
+    var image: UIImage?
+    var icon: UIImage?
+}
+
 /// ViewModel for chat operations
 @Observable
 @MainActor
@@ -170,6 +176,12 @@ final class ChatViewModel {
     /// Pre-decoded UIImage per message (avoids decoding in view body)
     var decodedImages: [UUID: UIImage] = [:]
 
+    /// Pre-decoded link preview assets (single dictionary to batch Observable notifications)
+    var decodedPreviewAssets: [UUID: DecodedPreviewAssets] = [:]
+
+    /// Tracks in-flight legacy preview decode tasks to prevent duplicates
+    var legacyPreviewDecodeInFlight: Set<UUID> = []
+
     /// Whether each image message is a GIF (computed once during decode)
     var imageIsGIF: [UUID: Bool] = [:]
 
@@ -179,6 +191,31 @@ final class ChatViewModel {
     /// In-flight reaction sends (prevents duplicate reactions on rapid taps)
     /// Key format: "{messageID}-{emoji}"
     var inFlightReactions: Set<String> = []
+
+    /// Cached URL detection results to avoid re-running NSDataDetector on rebuilds
+    var cachedURLs: [UUID: URL?] = [:]
+
+    /// Cached formatted text per message (avoids rebuilding AttributedString on every render)
+    @ObservationIgnored var formattedTexts: [UUID: AttributedString] = [:]
+
+    /// Returns cached formatted text for a message, building and caching on first access
+    func formattedText(
+        for messageID: UUID,
+        text: String,
+        isOutgoing: Bool,
+        currentUserName: String?,
+        isHighContrast: Bool
+    ) -> AttributedString {
+        if let cached = formattedTexts[messageID] { return cached }
+        let result = MessageText.buildFormattedText(
+            text: text,
+            isOutgoing: isOutgoing,
+            currentUserName: currentUserName,
+            isHighContrast: isHighContrast
+        )
+        formattedTexts[messageID] = result
+        return result
+    }
 
     // MARK: - Pagination State
 
@@ -285,8 +322,8 @@ final class ChatViewModel {
             return DisplayFlags(showTimestamp: true, showDirectionGap: false, showSenderName: true)
         }
 
-        // Time gap calculation (shared by timestamp and sender name logic)
-        let timeGap = abs(Int(message.timestamp) - Int(previous.timestamp))
+        // Time gap calculation based on receive time (consistent with sort order)
+        let timeGap = abs(Int(message.createdAt.timeIntervalSince(previous.createdAt)))
 
         // Timestamp: gap > 5 minutes
         let showTimestamp = timeGap > messageGroupingGapSeconds

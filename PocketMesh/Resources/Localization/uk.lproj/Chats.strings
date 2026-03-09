@@ -154,7 +154,7 @@
 "chats.contactInfo.hasLocation" = "Має місцезнаходження";
 
 /* Location: ChatView.swift - Input bar placeholder for direct messages */
-"chats.input.placeholder.directMessage" = "Особисте повідомлення";
+"chats.input.placeholder.directMessage" = "Пряме повідомлення";
 
 // MARK: - Channel Chat View
 
@@ -234,6 +234,9 @@
 
 /* Location: ChannelInfoSheet.swift - Footer explaining delete action */
 "chats.channelInfo.deleteFooter" = "Видалення прибирає цей канал з твого пристрою. Ти зможеш приєднатися знову, якщо маєш секретний ключ.";
+
+/* Location: ChatsView.swift - Alert title when channel deletion fails */
+"chats.channelInfo.deleteFailed.title" = "Не вдалося видалити канал";
 
 /* Location: ChannelInfoSheet.swift - Error when device not connected */
 "chats.error.noDeviceConnected" = "Пристрій не підключено";
@@ -675,6 +678,8 @@
 
 /* Location: ChatInputBar.swift - Accessibility hint when message is empty */
 "chats.input.typeFirst" = "Спочатку введи повідомлення";
+"chats.input.encrypted" = "Зашифровано";
+"chats.input.notEncrypted" = "Не зашифровано";
 
 // MARK: - Message Path Sheet
 

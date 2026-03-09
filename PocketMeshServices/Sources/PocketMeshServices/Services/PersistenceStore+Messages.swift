@@ -21,6 +21,28 @@ extension PersistenceStore {
 
     // MARK: - Message Operations
 
+    /// Batch fetch last messages for multiple contacts in a single actor-isolated call.
+    /// Runs N fetches with zero suspension points between them, avoiding N actor hops.
+    public func fetchLastMessages(contactIDs: [UUID], limit: Int) throws -> [UUID: [MessageDTO]] {
+        var result: [UUID: [MessageDTO]] = [:]
+        result.reserveCapacity(contactIDs.count)
+        for contactID in contactIDs {
+            result[contactID] = try fetchMessages(contactID: contactID, limit: limit)
+        }
+        return result
+    }
+
+    /// Batch fetch last messages for multiple channels in a single actor-isolated call.
+    /// Runs N fetches with zero suspension points between them, avoiding N actor hops.
+    public func fetchLastChannelMessages(channels: [(deviceID: UUID, channelIndex: UInt8, id: UUID)], limit: Int) throws -> [UUID: [MessageDTO]] {
+        var result: [UUID: [MessageDTO]] = [:]
+        result.reserveCapacity(channels.count)
+        for channel in channels {
+            result[channel.id] = try fetchMessages(deviceID: channel.deviceID, channelIndex: channel.channelIndex, limit: limit)
+        }
+        return result
+    }
+
     /// Fetch messages for a contact
     public func fetchMessages(contactID: UUID, limit: Int = 50, offset: Int = 0) throws -> [MessageDTO] {
         let targetContactID: UUID? = contactID
@@ -30,15 +52,16 @@ extension PersistenceStore {
         var descriptor = FetchDescriptor(
             predicate: predicate,
             sortBy: [
-                SortDescriptor(\Message.timestamp, order: .reverse),
-                SortDescriptor(\Message.createdAt, order: .reverse)
+                SortDescriptor(\Message.createdAt, order: .reverse),
+                SortDescriptor(\Message.timestamp, order: .reverse)
             ]
         )
         descriptor.fetchLimit = limit
         descriptor.fetchOffset = offset
 
         let messages = try modelContext.fetch(descriptor)
-        return messages.reversed().map { MessageDTO(from: $0) }
+        let dtos = messages.reversed().map { MessageDTO(from: $0) }
+        return MessageDTO.reorderSameSenderClusters(dtos)
     }
 
     /// Fetch messages for a channel
@@ -51,15 +74,16 @@ extension PersistenceStore {
         var descriptor = FetchDescriptor(
             predicate: predicate,
             sortBy: [
-                SortDescriptor(\Message.timestamp, order: .reverse),
-                SortDescriptor(\Message.createdAt, order: .reverse)
+                SortDescriptor(\Message.createdAt, order: .reverse),
+                SortDescriptor(\Message.timestamp, order: .reverse)
             ]
         )
         descriptor.fetchLimit = limit
         descriptor.fetchOffset = offset
 
         let messages = try modelContext.fetch(descriptor)
-        return messages.reversed().map { MessageDTO(from: $0) }
+        let dtos = messages.reversed().map { MessageDTO(from: $0) }
+        return MessageDTO.reorderSameSenderClusters(dtos)
     }
 
     /// Finds a channel message matching a parsed reaction within a timestamp window.
@@ -75,36 +99,18 @@ extension PersistenceStore {
         // swiftlint:disable:next line_length
         logger.debug("[REACTION-MATCH] Looking for message: targetSender=\(parsedReaction.targetSender), hash=\(parsedReaction.messageHash), localNodeName=\(localNodeName ?? "nil"), window=\(timestampWindow.lowerBound)...\(timestampWindow.upperBound)")
 
-        let targetDeviceID = deviceID
-        let targetChannelIndex: UInt8? = channelIndex
-        let start = timestampWindow.lowerBound
-        let end = timestampWindow.upperBound
-
-        let predicate = #Predicate<Message> { message in
-            message.deviceID == targetDeviceID &&
-            message.channelIndex == targetChannelIndex &&
-            message.timestamp >= start &&
-            message.timestamp <= end
-        }
-
-        var descriptor = FetchDescriptor(
-            predicate: predicate,
-            sortBy: [
-                SortDescriptor(\Message.timestamp, order: .reverse),
-                SortDescriptor(\Message.createdAt, order: .reverse)
-            ]
+        let candidates = try fetchChannelMessageCandidates(
+            deviceID: deviceID,
+            channelIndex: channelIndex,
+            timestampWindow: timestampWindow,
+            limit: limit
         )
-        descriptor.fetchLimit = limit
-
-        let candidates = try modelContext.fetch(descriptor)
         logger.debug("[REACTION-MATCH] Found \(candidates.count) candidates in window")
         guard !candidates.isEmpty else { return nil }
 
         for candidate in candidates {
             let direction = candidate.direction == .outgoing ? "outgoing" : "incoming"
-            // Use senderTimestamp if available (for incoming messages with corrected timestamps)
-            let reactionTimestamp = candidate.senderTimestamp ?? candidate.timestamp
-            let candidateHash = ReactionParser.generateMessageHash(text: candidate.text, timestamp: reactionTimestamp)
+            let candidateHash = ReactionParser.generateMessageHash(text: candidate.text, timestamp: candidate.reactionTimestamp)
             logger.debug("[REACTION-MATCH] Candidate: direction=\(direction), senderNodeName=\(candidate.senderNodeName ?? "nil"), hash=\(candidateHash), text=\(candidate.text.prefix(30))")
 
             if candidate.direction == .outgoing {
@@ -125,24 +131,55 @@ extension PersistenceStore {
             }
 
             logger.debug("[REACTION-MATCH] Found match!")
-            return MessageDTO(from: candidate)
+            return candidate
         }
 
         logger.debug("[REACTION-MATCH] No match found")
         return nil
     }
 
-    /// Finds a DM message matching a reaction by hash within a timestamp window.
-    public func findDMMessageForReaction(
+    /// Fetches channel message candidates within a timestamp window for meshcore-open reaction matching.
+    ///
+    /// Returns raw candidates without hash matching — the caller performs Dart hash comparison.
+    public func fetchChannelMessageCandidates(
         deviceID: UUID,
-        contactID: UUID,
-        messageHash: String,
+        channelIndex: UInt8,
         timestampWindow: ClosedRange<UInt32>,
         limit: Int
-    ) throws -> MessageDTO? {
-        let logger = Logger(subsystem: "PocketMeshServices", category: "PersistenceStore")
-        logger.debug("[DM-REACTION-MATCH] Looking for DM: hash=\(messageHash), contactID=\(contactID)")
+    ) throws -> [MessageDTO] {
+        let targetDeviceID = deviceID
+        let targetChannelIndex: UInt8? = channelIndex
+        let start = timestampWindow.lowerBound
+        let end = timestampWindow.upperBound
 
+        let predicate = #Predicate<Message> { message in
+            message.deviceID == targetDeviceID &&
+            message.channelIndex == targetChannelIndex &&
+            message.timestamp >= start &&
+            message.timestamp <= end
+        }
+
+        var descriptor = FetchDescriptor(
+            predicate: predicate,
+            sortBy: [
+                SortDescriptor(\Message.createdAt, order: .reverse),
+                SortDescriptor(\Message.timestamp, order: .reverse)
+            ]
+        )
+        descriptor.fetchLimit = limit
+
+        return try modelContext.fetch(descriptor).map { MessageDTO(from: $0) }
+    }
+
+    /// Fetches DM message candidates within a timestamp window for meshcore-open reaction matching.
+    ///
+    /// Returns raw candidates without hash matching — the caller performs Dart hash comparison.
+    public func fetchDMMessageCandidates(
+        deviceID: UUID,
+        contactID: UUID,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) throws -> [MessageDTO] {
         let targetDeviceID = deviceID
         let targetContactID: UUID? = contactID
         let start = timestampWindow.lowerBound
@@ -158,33 +195,50 @@ extension PersistenceStore {
         var descriptor = FetchDescriptor(
             predicate: predicate,
             sortBy: [
-                SortDescriptor(\Message.timestamp, order: .reverse),
-                SortDescriptor(\Message.createdAt, order: .reverse)
+                SortDescriptor(\Message.createdAt, order: .reverse),
+                SortDescriptor(\Message.timestamp, order: .reverse)
             ]
         )
         descriptor.fetchLimit = limit
 
-        let candidates = try modelContext.fetch(descriptor)
+        return try modelContext.fetch(descriptor).map { MessageDTO(from: $0) }
+    }
+
+    /// Finds a DM message matching a reaction by hash within a timestamp window.
+    public func findDMMessageForReaction(
+        deviceID: UUID,
+        contactID: UUID,
+        messageHash: String,
+        timestampWindow: ClosedRange<UInt32>,
+        limit: Int
+    ) throws -> MessageDTO? {
+        let logger = Logger(subsystem: "PocketMeshServices", category: "PersistenceStore")
+        logger.debug("[DM-REACTION-MATCH] Looking for DM: hash=\(messageHash), contactID=\(contactID)")
+
+        let candidates = try fetchDMMessageCandidates(
+            deviceID: deviceID,
+            contactID: contactID,
+            timestampWindow: timestampWindow,
+            limit: limit
+        )
         logger.debug("[DM-REACTION-MATCH] Found \(candidates.count) candidates")
 
         for candidate in candidates {
             // Skip messages that are themselves reactions
-            if ReactionParser.parseDM(candidate.text) != nil {
+            if ReactionParser.isReactionText(candidate.text, isDM: true) {
                 logger.debug("[DM-REACTION-MATCH] Skipping candidate (is reaction): \(candidate.text.prefix(30))")
                 continue
             }
 
-            // Use senderTimestamp if available (for incoming messages with corrected timestamps)
-            let reactionTimestamp = candidate.senderTimestamp ?? candidate.timestamp
             let direction = candidate.direction == .outgoing ? "outgoing" : "incoming"
             let candidateHash = ReactionParser.generateMessageHash(
                 text: candidate.text,
-                timestamp: reactionTimestamp
+                timestamp: candidate.reactionTimestamp
             )
             logger.debug("[DM-REACTION-MATCH] Candidate: direction=\(direction), timestamp=\(candidate.timestamp), senderTimestamp=\(candidate.senderTimestamp ?? 0), hash=\(candidateHash), text=\(candidate.text.prefix(30))")
             if candidateHash == messageHash {
                 logger.debug("[DM-REACTION-MATCH] Found match: \(candidate.id)")
-                return MessageDTO(from: candidate)
+                return candidate
             } else {
                 logger.debug("[DM-REACTION-MATCH] Hash mismatch: \(candidateHash) != \(messageHash)")
             }

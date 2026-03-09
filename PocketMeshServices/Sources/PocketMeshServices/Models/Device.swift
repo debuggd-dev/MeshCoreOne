@@ -79,6 +79,9 @@ public final class Device {
     /// Auto-add configuration bitmask from device
     public var autoAddConfig: UInt8 = 0
 
+    /// Maximum hops for auto-add filtering. 0 = no limit, 1 = direct only, N = up to N-1 hops.
+    public var autoAddMaxHops: UInt8 = 0
+
     /// Number of acknowledgments to send for direct messages (0=disabled, 1-2 typical)
     public var multiAcks: UInt8
 
@@ -139,6 +142,7 @@ public final class Device {
         preRepeatCodingRate: UInt8? = nil,
         manualAddContacts: Bool = false,
         autoAddConfig: UInt8 = 0,
+        autoAddMaxHops: UInt8 = 0,
         multiAcks: UInt8 = 2,
         telemetryModeBase: UInt8 = 2,
         telemetryModeLoc: UInt8 = 0,
@@ -177,6 +181,7 @@ public final class Device {
         self.preRepeatCodingRate = preRepeatCodingRate
         self.manualAddContacts = manualAddContacts
         self.autoAddConfig = autoAddConfig
+        self.autoAddMaxHops = autoAddMaxHops
         self.multiAcks = multiAcks
         self.telemetryModeBase = telemetryModeBase
         self.telemetryModeLoc = telemetryModeLoc
@@ -217,6 +222,7 @@ public final class Device {
         preRepeatCodingRate = dto.preRepeatCodingRate
         manualAddContacts = dto.manualAddContacts
         autoAddConfig = dto.autoAddConfig
+        autoAddMaxHops = dto.autoAddMaxHops
         multiAcks = dto.multiAcks
         telemetryModeBase = dto.telemetryModeBase
         telemetryModeLoc = dto.telemetryModeLoc
@@ -265,6 +271,7 @@ public struct DeviceDTO: Sendable, Equatable, Identifiable {
     public var preRepeatCodingRate: UInt8?
     public var manualAddContacts: Bool
     public var autoAddConfig: UInt8
+    public var autoAddMaxHops: UInt8
     public var multiAcks: UInt8
     public var telemetryModeBase: UInt8
     public var telemetryModeLoc: UInt8
@@ -308,14 +315,24 @@ public struct DeviceDTO: Sendable, Equatable, Identifiable {
         firmwareVersionString.isAtLeast(major: 1, minor: 12)
     }
 
+    /// Whether the device supports auto-add max hops (v1.14+)
+    public var supportsAutoAddMaxHops: Bool {
+        firmwareVersionString.isAtLeast(major: 1, minor: 14)
+    }
+
     /// Whether this device supports client repeat mode (firmware v9+)
     public var supportsClientRepeat: Bool { firmwareVersion >= 9 }
 
     /// Whether this device supports path hash mode configuration (firmware v10+)
     public var supportsPathHashMode: Bool { firmwareVersion >= 10 }
 
-    /// Whether location is shared publicly in advertisements (policy value 1)
-    public var sharesLocationPublicly: Bool { advertLocationPolicy == 1 }
+    /// Advertisement location policy interpreted from raw value.
+    public var advertLocationPolicyMode: AdvertLocationPolicy {
+        AdvertLocationPolicy(rawValue: advertLocationPolicy) ?? .none
+    }
+
+    /// Whether location is shared publicly in advertisements.
+    public var sharesLocationPublicly: Bool { advertLocationPolicy > 0 }
 
     /// Whether pre-repeat radio settings are saved for restoration.
     public var hasPreRepeatSettings: Bool {
@@ -350,6 +367,7 @@ public struct DeviceDTO: Sendable, Equatable, Identifiable {
         preRepeatCodingRate: UInt8? = nil,
         manualAddContacts: Bool,
         autoAddConfig: UInt8 = 0,
+        autoAddMaxHops: UInt8 = 0,
         multiAcks: UInt8,
         telemetryModeBase: UInt8,
         telemetryModeLoc: UInt8,
@@ -388,6 +406,7 @@ public struct DeviceDTO: Sendable, Equatable, Identifiable {
         self.preRepeatCodingRate = preRepeatCodingRate
         self.manualAddContacts = manualAddContacts
         self.autoAddConfig = autoAddConfig
+        self.autoAddMaxHops = autoAddMaxHops
         self.multiAcks = multiAcks
         self.telemetryModeBase = telemetryModeBase
         self.telemetryModeLoc = telemetryModeLoc
@@ -428,6 +447,7 @@ public struct DeviceDTO: Sendable, Equatable, Identifiable {
         self.preRepeatCodingRate = device.preRepeatCodingRate
         self.manualAddContacts = device.manualAddContacts
         self.autoAddConfig = device.autoAddConfig
+        self.autoAddMaxHops = device.autoAddMaxHops
         self.multiAcks = device.multiAcks
         self.telemetryModeBase = device.telemetryModeBase
         self.telemetryModeLoc = device.telemetryModeLoc
