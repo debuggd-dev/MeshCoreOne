@@ -37,7 +37,7 @@ public enum MeshCoreOpenReactionParser {
     /// Format: `r:{4-char-hex-hash}:{2-char-hex-emoji-index}`
     /// - Returns: Parsed emoji and dart hash, or nil if format doesn't match.
     public static func parse(_ text: String) -> ParsedMCOReaction? {
-        guard text.count == 10,
+        guard text.count == 9,
               text.hasPrefix("r:"),
               text[text.index(text.startIndex, offsetBy: 6)] == ":" else {
             return nil
