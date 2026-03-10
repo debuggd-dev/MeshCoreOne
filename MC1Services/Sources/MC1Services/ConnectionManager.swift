@@ -725,9 +725,14 @@ public final class ConnectionManager {
         existingDevice: DeviceDTO? = nil,
         connectionMethods: [ConnectionMethod] = []
     ) -> Device {
-        // Merge new connection methods with existing ones, avoiding duplicates
+        // Merge new connection methods with existing ones, replacing by transport type
         var mergedMethods = existingDevice?.connectionMethods ?? []
-        for method in connectionMethods where !mergedMethods.contains(method) {
+        for method in connectionMethods {
+            if method.isWiFi {
+                mergedMethods.removeAll { $0.isWiFi }
+            } else if method.isBluetooth {
+                mergedMethods.removeAll { $0.isBluetooth }
+            }
             mergedMethods.append(method)
         }
 
