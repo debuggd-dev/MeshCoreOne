@@ -1,6 +1,6 @@
 # MeshCore One
 
-An unofficial MeshCore client built for iOS in Swift.   
+A MeshCore client built for iOS in Swift.   
 Disclaimer: Built entirely with AI.
 
 Join the beta on TestFlight or sideload using unsigned IPA files under [Releases](https://github.com/Avi0n/MeshCoreOne/releases).
