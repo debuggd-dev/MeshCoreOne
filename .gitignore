@@ -23,7 +23,7 @@ scripts/
 xcuserdata/
 
 ## Xcodegen
-MC1.xcodeproj
+*.xcodeproj
 
 ## Obj-C/Swift specific
 *.hmap
