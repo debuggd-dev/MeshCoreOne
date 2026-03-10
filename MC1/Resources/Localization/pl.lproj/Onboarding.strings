@@ -13,7 +13,7 @@
 "welcome.title" = "MeshCore One";
 
 /* Location: WelcomeView.swift - Subtitle describing the app */
-"welcome.subtitle" = "Nieoficjalny klient MeshCore dla iOS";
+"welcome.subtitle" = "Klient MeshCore dla urządzeń Apple";
 
 /* Location: WelcomeView.swift - Feature title for multi-hop routing */
 "welcome.feature.multiHop.title" = "Routing wieloskokowy";

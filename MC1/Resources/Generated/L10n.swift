@@ -2197,7 +2197,7 @@ public enum L10n {
       /// Location: WelcomeView.swift - Button to proceed to next onboarding step
       public static let getStarted = L10n.tr("Onboarding", "welcome.getStarted", fallback: "Get Started")
       /// Location: WelcomeView.swift - Subtitle describing the app
-      public static let subtitle = L10n.tr("Onboarding", "welcome.subtitle", fallback: "Unofficial MeshCore client for iOS")
+      public static let subtitle = L10n.tr("Onboarding", "welcome.subtitle", fallback: "A MeshCore client for Apple devices")
       /// Location: WelcomeView.swift - App title displayed on welcome screen
       public static let title = L10n.tr("Onboarding", "welcome.title", fallback: "MeshCore One")
       public enum Feature {
