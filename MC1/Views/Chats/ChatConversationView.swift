@@ -85,10 +85,27 @@ struct ChatConversationView: View {
             onRetryMessage: { retryMessage($0) }
         )
         .safeAreaInset(edge: .bottom, spacing: 8) {
-            inputBar
+            ChatConversationInputBar(
+                conversationType: conversationType,
+                composingText: $chatViewModel.composingText,
+                isFocused: $isInputFocused,
+                nodeNameByteCount: appState.connectedDevice?.nodeName.utf8.count ?? 0,
+                onSend: { text in
+                    switch conversationType {
+                    case .dm:
+                        await chatViewModel.sendMessage(text: text)
+                    case .channel:
+                        await chatViewModel.sendChannelMessage(text: text)
+                    }
+                },
+                onWillSend: { scrollToBottomRequest += 1 }
+            )
         }
         .overlay(alignment: .bottom) {
-            mentionSuggestionsOverlay
+            ChatConversationMentionOverlay(
+                suggestions: mentionSuggestions,
+                onSelectMention: { insertMention(for: $0) }
+            )
         }
         .navigationHeader(
             title: conversationType.navigationTitle,
@@ -107,7 +124,19 @@ struct ChatConversationView: View {
                 Task { await refreshContact() }
             }
         }, content: {
-            infoSheet
+            ChatConversationInfoSheet(
+                conversationType: conversationType,
+                chatViewModel: chatViewModel,
+                onClearChannelMessages: {
+                    guard case .channel(let channel) = conversationType else { return }
+                    await chatViewModel.loadChannelMessages(for: channel)
+                    if let parent = parentViewModel {
+                        await parent.loadChannels(deviceID: channel.deviceID)
+                        await parent.loadLastMessagePreviews()
+                    }
+                },
+                onDeleteChannel: { dismiss() }
+            )
         })
         // Message actions sheet — shared
         .sheet(item: $selectedMessageForActions) { message in
@@ -491,29 +520,6 @@ struct ChatConversationView: View {
         }
     }
 
-    @ViewBuilder
-    private var mentionSuggestionsOverlay: some View {
-        if !mentionSuggestions.isEmpty {
-            VStack {
-                Spacer()
-                MentionSuggestionView(contacts: mentionSuggestions) { contact in
-                    insertMention(for: contact)
-                }
-                .padding(.horizontal)
-                .padding(.bottom, 60)
-                .transition(
-                    .asymmetric(
-                        insertion: .move(edge: .bottom)
-                            .combined(with: .opacity)
-                            .combined(with: .scale(scale: 0.95, anchor: .bottom)),
-                        removal: .move(edge: .bottom).combined(with: .opacity)
-                    )
-                )
-            }
-            .animation(.spring(response: 0.3, dampingFraction: 0.8), value: mentionSuggestions.isEmpty)
-        }
-    }
-
     private func insertMention(for contact: ContactDTO) {
         guard let query = MentionUtilities.detectActiveMention(in: chatViewModel.composingText) else { return }
 
@@ -521,73 +527,6 @@ struct ChatConversationView: View {
         if let range = chatViewModel.composingText.range(of: searchPattern, options: .backwards) {
             let mention = MentionUtilities.createMention(for: contact.name)
             chatViewModel.composingText.replaceSubrange(range, with: mention + " ")
-        }
-    }
-
-    // MARK: - Input Bar
-
-    @ViewBuilder
-    private var inputBar: some View {
-        switch conversationType {
-        case .dm:
-            ChatInputBar(
-                text: $chatViewModel.composingText,
-                isFocused: $isInputFocused,
-                placeholder: L10n.Chats.Chats.Input.Placeholder.directMessage,
-                maxBytes: ProtocolLimits.maxDirectMessageLength,
-                isEncrypted: true
-            ) { text in
-                scrollToBottomRequest += 1
-                Task { await chatViewModel.sendMessage(text: text) }
-            }
-
-        case .channel(let channel):
-            let maxBytes = ProtocolLimits.maxChannelMessageLength(
-                nodeNameByteCount: appState.connectedDevice?.nodeName.utf8.count ?? 0
-            )
-            ChatInputBar(
-                text: $chatViewModel.composingText,
-                isFocused: $isInputFocused,
-                placeholder: conversationType.isPublicStyleChannel
-                    ? L10n.Chats.Chats.Channel.typePublic
-                    : L10n.Chats.Chats.Channel.typePrivate,
-                maxBytes: maxBytes,
-                isEncrypted: channel.isEncryptedChannel
-            ) { text in
-                scrollToBottomRequest += 1
-                Task { await chatViewModel.sendChannelMessage(text: text) }
-            }
-        }
-    }
-
-    // MARK: - Info Sheet
-
-    @ViewBuilder
-    private var infoSheet: some View {
-        switch conversationType {
-        case .dm(let contact):
-            NavigationStack {
-                ContactDetailView(contact: contact, showFromDirectChat: true)
-            }
-
-        case .channel(let channel):
-            ChannelInfoSheet(
-                channel: channel,
-                onClearMessages: {
-                    Task {
-                        await chatViewModel.loadChannelMessages(for: channel)
-
-                        if let parent = parentViewModel {
-                            await parent.loadChannels(deviceID: channel.deviceID)
-                            await parent.loadLastMessagePreviews()
-                        }
-                    }
-                },
-                onDelete: {
-                    dismiss()
-                }
-            )
-            .environment(\.chatViewModel, chatViewModel)
         }
     }
 
