@@ -595,10 +595,7 @@ extension PersistenceStore {
         let predicate = #Predicate<MessageRepeat> { repeat_ in
             repeat_.rxLogEntryID == targetID
         }
-        var descriptor = FetchDescriptor(predicate: predicate)
-        descriptor.fetchLimit = 1
-
-        return try !modelContext.fetch(descriptor).isEmpty
+        return try modelContext.fetchCount(FetchDescriptor(predicate: predicate)) > 0
     }
 
     /// Increments the heardRepeats count for a message and returns the new count.
@@ -674,9 +671,7 @@ extension PersistenceStore {
             $0.senderName == targetSenderName &&
             $0.emoji == targetEmoji
         }
-        var descriptor = FetchDescriptor(predicate: predicate)
-        descriptor.fetchLimit = 1
-        return try !modelContext.fetch(descriptor).isEmpty
+        return try modelContext.fetchCount(FetchDescriptor(predicate: predicate)) > 0
     }
 
     /// Updates a message's reaction summary cache
