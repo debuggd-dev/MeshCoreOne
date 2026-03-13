@@ -9,11 +9,11 @@ struct ChatsStackLayout<RootContent: View>: View {
     @Binding var activeRoute: ChatRoute?
 
     let onLoadConversations: () async -> Void
-    @ViewBuilder let rootContent: () -> RootContent
+    @ViewBuilder let rootContent: RootContent
 
     var body: some View {
         NavigationStack(path: $navigationPath) {
-            rootContent()
+            rootContent
                 .navigationDestination(for: ChatRoute.self) { route in
                     Group {
                         switch route {
