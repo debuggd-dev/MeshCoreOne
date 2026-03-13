@@ -66,6 +66,9 @@ final class ChatViewModel {
     @ObservationIgnored private var cachedFavoriteConversations: [Conversation] = []
     @ObservationIgnored private var cachedNonFavoriteConversations: [Conversation] = []
     @ObservationIgnored private var conversationCacheValid = false
+    @ObservationIgnored var urlDetectionTask: Task<Void, Never>?
+    // Stored for lifecycle tracking; queue drains independently of conversation
+    @ObservationIgnored var queueProcessorTask: Task<Void, Never>?
 
     /// Fallback date for conversations with no messages, used to sort them to the end.
     private static let noMessageSentinel = Date.distantPast

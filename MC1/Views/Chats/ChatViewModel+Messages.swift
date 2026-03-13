@@ -467,7 +467,7 @@ extension ChatViewModel {
 
             // Start processor if not already running
             if !isProcessingQueue {
-                Task { await processQueue() }
+                queueProcessorTask = Task { await processQueue() }
             }
         } catch {
             errorMessage = error.localizedDescription
@@ -904,8 +904,10 @@ extension ChatViewModel {
         // Async URL detection for messages without cached results
         if !uncachedMessageIDs.isEmpty {
             let messagesToDetect = uncachedMessageIDs
-            Task {
+            urlDetectionTask?.cancel()
+            urlDetectionTask = Task {
                 for (messageID, text) in messagesToDetect {
+                    guard !Task.isCancelled else { return }
                     await updateURLForDisplayItem(messageID: messageID, text: text)
                 }
             }
