@@ -110,9 +110,11 @@ public final class Message {
     public var linkPreviewTitle: String?
 
     /// Preview image data (hero image)
+    @Attribute(.externalStorage)
     public var linkPreviewImageData: Data?
 
     /// Icon/favicon data
+    @Attribute(.externalStorage)
     public var linkPreviewIconData: Data?
 
     /// Whether fetch has been attempted (true = done, false = not yet tried)
