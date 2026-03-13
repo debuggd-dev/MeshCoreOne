@@ -3,12 +3,6 @@ import UIKit
 import MC1Services
 import OSLog
 
-/// Decoded preview hero image and icon, stored together to batch Observable notifications
-struct DecodedPreviewAssets {
-    var image: UIImage?
-    var icon: UIImage?
-}
-
 /// ViewModel for chat operations
 @Observable
 @MainActor
@@ -142,12 +136,6 @@ final class ChatViewModel {
 
     /// Message text being composed
     var composingText = ""
-
-    /// A message waiting to be sent, with its target contact captured at enqueue time
-    struct QueuedMessage {
-        let messageID: UUID
-        let contactID: UUID
-    }
 
     /// Queue of message IDs waiting to be sent
     var sendQueue: [QueuedMessage] = []
