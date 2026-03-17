@@ -60,7 +60,7 @@ extension ConnectionManager: BLEReconnectionDelegate {
         self.session = newSession
 
         do {
-            try await newSession.start()
+            try await newSession.start(reconnectingAttempt: 1)
         } catch {
             logger.warning("[BLE] rebuildSession: session.start() failed: \(error.localizedDescription)")
             throw error
