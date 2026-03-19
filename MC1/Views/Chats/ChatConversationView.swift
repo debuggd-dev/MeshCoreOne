@@ -49,6 +49,7 @@ struct ChatConversationView: View {
     @AppStorage("autoPlayGIFs") private var autoPlayGIFs = true
     @AppStorage("showIncomingPath") private var showIncomingPath = false
     @AppStorage("showIncomingHopCount") private var showIncomingHopCount = false
+    @AppStorage("replyWithQuote") private var replyWithQuote = false
 
     // MARK: - Init
 
@@ -563,8 +564,18 @@ struct ChatConversationView: View {
             recentEmojisStore.recordUsage(emoji)
             Task { await chatViewModel.sendReaction(emoji: emoji, to: message) }
         case .reply:
-            let replyText = buildReplyText(for: message)
-            chatViewModel.composingText = replyText
+            if replyWithQuote {
+                chatViewModel.composingText = buildReplyText(for: message)
+            } else {
+                let mentionName: String
+                switch conversationType {
+                case .dm(let contact):
+                    mentionName = contact.name
+                case .channel:
+                    mentionName = message.senderNodeName ?? L10n.Chats.Chats.Message.Sender.unknown
+                }
+                chatViewModel.composingText = MentionUtilities.createMention(for: mentionName) + " "
+            }
             isInputFocused = true
         case .copy:
             UIPasteboard.general.string = message.text
