@@ -220,11 +220,12 @@ private struct ActionsEmojiSection: View {
 private struct ActionsButtonsSection: View {
     let availability: MessageActionAvailability
     let onSelectAction: (MessageAction) -> Void
+    @AppStorage("replyWithQuote") private var replyWithQuote = false
 
     var body: some View {
         if availability.canReply {
             ActionButton(
-                title: L10n.Chats.Chats.Message.Action.reply,
+                title: replyWithQuote ? L10n.Chats.Chats.Message.Action.reply : L10n.Chats.Chats.Message.Action.mention,
                 icon: "arrowshape.turn.up.left",
                 action: { onSelectAction(.reply) }
             )

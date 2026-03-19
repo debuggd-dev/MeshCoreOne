@@ -254,6 +254,7 @@ final class ContactsViewModel {
             // Filter by search text only
             result = result.filter { contact in
                 contact.displayName.localizedStandardContains(searchText)
+                    || contact.publicKey.hexString().hasPrefix(searchText.uppercased())
             }
         }
 
@@ -271,7 +272,7 @@ final class ContactsViewModel {
     ) -> [ContactDTO] {
         switch order {
         case .lastHeard:
-            return contacts.sorted { $0.lastAdvertTimestamp > $1.lastAdvertTimestamp }
+            return contacts.sorted { $0.lastModified > $1.lastModified }
         case .name:
             return contacts.sorted {
                 $0.displayName.localizedCompare($1.displayName) == .orderedAscending

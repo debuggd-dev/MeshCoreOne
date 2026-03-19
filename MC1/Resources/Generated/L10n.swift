@@ -28,9 +28,9 @@ public enum L10n {
           public static let title = L10n.tr("Chats", "chats.alert.leaveRoom.title", fallback: "Leave Room")
         }
         public enum UnableToSend {
-          /// Location: ChatView.swift - Alert message when message send fails
+          /// Location: ChatConversationView.swift - Alert message when message send fails
           public static let message = L10n.tr("Chats", "chats.alert.unableToSend.message", fallback: "Please ensure your device is connected and try again.")
-          /// Location: ChatView.swift - Alert title when message send fails
+          /// Location: ChatConversationView.swift - Alert title when message send fails
           public static let title = L10n.tr("Chats", "chats.alert.unableToSend.title", fallback: "Unable to Send")
         }
       }
@@ -59,20 +59,20 @@ public enum L10n {
         }
       }
       public enum Channel {
-        /// Location: ChannelChatView.swift - Fallback channel name format - %d is channel index
+        /// Location: ChatConversationView.swift - Fallback channel name format - %d is channel index
         public static func defaultName(_ p1: Int) -> String {
           return L10n.tr("Chats", "chats.channel.defaultName", p1, fallback: "Channel %d")
         }
-        /// Location: ChannelChatView.swift - Header subtitle for private channels
+        /// Location: ChatConversationView.swift - Header subtitle for private channels
         public static let typePrivate = L10n.tr("Chats", "chats.channel.typePrivate", fallback: "Private Channel")
-        /// Location: ChannelChatView.swift - Header subtitle for public channels
+        /// Location: ChatConversationView.swift - Header subtitle for public channels
         public static let typePublic = L10n.tr("Chats", "chats.channel.typePublic", fallback: "Public Channel")
         public enum EmptyState {
-          /// Location: ChannelChatView.swift - Empty state message
+          /// Location: ChatConversationView.swift - Empty state message
           public static let noMessages = L10n.tr("Chats", "chats.channel.emptyState.noMessages", fallback: "No messages yet")
-          /// Location: ChannelChatView.swift - Empty state description for private channel
+          /// Location: ChatConversationView.swift - Empty state description for private channel
           public static let privateDescription = L10n.tr("Chats", "chats.channel.emptyState.privateDescription", fallback: "This is a private channel")
-          /// Location: ChannelChatView.swift - Empty state description for public channel
+          /// Location: ChatConversationView.swift - Empty state description for public channel
           public static let publicDescription = L10n.tr("Chats", "chats.channel.emptyState.publicDescription", fallback: "This is a public broadcast channel")
         }
       }
@@ -191,17 +191,15 @@ public enum L10n {
         public static let newMessage = L10n.tr("Chats", "chats.compose.newMessage", fallback: "New Message")
       }
       public enum ConnectionStatus {
-        /// Location: ChatView.swift - Connection status format for direct path - %d is hop count
+        /// Location: ChatConversationView.swift - Connection status format for direct path - %d is hop count
         public static func direct(_ p1: Int) -> String {
           return L10n.tr("Chats", "chats.connectionStatus.direct", p1, fallback: "Direct • %d hops")
         }
-        /// Location: ChatView.swift - Connection status for flood routed contacts
+        /// Location: ChatConversationView.swift - Connection status for flood routed contacts
         public static let floodRouting = L10n.tr("Chats", "chats.connectionStatus.floodRouting", fallback: "Flood routing")
-        /// Location: ChatView.swift - Connection status when route is unknown
-        public static let unknown = L10n.tr("Chats", "chats.connectionStatus.unknown", fallback: "Unknown route")
       }
       public enum ContactInfo {
-        /// Location: ChatView.swift - Label showing contact has location
+        /// Location: ChatConversationView.swift - Label showing contact has location
         public static let hasLocation = L10n.tr("Chats", "chats.contactInfo.hasLocation", fallback: "Has location")
       }
       public enum CreatePrivate {
@@ -235,7 +233,7 @@ public enum L10n {
       public enum EmptyState {
         /// Location: ChatsView.swift - Split view placeholder when no conversation selected
         public static let selectConversation = L10n.tr("Chats", "chats.emptyState.selectConversation", fallback: "Select a conversation")
-        /// Location: ChatView.swift - Empty state text prompting user to start chatting
+        /// Location: ChatConversationView.swift - Empty state text prompting user to start chatting
         public static let startConversation = L10n.tr("Chats", "chats.emptyState.startConversation", fallback: "Start a conversation")
         public enum NoChannels {
           /// Location: ChatsView.swift - Description when no channels
@@ -269,7 +267,7 @@ public enum L10n {
         public static let servicesUnavailable = L10n.tr("Chats", "chats.error.servicesUnavailable", fallback: "Services not available")
       }
       public enum Errors {
-        /// Location: ChatView.swift - Error when loading older messages fails
+        /// Location: ChatConversationView.swift - Error when loading older messages fails
         public static let loadOlderMessagesFailed = L10n.tr("Chats", "chats.errors.loadOlderMessagesFailed", fallback: "Failed to load older messages")
       }
       public enum Filter {
@@ -332,7 +330,7 @@ public enum L10n {
         /// Location: ChatInputBar.swift - Accessibility hint when message is empty
         public static let typeFirst = L10n.tr("Chats", "chats.input.typeFirst", fallback: "Type a message first")
         public enum Placeholder {
-          /// Location: ChatView.swift - Input bar placeholder for direct messages
+          /// Location: ChatConversationView.swift - Input bar placeholder for direct messages
           public static let directMessage = L10n.tr("Chats", "chats.input.placeholder.directMessage", fallback: "Direct Message")
         }
       }
@@ -459,9 +457,9 @@ public enum L10n {
         }
       }
       public enum Message {
-        /// Location: ChatView.swift - Placeholder when message data is unavailable
+        /// Location: ChatConversationView.swift - Placeholder when message data is unavailable
         public static let unavailable = L10n.tr("Chats", "chats.message.unavailable", fallback: "Message unavailable")
-        /// Location: ChatView.swift - Accessibility label for unavailable message
+        /// Location: ChatConversationView.swift - Accessibility label for unavailable message
         public static let unavailableAccessibility = L10n.tr("Chats", "chats.message.unavailableAccessibility", fallback: "Message could not be loaded")
         public enum Action {
           /// Location: MessageActionsSheet.swift - Purpose: Block sender action
@@ -472,6 +470,8 @@ public enum L10n {
           public static let delete = L10n.tr("Chats", "chats.message.action.delete", fallback: "Delete")
           /// Location: UnifiedMessageBubble.swift - Context menu submenu label
           public static let details = L10n.tr("Chats", "chats.message.action.details", fallback: "Details")
+          /// Location: MessageActionsSheet.swift - Context menu action to mention
+          public static let mention = L10n.tr("Chats", "chats.message.action.mention", fallback: "Mention")
           /// Location: UnifiedMessageBubble.swift - Context menu action to view repeat details
           public static let repeatDetails = L10n.tr("Chats", "chats.message.action.repeatDetails", fallback: "Repeat Details")
           /// Location: UnifiedMessageBubble.swift - Context menu action to reply
@@ -1680,14 +1680,14 @@ public enum L10n {
           public static let includeDiscovered = L10n.tr("Contacts", "contacts.trace.list.includeDiscovered", fallback: "Include Discovered")
           /// Location: TracePathListView.swift - Purpose: Toggle to include room servers in the list
           public static let includeRooms = L10n.tr("Contacts", "contacts.trace.list.includeRooms", fallback: "Include Rooms")
-          /// Location: TracePathListView.swift - Purpose: Outbound path section header
-          public static let outboundPath = L10n.tr("Contacts", "contacts.trace.list.outboundPath", fallback: "Outbound Path")
           /// Location: TracePathListView.swift - Purpose: Paste button
           public static let paste = L10n.tr("Contacts", "contacts.trace.list.paste", fallback: "Paste from clipboard")
           /// Location: TracePathListView.swift - Purpose: Range warning footer
           public static let rangeWarning = L10n.tr("Contacts", "contacts.trace.list.rangeWarning", fallback: "You must be within range of the last repeater to receive a response.")
           /// Location: TracePathListView.swift - Purpose: Repeaters section label
           public static let repeaters = L10n.tr("Contacts", "contacts.trace.list.repeaters", fallback: "Repeaters")
+          /// Location: TracePathListView.swift - Purpose: Round trip path section header
+          public static let roundTripPath = L10n.tr("Contacts", "contacts.trace.list.roundTripPath", fallback: "Round Trip Path")
           /// Location: TracePathListView.swift - Purpose: Running trace with batch count
           public static func runningBatch(_ p1: Int, _ p2: Int) -> String {
             return L10n.tr("Contacts", "contacts.trace.list.runningBatch", p1, p2, fallback: "Running Trace %d of %d")
@@ -2325,6 +2325,10 @@ public enum L10n {
         public static let noiseFloor = L10n.tr("RemoteNodes", "remoteNodes.history.noiseFloor", fallback: "Noise Floor")
         /// Location: NeighborRow - Not seen status
         public static let notSeen = L10n.tr("RemoteNodes", "remoteNodes.history.notSeen", fallback: "Not seen")
+        /// Location: NodeStatusHistoryView.swift - Packets received chart title
+        public static let packetsReceived = L10n.tr("RemoteNodes", "remoteNodes.history.packetsReceived", fallback: "Packets Received")
+        /// Location: NodeStatusHistoryView.swift - Packets sent chart title
+        public static let packetsSent = L10n.tr("RemoteNodes", "remoteNodes.history.packetsSent", fallback: "Packets Sent")
         /// Location: NodeStatusHistoryView.swift - Footer about data retention
         public static let retentionNotice = L10n.tr("RemoteNodes", "remoteNodes.history.retentionNotice", fallback: "History data older than one year is automatically removed.")
         /// Location: NodeStatusHistoryView.swift - RSSI chart title
@@ -3642,6 +3646,12 @@ public enum L10n {
         /// Navigation title for the regenerate identity sheet
         public static let title = L10n.tr("Settings", "regenerateIdentity.sheet.title", fallback: "Regenerate Key")
       }
+    }
+    public enum ReplyWithQuote {
+      /// Replying includes a preview of the original message.
+      public static let footer = L10n.tr("Settings", "replyWithQuote.footer", fallback: "Replying includes a preview of the original message.")
+      /// Reply with Quote
+      public static let toggle = L10n.tr("Settings", "replyWithQuote.toggle", fallback: "Reply with Quote")
     }
     public enum Telemetry {
       /// Toggle label for allowing telemetry requests

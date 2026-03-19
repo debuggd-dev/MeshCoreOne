@@ -1,90 +1,5 @@
 import SwiftUI
-import UIKit
 import MC1Services
-
-/// Configuration for message bubble appearance and behavior
-struct MessageBubbleConfiguration: Sendable {
-    let accentColor: Color
-    let showSenderName: Bool
-    let isChannel: Bool
-    let senderNameResolver: (@Sendable (MessageDTO) -> String)?
-
-    static let directMessage = MessageBubbleConfiguration(
-        accentColor: .blue,
-        showSenderName: false,
-        isChannel: false,
-        senderNameResolver: nil
-    )
-
-    static func channel(isPublic: Bool, contacts: [ContactDTO]) -> MessageBubbleConfiguration {
-        MessageBubbleConfiguration(
-            accentColor: isPublic ? .green : .blue,
-            showSenderName: true,
-            isChannel: true,
-            senderNameResolver: { message in
-                resolveSenderName(for: message, contacts: contacts)
-            }
-        )
-    }
-
-    private static func resolveSenderName(for message: MessageDTO, contacts: [ContactDTO]) -> String {
-        // First, try parsed sender name from channel message
-        if let senderName = message.senderNodeName, !senderName.isEmpty {
-            return senderName
-        }
-
-        // Fallback: key prefix lookup
-        guard let prefix = message.senderKeyPrefix else {
-            return L10n.Chats.Chats.Message.Sender.unknown
-        }
-
-        // Try to find matching contact
-        if let contact = contacts.first(where: { contact in
-            contact.publicKey.count >= prefix.count &&
-            Array(contact.publicKey.prefix(prefix.count)) == Array(prefix)
-        }) {
-            return contact.displayName
-        }
-
-        // Fallback to hex representation
-        if prefix.count >= 2 {
-            return prefix.prefix(2).map { String(format: "%02X", $0) }.joined()
-        }
-        return L10n.Chats.Chats.Message.Sender.unknown
-    }
-}
-
-/// Display state for a message bubble (typically derived from MessageDisplayItem)
-struct MessageDisplayState {
-    var showTimestamp: Bool = false
-    var showDirectionGap: Bool = false
-    var showSenderName: Bool = true
-    var showNewMessagesDivider: Bool = false
-    var detectedURL: URL?
-    var previewState: PreviewLoadState = .idle
-    var loadedPreview: LinkPreviewDataDTO?
-    var isImageURL: Bool = false
-    var decodedImage: UIImage?
-    var decodedPreviewImage: UIImage?
-    var decodedPreviewIcon: UIImage?
-    var isGIF: Bool = false
-    var showInlineImages: Bool = false
-    var autoPlayGIFs: Bool = true
-    var showIncomingPath: Bool = false
-    var showIncomingHopCount: Bool = false
-    var formattedText: AttributedString?
-}
-
-/// Callbacks for message bubble interactions
-struct MessageBubbleCallbacks {
-    var onRetry: (() -> Void)?
-    var onReaction: ((String) -> Void)?
-    var onLongPress: (() -> Void)?
-    var onImageTap: (() -> Void)?
-    var onRetryImageFetch: (() -> Void)?
-    var onRequestPreviewFetch: (() -> Void)?
-    var onManualPreviewFetch: (() -> Void)?
-}
 
 /// Unified message bubble for both direct and channel messages
 struct UnifiedMessageBubble: View {
@@ -204,7 +119,7 @@ struct UnifiedMessageBubble: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.top, displayState.showDirectionGap ? 6 : (displayState.showSenderName ? 4 : 1))
+        .padding(.top, displayState.showDirectionGap ? 6 : (displayState.showSenderName ? 4 : (message.isOutgoing ? 1 : 2)))
         .padding(.bottom, 0)
         .onAppear {
             // Request preview/image fetch when cell becomes visible
@@ -285,8 +200,7 @@ private struct BubbleContent: View {
                     }
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
+            .bubbleContentPadding()
 
             if displayState.isImageURL && displayState.showInlineImages {
                 BubbleEmbeddedImageContent(
@@ -330,8 +244,7 @@ private struct BubbleEmbeddedImageContent: View {
                         .font(.subheadline)
                         .foregroundStyle(message.isOutgoing ? .white.opacity(0.7) : .secondary)
                 }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .bubbleContentPadding()
             }
 
         case .noPreview, .disabled:
@@ -344,8 +257,7 @@ private struct BubbleEmbeddedImageContent: View {
                             .font(.subheadline)
                             .foregroundStyle(message.isOutgoing ? .white.opacity(0.7) : .secondary)
                     }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .bubbleContentPadding()
                 }
                 .buttonStyle(.plain)
                 .accessibilityHint(L10n.Chats.Chats.InlineImage.retryHint)
@@ -524,6 +436,15 @@ private struct BubbleHopCountFooter: View {
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(L10n.Chats.Chats.Message.HopCount.accessibilityLabel(Int(pathLength)))
+    }
+}
+
+// MARK: - Helpers
+
+private extension View {
+    func bubbleContentPadding() -> some View {
+        padding(.horizontal, 10)
+            .padding(.vertical, 8)
     }
 }
 

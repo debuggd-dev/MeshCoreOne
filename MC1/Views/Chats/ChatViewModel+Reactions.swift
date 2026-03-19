@@ -22,7 +22,7 @@ extension ChatViewModel {
         inFlightReactions.insert(reactionKey)
         defer { inFlightReactions.remove(reactionKey) }
 
-        let localNodeName = appState?.connectedDevice?.nodeName ?? "Me"
+        let localNodeName = appState?.localNodeName ?? "Me"
 
         // Check if user already reacted with this emoji
         if let alreadyReacted = try? await dataStore.reactionExists(
@@ -85,8 +85,6 @@ extension ChatViewModel {
                 deviceID: message.deviceID
             )
 
-            recentEmojisStore.recordUsage(emoji)
-
             // Optimistic local update
             let messageHash = ReactionParser.generateMessageHash(
                 text: message.text,
@@ -134,16 +132,12 @@ extension ChatViewModel {
             targetText: message.text,
             targetTimestamp: message.reactionTimestamp
         )
-        logger.debug("[DM-REACTION-SEND] Building reaction: timestamp=\(message.timestamp), senderTimestamp=\(message.senderTimestamp ?? 0), reactionTimestamp=\(message.reactionTimestamp), text=\(message.text.prefix(30))")
-
         do {
             // Send as DM to the contact
             _ = try await messageService.sendDirectMessage(
                 text: reactionText,
                 to: contact
             )
-
-            recentEmojisStore.recordUsage(emoji)
 
             // Optimistic local update
             let messageHash = ReactionParser.generateMessageHash(
@@ -197,50 +191,6 @@ extension ChatViewModel {
 
     /// Update reaction summary for a specific message inline (O(1) update)
     func updateReactionSummary(for messageID: UUID, summary: String) {
-        guard let index = messages.firstIndex(where: { $0.id == messageID }),
-              let existing = messagesByID[messageID] else {
-            return
-        }
-
-        // Create updated MessageDTO with new reaction summary
-        let updated = MessageDTO(
-            id: existing.id,
-            deviceID: existing.deviceID,
-            contactID: existing.contactID,
-            channelIndex: existing.channelIndex,
-            text: existing.text,
-            timestamp: existing.timestamp,
-            createdAt: existing.createdAt,
-            direction: existing.direction,
-            status: existing.status,
-            textType: existing.textType,
-            ackCode: existing.ackCode,
-            pathLength: existing.pathLength,
-            snr: existing.snr,
-            pathNodes: existing.pathNodes,
-            senderKeyPrefix: existing.senderKeyPrefix,
-            senderNodeName: existing.senderNodeName,
-            isRead: existing.isRead,
-            replyToID: existing.replyToID,
-            roundTripTime: existing.roundTripTime,
-            heardRepeats: existing.heardRepeats,
-            sendCount: existing.sendCount,
-            retryAttempt: existing.retryAttempt,
-            maxRetryAttempts: existing.maxRetryAttempts,
-            deduplicationKey: existing.deduplicationKey,
-            linkPreviewURL: existing.linkPreviewURL,
-            linkPreviewTitle: existing.linkPreviewTitle,
-            linkPreviewImageData: existing.linkPreviewImageData,
-            linkPreviewIconData: existing.linkPreviewIconData,
-            linkPreviewFetched: existing.linkPreviewFetched,
-            containsSelfMention: existing.containsSelfMention,
-            mentionSeen: existing.mentionSeen,
-            timestampCorrected: existing.timestampCorrected,
-            reactionSummary: summary
-        )
-
-        messages[index] = updated
-        messagesByID[messageID] = updated
-        rebuildDisplayItem(for: messageID)
+        updateMessage(id: messageID) { $0.reactionSummary = summary }
     }
 }
