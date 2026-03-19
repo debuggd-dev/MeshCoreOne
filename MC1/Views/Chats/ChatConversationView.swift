@@ -564,16 +564,16 @@ struct ChatConversationView: View {
             recentEmojisStore.recordUsage(emoji)
             Task { await chatViewModel.sendReaction(emoji: emoji, to: message) }
         case .reply:
+            let mentionName: String
+            switch conversationType {
+            case .dm(let contact):
+                mentionName = contact.name
+            case .channel:
+                mentionName = message.senderNodeName ?? L10n.Chats.Chats.Message.Sender.unknown
+            }
             if replyWithQuote {
-                chatViewModel.composingText = buildReplyText(for: message)
+                chatViewModel.composingText = MentionUtilities.buildReplyText(mentionName: mentionName, messageText: message.text)
             } else {
-                let mentionName: String
-                switch conversationType {
-                case .dm(let contact):
-                    mentionName = contact.name
-                case .channel:
-                    mentionName = message.senderNodeName ?? L10n.Chats.Chats.Message.Sender.unknown
-                }
                 chatViewModel.composingText = MentionUtilities.createMention(for: mentionName) + " "
             }
             isInputFocused = true
@@ -592,16 +592,6 @@ struct ChatConversationView: View {
         }
     }
 
-    private func buildReplyText(for message: MessageDTO) -> String {
-        let mentionName: String
-        switch conversationType {
-        case .dm(let contact):
-            mentionName = contact.name
-        case .channel:
-            mentionName = message.senderNodeName ?? L10n.Chats.Chats.Message.Sender.unknown
-        }
-        return MentionUtilities.buildReplyText(mentionName: mentionName, messageText: message.text)
-    }
 
     private func retryMessage(_ message: MessageDTO) {
         Task {
