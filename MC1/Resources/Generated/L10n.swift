@@ -470,6 +470,8 @@ public enum L10n {
           public static let delete = L10n.tr("Chats", "chats.message.action.delete", fallback: "Delete")
           /// Location: UnifiedMessageBubble.swift - Context menu submenu label
           public static let details = L10n.tr("Chats", "chats.message.action.details", fallback: "Details")
+          /// Location: MessageActionsSheet.swift - Context menu action to mention
+          public static let mention = L10n.tr("Chats", "chats.message.action.mention", fallback: "Mention")
           /// Location: UnifiedMessageBubble.swift - Context menu action to view repeat details
           public static let repeatDetails = L10n.tr("Chats", "chats.message.action.repeatDetails", fallback: "Repeat Details")
           /// Location: UnifiedMessageBubble.swift - Context menu action to reply
@@ -3640,6 +3642,12 @@ public enum L10n {
         /// Navigation title for the regenerate identity sheet
         public static let title = L10n.tr("Settings", "regenerateIdentity.sheet.title", fallback: "Regenerate Key")
       }
+    }
+    public enum ReplyWithQuote {
+      /// Replying includes a preview of the original message.
+      public static let footer = L10n.tr("Settings", "replyWithQuote.footer", fallback: "Replying includes a preview of the original message.")
+      /// Reply with Quote
+      public static let toggle = L10n.tr("Settings", "replyWithQuote.toggle", fallback: "Reply with Quote")
     }
     public enum Telemetry {
       /// Toggle label for allowing telemetry requests
