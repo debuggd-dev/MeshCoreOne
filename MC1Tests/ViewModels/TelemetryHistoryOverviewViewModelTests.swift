@@ -183,4 +183,112 @@ struct TelemetryHistoryOverviewViewModelTests {
         )
         #expect(viewModel.hasSnapshots)
     }
+
+    @Test("hasTelemetryData returns true when telemetry entries exist")
+    func hasTelemetryData() async throws {
+        let store = try await createStore()
+
+        // Snapshot without telemetry
+        let idNoTelemetry = try await store.saveNodeStatusSnapshot(
+            nodePublicKey: testPublicKey, batteryMillivolts: 3800,
+            lastSNR: nil, lastRSSI: nil, noiseFloor: nil,
+            uptimeSeconds: nil, rxAirtimeSeconds: nil,
+            packetsSent: nil, packetsReceived: nil
+        )
+
+        let viewModel = TelemetryHistoryOverviewViewModel()
+        await viewModel.loadData(
+            dataStore: store, publicKey: testPublicKey, deviceID: testDeviceID
+        )
+        #expect(!viewModel.hasTelemetryData, "Should be false with no telemetry entries")
+
+        // Add telemetry to the snapshot
+        try await store.updateSnapshotTelemetry(
+            id: idNoTelemetry,
+            telemetry: [TelemetrySnapshotEntry(channel: 0, type: "Voltage", value: 3.8)]
+        )
+
+        await viewModel.loadData(
+            dataStore: store, publicKey: testPublicKey, deviceID: testDeviceID
+        )
+        #expect(viewModel.hasTelemetryData, "Should be true after adding telemetry entries")
+    }
+
+    @Test("hasNeighborData returns true when neighbor snapshots exist")
+    func hasNeighborData() async throws {
+        let store = try await createStore()
+
+        // Snapshot without neighbors
+        let id = try await store.saveNodeStatusSnapshot(
+            nodePublicKey: testPublicKey, batteryMillivolts: 3800,
+            lastSNR: nil, lastRSSI: nil, noiseFloor: nil,
+            uptimeSeconds: nil, rxAirtimeSeconds: nil,
+            packetsSent: nil, packetsReceived: nil
+        )
+
+        let viewModel = TelemetryHistoryOverviewViewModel()
+        await viewModel.loadData(
+            dataStore: store, publicKey: testPublicKey, deviceID: testDeviceID
+        )
+        #expect(!viewModel.hasNeighborData, "Should be false with no neighbor snapshots")
+
+        // Add neighbors to the snapshot
+        try await store.updateSnapshotNeighbors(
+            id: id,
+            neighbors: [NeighborSnapshotEntry(publicKeyPrefix: Data([0x01, 0x02]), snr: 6.5, secondsAgo: 30)]
+        )
+
+        await viewModel.loadData(
+            dataStore: store, publicKey: testPublicKey, deviceID: testDeviceID
+        )
+        #expect(viewModel.hasNeighborData, "Should be true after adding neighbor snapshots")
+    }
+
+    // MARK: - Channel Groups
+
+    @Test("channelGroups groups by channel and sorts by chartSortPriority then alphabetically")
+    func channelGroupsGrouping() async throws {
+        let store = try await createStore()
+
+        let snapshotID = try await store.saveNodeStatusSnapshot(
+            nodePublicKey: testPublicKey, batteryMillivolts: 3800,
+            lastSNR: nil, lastRSSI: nil, noiseFloor: nil,
+            uptimeSeconds: nil, rxAirtimeSeconds: nil,
+            packetsSent: nil, packetsReceived: nil
+        )
+
+        // Channel 0: Voltage (priority 0) and Temperature (priority 1)
+        // Channel 2: Humidity (priority 1) and Voltage (priority 0)
+        try await store.updateSnapshotTelemetry(
+            id: snapshotID,
+            telemetry: [
+                TelemetrySnapshotEntry(channel: 0, type: "Voltage", value: 3.8),
+                TelemetrySnapshotEntry(channel: 0, type: "Temperature", value: 22.5),
+                TelemetrySnapshotEntry(channel: 2, type: "Humidity", value: 55.0),
+                TelemetrySnapshotEntry(channel: 2, type: "Voltage", value: 4.1),
+            ]
+        )
+
+        let viewModel = TelemetryHistoryOverviewViewModel()
+        await viewModel.loadData(
+            dataStore: store, publicKey: testPublicKey, deviceID: testDeviceID
+        )
+
+        let groups = viewModel.channelGroups
+
+        // Two channel groups, sorted by channel number
+        #expect(groups.count == 2, "Should have 2 channel groups")
+        #expect(groups[0].channel == 0, "First group should be channel 0")
+        #expect(groups[1].channel == 2, "Second group should be channel 2")
+
+        // Channel 0: Voltage (priority 0) before Temperature (priority 1)
+        #expect(groups[0].charts.count == 2, "Channel 0 should have 2 charts")
+        #expect(groups[0].charts[0].title == "Voltage", "Voltage should sort first (priority 0)")
+        #expect(groups[0].charts[1].title == "Temperature", "Temperature should sort second (priority 1)")
+
+        // Channel 2: Voltage (priority 0) before Humidity (priority 1)
+        #expect(groups[1].charts.count == 2, "Channel 2 should have 2 charts")
+        #expect(groups[1].charts[0].title == "Voltage", "Voltage should sort first (priority 0)")
+        #expect(groups[1].charts[1].title == "Humidity", "Humidity should sort second (priority 1)")
+    }
 }
