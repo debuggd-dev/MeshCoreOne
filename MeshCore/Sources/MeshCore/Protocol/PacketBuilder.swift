@@ -780,6 +780,35 @@ public enum PacketBuilder: Sendable {
         return data
     }
 
+    /// Builds a command to send an anonymous request to a remote node.
+    ///
+    /// ### Binary Format
+    /// - Offset 0 (1 byte): Command code `0x39`
+    /// - Offset 1–32 (32 bytes): Destination public key
+    /// - Offset 33 (1 byte): Anonymous request type
+    /// - Offset 34 (1 byte): Encoded path length (bits 7-6 = hash_size-1, bits 5-0 = hop count)
+    /// - Offset 35+ (variable): Out-path bytes, reversed to form the return route
+    ///
+    /// - Parameters:
+    ///   - publicKey: The 32-byte public key of the destination node.
+    ///   - type: The anonymous request type.
+    ///   - pathLength: The encoded path length byte.
+    ///   - path: The raw out-path bytes for the destination. Reversed to form the return route.
+    /// - Returns: The command data to send to the companion radio.
+    public static func sendAnonReq(
+        to publicKey: Data,
+        type: AnonRequestType,
+        pathLength: UInt8,
+        path: Data
+    ) -> Data {
+        var data = Data([CommandCode.sendAnonReq.rawValue])
+        data.append(publicKey.prefix(publicKeySize))
+        data.append(type.rawValue)
+        data.append(pathLength)
+        data.append(Data(path.reversed()))
+        return data
+    }
+
     /// Builds a setPathHashMode command to configure the path hash size.
     ///
     /// - Parameter mode: Hash mode (0=1-byte, 1=2-byte, 2=3-byte hashes).

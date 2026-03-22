@@ -2283,6 +2283,146 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         }
     }
 
+    // MARK: - Region Requests
+
+    /// Queries a repeater for its list of allowed regions.
+    ///
+    /// Sends an anonymous region request to the specified contact and waits for the
+    /// repeater to respond with its configured region list.
+    ///
+    /// - Parameter contact: The repeater contact to query. Must have a full 32-byte public key.
+    /// - Returns: An array of region name strings (e.g., `["Europe", "UK"]`).
+    ///   Names prefixed with `$` are private regions requiring pre-shared keys.
+    /// - Throws: ``MeshCoreError/timeout`` if no response is received,
+    ///   ``MeshCoreError/deviceError(code:)`` if the firmware rejects the request,
+    ///   ``MeshCoreError/parseError(_:)`` if the response is malformed.
+    public func requestRegions(from contact: MeshContact) async throws -> [String] {
+        try await binaryRequestSerializer.withSerialization { [self] in
+            try await performRegionsRequest(from: contact)
+        }
+    }
+
+    /// Internal implementation of regions request, called within serialization.
+    private func performRegionsRequest(from contact: MeshContact) async throws -> [String] {
+        let isFloodRouted = contact.outPathLength == 0xFF
+        let pathLength: UInt8
+        let path: Data
+        if isFloodRouted {
+            pathLength = 0
+            path = Data()
+        } else {
+            pathLength = contact.outPathLength
+            path = contact.outPath
+        }
+
+        let prefixHex = contact.publicKey.prefix(6).map { String(format: "%02x", $0) }.joined()
+        let startTime = ContinuousClock.now
+
+        // Firmware requires isRouteDirect() for region requests. For flood-routed
+        // contacts, temporarily set the contact to zero-hop direct on the firmware,
+        // matching the Python reference (base.py:269-273).
+        if isFloodRouted {
+            try await updateContact(
+                publicKey: contact.publicKey,
+                type: contact.type,
+                flags: contact.flags,
+                outPathLength: 0,
+                outPath: Data(),
+                advertisedName: contact.advertisedName,
+                lastAdvertisement: contact.lastAdvertisement,
+                latitude: contact.latitude,
+                longitude: contact.longitude
+            )
+        }
+
+        let data = PacketBuilder.sendAnonReq(
+            to: contact.publicKey,
+            type: .regions,
+            pathLength: pathLength,
+            path: path
+        )
+
+        logger.info("Regions request to \(prefixHex): sending")
+
+        // Subscribe BEFORE sending to avoid race condition
+        let events = await dispatcher.subscribe()
+        try await transport.send(data)
+
+        let result: [String]
+        do {
+            result = try await withThrowingTaskGroup(of: [String]?.self) { group in
+                let (timeoutStream, timeoutContinuation) = AsyncStream<TimeInterval>.makeStream()
+
+                group.addTask { [logger] in
+                    var expectedAck: Data?
+
+                    for await event in events {
+                        if Task.isCancelled { return nil }
+
+                        switch event {
+                        case .messageSent(let info):
+                            expectedAck = info.expectedAck
+                            let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
+                            logger.info("Regions request to \(prefixHex): messageSent received, suggestedTimeoutMs=\(info.suggestedTimeoutMs), effective timeout=\(String(format: "%.1f", timeout))s")
+                            timeoutContinuation.yield(timeout)
+                            timeoutContinuation.finish()
+
+                        case .error(let code):
+                            throw MeshCoreError.deviceError(code: code ?? 0)
+
+                        case .binaryResponse(let tag, let responseData):
+                            guard let expected = expectedAck, tag == expected else { continue }
+                            let result = try RegionsParser.parse(responseData)
+                            let elapsed = ContinuousClock.now - startTime
+                            logger.info("Regions request to \(prefixHex): response received in \(elapsed)")
+                            return result
+
+                        default:
+                            continue
+                        }
+                    }
+                    timeoutContinuation.finish()
+                    return nil
+                }
+
+                group.addTask { [logger, clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
+                    var timeout = defaultTimeout
+                    var usedFirmwareTimeout = false
+                    for await t in timeoutStream {
+                        timeout = t
+                        usedFirmwareTimeout = true
+                        break
+                    }
+                    logger.info("Regions request to \(prefixHex): timeout task sleeping for \(String(format: "%.1f", timeout))s (\(usedFirmwareTimeout ? "firmware" : "default"))")
+                    try await clock.sleep(for: .seconds(timeout))
+                    let elapsed = ContinuousClock.now - startTime
+                    logger.warning("Regions request to \(prefixHex): timed out after \(elapsed)")
+                    return nil
+                }
+
+                if let result = try await group.next() ?? nil {
+                    group.cancelAll()
+                    return result
+                }
+                group.cancelAll()
+                throw MeshCoreError.timeout
+            }
+        } catch {
+            // Restore flood routing before propagating the error
+            if isFloodRouted {
+                try? await resetPath(publicKey: contact.publicKey)
+            }
+            throw error
+        }
+
+        // Restore flood routing after successful request
+        if isFloodRouted {
+            try? await resetPath(publicKey: contact.publicKey)
+        }
+
+        return result
+    }
+
     /// Fetches all neighbors from a remote node with automatic pagination.
     ///
     /// This is a convenience method that automatically handles pagination to retrieve
