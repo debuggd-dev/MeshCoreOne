@@ -1632,6 +1632,8 @@ enum RegionsParser {
         }
         let trimmed = regionString.trimmingCharacters(in: .controlCharacters)
         if trimmed.isEmpty { return [] }
-        return trimmed.split(separator: ",").map(String.init)
+        return trimmed.split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty && $0 != "*" }
     }
 }

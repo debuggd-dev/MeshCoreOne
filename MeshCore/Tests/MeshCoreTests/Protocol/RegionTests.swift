@@ -156,6 +156,34 @@ struct RegionsParserTests {
             _ = try RegionsParser.parse(data)
         }
     }
+
+    @Test("filters out wildcard region")
+    func filtersWildcard() throws {
+        let result = try RegionsParser.parse(makeResponse("*,Europe,UK"))
+
+        #expect(result == ["Europe", "UK"])
+    }
+
+    @Test("filters out wildcard-only response to empty array")
+    func filtersWildcardOnly() throws {
+        let result = try RegionsParser.parse(makeResponse("*"))
+
+        #expect(result == [])
+    }
+
+    @Test("filters out whitespace-only entries")
+    func filtersWhitespace() throws {
+        let result = try RegionsParser.parse(makeResponse("Europe, ,UK"))
+
+        #expect(result == ["Europe", "UK"])
+    }
+
+    @Test("trims whitespace around region names")
+    func trimsWhitespace() throws {
+        let result = try RegionsParser.parse(makeResponse(" Europe , UK "))
+
+        #expect(result == ["Europe", "UK"])
+    }
 }
 
 // MARK: - requestRegions Integration

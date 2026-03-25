@@ -91,6 +91,8 @@ public enum L10n {
         public static let manualSharing = L10n.tr("Chats", "chats.channelInfo.manualSharing", fallback: "Manual Sharing")
         /// Location: ChannelInfoSheet.swift - Footer explaining manual sharing
         public static let manualSharingFooter = L10n.tr("Chats", "chats.channelInfo.manualSharingFooter", fallback: "Share the channel name and this secret key for others to join manually.")
+        /// Location: ChannelInfoSheet.swift - Purpose: Region row label
+        public static let region = L10n.tr("Chats", "chats.channelInfo.region", fallback: "Region")
         /// Location: ChannelInfoSheet.swift - QR code instruction text
         public static let scanToJoin = L10n.tr("Chats", "chats.channelInfo.scanToJoin", fallback: "Scan to join this channel")
         /// Location: ChannelInfoSheet.swift - Label for secret key
@@ -124,6 +126,48 @@ public enum L10n {
         public enum DeleteFailed {
           /// Location: ChatsView.swift - Alert title when channel deletion fails
           public static let title = L10n.tr("Chats", "chats.channelInfo.deleteFailed.title", fallback: "Channel Deletion Failed")
+        }
+        public enum Region {
+          /// Location: RegionManagementView.swift - Purpose: Add manually button
+          public static let addManually = L10n.tr("Chats", "chats.channelInfo.region.addManually", fallback: "Add Manually")
+          /// Location: AddRegionView.swift - Purpose: Text field placeholder
+          public static let addRegionPlaceholder = L10n.tr("Chats", "chats.channelInfo.region.addRegionPlaceholder", fallback: "Region name")
+          /// Location: AddRegionView.swift - Purpose: Navigation title
+          public static let addRegionTitle = L10n.tr("Chats", "chats.channelInfo.region.addRegionTitle", fallback: "Add Region")
+          /// Location: RegionDiscoveryResultsView.swift - Purpose: Add selected regions button
+          public static let addSelected = L10n.tr("Chats", "chats.channelInfo.region.addSelected", fallback: "Add")
+          /// Location: ChannelInfoSheet.swift - Purpose: Region value when no scope set
+          public static let allRegions = L10n.tr("Chats", "chats.channelInfo.region.allRegions", fallback: "All Regions")
+          /// Location: ChannelInfoSheet.swift - Purpose: Discover button
+          public static let discover = L10n.tr("Chats", "chats.channelInfo.region.discover", fallback: "Discover Nearby Regions")
+          /// Location: ChannelInfoSheet.swift - Purpose: Discover button loading state
+          public static let discovering = L10n.tr("Chats", "chats.channelInfo.region.discovering", fallback: "Discovering…")
+          /// Location: AddRegionView.swift - Purpose: Duplicate error
+          public static let duplicate = L10n.tr("Chats", "chats.channelInfo.region.duplicate", fallback: "This region is already in your list.")
+          /// Location: ChannelInfoSheet.swift - Purpose: Explanation shown when no regions exist
+          public static let explanation = L10n.tr("Chats", "chats.channelInfo.region.explanation", fallback: "Limit messages to a geographic area")
+          /// Location: AddRegionView.swift - Purpose: Validation error
+          public static let invalidName = L10n.tr("Chats", "chats.channelInfo.region.invalidName", fallback: "Region names cannot contain spaces or start with # or $.")
+          /// Location: RegionManagementView.swift - Purpose: Navigation title
+          public static let manage = L10n.tr("Chats", "chats.channelInfo.region.manage", fallback: "Regions")
+          /// Location: RegionManagementView.swift - Purpose: Manage regions link
+          public static let manageRegions = L10n.tr("Chats", "chats.channelInfo.region.manageRegions", fallback: "Manage Regions")
+          /// Location: RegionDiscoveryResultsView.swift - Purpose: No new regions found
+          public static let noNewRegions = L10n.tr("Chats", "chats.channelInfo.region.noNewRegions", fallback: "No new regions found")
+          /// Location: RegionManagementView.swift - Purpose: Empty state title
+          public static let noRegions = L10n.tr("Chats", "chats.channelInfo.region.noRegions", fallback: "No regions added")
+          /// Location: RegionManagementView.swift - Purpose: Empty state description
+          public static let noRegionsDescription = L10n.tr("Chats", "chats.channelInfo.region.noRegionsDescription", fallback: "Discover regions from nearby repeaters or add them manually.")
+          /// Location: RegionDiscoveryResultsView.swift - Purpose: No repeaters responded
+          public static let noRepeatersResponded = L10n.tr("Chats", "chats.channelInfo.region.noRepeatersResponded", fallback: "No repeaters responded")
+          /// Location: ChannelInfoSheet.swift - Purpose: Region value when no regions configured
+          public static let notConfigured = L10n.tr("Chats", "chats.channelInfo.region.notConfigured", fallback: "Not configured")
+          /// Location: ChannelInfoSheet.swift - Purpose: Private region label
+          public static let `private` = L10n.tr("Chats", "chats.channelInfo.region.private", fallback: "Private")
+          /// Location: ChatConversationType.swift - Purpose: Accessibility label for scoped subtitle
+          public static func scopedAccessibility(_ p1: Any, _ p2: Any) -> String {
+            return L10n.tr("Chats", "chats.channelInfo.region.scopedAccessibility", String(describing: p1), String(describing: p2), fallback: "%@, scoped to %@")
+          }
         }
       }
       public enum ChannelOptions {
