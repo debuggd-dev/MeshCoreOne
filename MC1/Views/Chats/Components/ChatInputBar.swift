@@ -12,6 +12,7 @@ struct ChatInputBar: View {
     let onSend: (String) -> Void
 
     @State private var isCoolingDown = false
+    @State private var textFieldID = UUID()
 
     private var byteCount: Int {
         text.utf8.count
@@ -29,6 +30,7 @@ struct ChatInputBar: View {
     var body: some View {
         HStack(alignment: .bottom, spacing: 12) {
             ChatInputTextField(text: $text, placeholder: placeholder, isFocused: $isFocused, isEncrypted: isEncrypted)
+                .id(textFieldID)
             ChatSendButtonWithCounter(
                 canSend: canSend,
                 isOverLimit: isOverLimit,
@@ -76,6 +78,8 @@ struct ChatInputBar: View {
         guard !captured.isEmpty else { return }
         isCoolingDown = true
         text = ""
+        textFieldID = UUID()
+        isFocused = true
         onSend(captured)
         Task {
             try? await Task.sleep(for: .seconds(1))
