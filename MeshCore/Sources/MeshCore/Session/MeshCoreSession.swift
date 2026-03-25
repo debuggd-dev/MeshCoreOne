@@ -2344,12 +2344,12 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
 
         logger.info("Regions request to \(prefixHex): sending")
 
-        // Subscribe BEFORE sending to avoid race condition
-        let events = await dispatcher.subscribe()
-        try await transport.send(data)
-
         let result: [String]
         do {
+            // Subscribe before sending to avoid race condition
+            let events = await dispatcher.subscribe()
+            try await transport.send(data)
+
             result = try await withThrowingTaskGroup(of: [String]?.self) { group in
                 let (timeoutStream, timeoutContinuation) = AsyncStream<TimeInterval>.makeStream()
 
