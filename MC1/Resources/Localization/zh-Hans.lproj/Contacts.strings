@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "最后听到";
+"contacts.sort.lastHeard" = "最后修改";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "名称";

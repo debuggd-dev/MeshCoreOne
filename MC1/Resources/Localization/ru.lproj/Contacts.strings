@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "Последняя активность";
+"contacts.sort.lastHeard" = "Последнее изменение";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "Имя";
