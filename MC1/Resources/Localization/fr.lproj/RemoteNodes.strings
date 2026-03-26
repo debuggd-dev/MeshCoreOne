@@ -11,8 +11,8 @@
 /* Location: NodeAuthenticationSheet.swift - Navigation title for room authentication */
 "remoteNodes.auth.joinRoom" = "Rejoindre le salon";
 
-/* Location: NodeAuthenticationSheet.swift - Navigation title for repeater admin access */
-"remoteNodes.auth.adminAccess" = "Accès administrateur";
+/* Location: NodeAuthenticationSheet.swift - Navigation title for repeater management */
+"remoteNodes.auth.management" = "Gestion";
 
 /* Location: NodeAuthenticationSheet.swift - Cancel button */
 "remoteNodes.auth.cancel" = "Annuler";

@@ -108,8 +108,8 @@
 /* Location: MapView.swift ContactDetailSheet - Purpose: Sheet title for telemetry authentication */
 "map.detail.action.telemetryAccessTitle" = "Доступ до телеметрії";
 
-/* Location: MapView.swift ContactDetailSheet - Purpose: Button to access repeater admin settings */
-"map.detail.action.adminAccess" = "Доступ адміністратора";
+/* Location: MapView.swift ContactDetailSheet - Purpose: Button to manage repeater */
+"map.detail.action.management" = "Керування";
 
 /* Location: MapView.swift ContactDetailSheet - Purpose: Button to join a room */
 "map.detail.action.joinRoom" = "Приєднатися до кімнати";

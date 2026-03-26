@@ -55,7 +55,7 @@ struct NodeAuthenticationSheet: View {
                 makeAuthenticationSection()
                 makeConnectButton()
             }
-            .navigationTitle(customTitle ?? (role == .roomServer ? L10n.RemoteNodes.RemoteNodes.Auth.joinRoom : L10n.RemoteNodes.RemoteNodes.Auth.adminAccess))
+            .navigationTitle(customTitle ?? (role == .roomServer ? L10n.RemoteNodes.RemoteNodes.Auth.joinRoom : L10n.RemoteNodes.RemoteNodes.Auth.management))
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(L10n.RemoteNodes.RemoteNodes.Auth.cancel) {

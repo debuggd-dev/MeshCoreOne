@@ -564,7 +564,7 @@ private struct ContactActionsSection: View {
 
                 // Admin Access - navigates to settings view after auth
                 Button(action: onShowAdminAccess) {
-                    Label(L10n.Contacts.Contacts.Detail.adminAccess, systemImage: "gearshape.2")
+                    Label(L10n.Contacts.Contacts.Detail.management, systemImage: "gearshape.2")
                 }
                 .radioDisabled(for: appState.connectionState)
 

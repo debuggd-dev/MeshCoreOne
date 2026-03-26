@@ -212,8 +212,8 @@
 /* Location: ContactDetailView.swift - Purpose: Telemetry access sheet title */
 "contacts.detail.telemetryAccess" = "Telemetry Access";
 
-/* Location: ContactDetailView.swift - Purpose: Admin access button */
-"contacts.detail.adminAccess" = "Admin Access";
+/* Location: ContactDetailView.swift - Purpose: Management button */
+"contacts.detail.management" = "Management";
 
 /* Location: ContactDetailView.swift - Purpose: Send message button */
 "contacts.detail.sendMessage" = "Send Message";

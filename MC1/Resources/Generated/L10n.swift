@@ -1029,8 +1029,6 @@ public enum L10n {
       public enum Detail {
         /// Location: ContactDetailView.swift - Purpose: Add to favorites button
         public static let addToFavorites = L10n.tr("Contacts", "contacts.detail.addToFavorites", fallback: "Add to Favorites")
-        /// Location: ContactDetailView.swift - Purpose: Admin access button
-        public static let adminAccess = L10n.tr("Contacts", "contacts.detail.adminAccess", fallback: "Admin Access")
         /// Location: ContactDetailView.swift - Purpose: Block contact button
         public static let blockContact = L10n.tr("Contacts", "contacts.detail.blockContact", fallback: "Block Contact")
         /// Location: ContactDetailView.swift - Purpose: Blocked status indicator
@@ -1065,6 +1063,8 @@ public enum L10n {
         public static let lastAdvert = L10n.tr("Contacts", "contacts.detail.lastAdvert", fallback: "Last Advert")
         /// Location: ContactDetailView.swift - Purpose: Location section header
         public static let location = L10n.tr("Contacts", "contacts.detail.location", fallback: "Location")
+        /// Location: ContactDetailView.swift - Purpose: Management button
+        public static let management = L10n.tr("Contacts", "contacts.detail.management", fallback: "Management")
         /// Location: ContactDetailView.swift - Purpose: Name label
         public static let name = L10n.tr("Contacts", "contacts.detail.name", fallback: "Name")
         /// Location: ContactDetailView.swift - Purpose: Network path section header
@@ -2058,10 +2058,10 @@ public enum L10n {
         /// Location: MapView.swift ContactDetailSheet - Purpose: Label for contact type
         public static let type = L10n.tr("Map", "map.detail.type", fallback: "Type")
         public enum Action {
-          /// Location: MapView.swift ContactDetailSheet - Purpose: Button to access repeater admin settings
-          public static let adminAccess = L10n.tr("Map", "map.detail.action.adminAccess", fallback: "Admin Access")
           /// Location: MapView.swift ContactDetailSheet - Purpose: Button to join a room
           public static let joinRoom = L10n.tr("Map", "map.detail.action.joinRoom", fallback: "Join Room")
+          /// Location: MapView.swift ContactDetailSheet - Purpose: Button to manage repeater
+          public static let management = L10n.tr("Map", "map.detail.action.management", fallback: "Management")
           /// Location: MapView.swift - Purpose: Saved History button for offline telemetry
           public static let savedHistory = L10n.tr("Map", "map.detail.action.savedHistory", fallback: "Saved History")
           /// Location: MapView.swift ContactDetailSheet - Purpose: Button to send a message
@@ -2303,8 +2303,6 @@ public enum L10n {
       /// Location: Multiple files - Name label
       public static let name = L10n.tr("RemoteNodes", "remoteNodes.name", fallback: "Name")
       public enum Auth {
-        /// Location: NodeAuthenticationSheet.swift - Navigation title for repeater admin access
-        public static let adminAccess = L10n.tr("RemoteNodes", "remoteNodes.auth.adminAccess", fallback: "Admin Access")
         /// Location: NodeAuthenticationSheet.swift - Authentication section header
         public static let authentication = L10n.tr("RemoteNodes", "remoteNodes.auth.authentication", fallback: "Authentication")
         /// Location: NodeAuthenticationSheet.swift - Cancel button
@@ -2317,6 +2315,8 @@ public enum L10n {
         }
         /// Location: NodeAuthenticationSheet.swift - Navigation title for room authentication
         public static let joinRoom = L10n.tr("RemoteNodes", "remoteNodes.auth.joinRoom", fallback: "Join Room")
+        /// Location: NodeAuthenticationSheet.swift - Navigation title for repeater management
+        public static let management = L10n.tr("RemoteNodes", "remoteNodes.auth.management", fallback: "Management")
         /// Location: NodeAuthenticationSheet.swift - Name label
         public static let name = L10n.tr("RemoteNodes", "remoteNodes.auth.name", fallback: "Name")
         /// Location: NodeAuthenticationSheet.swift - Node details section header
