@@ -105,6 +105,18 @@ final class RepeaterSettingsViewModel {
     var floodAdvertIntervalError: String?
     var floodMaxHopsError: String?
 
+    // Region settings (from bare "region" CLI command)
+    nonisolated static let wildcardName = "*"
+    var regions: [RepeaterRegionEntry] = []
+    private var originalRegions: [RepeaterRegionEntry]?
+    var isLoadingRegions = false
+    var regionsError: String?
+    var regionsLoaded: Bool { originalRegions != nil }
+    var hasUnsavedRegionChanges = false
+    var isAddingRegion = false
+    var newRegionName = ""
+    var regionsSaveSuccess = false
+
     // Password change (no query available)
     var newPassword: String = ""
     var confirmPassword: String = ""
@@ -115,6 +127,7 @@ final class RepeaterSettingsViewModel {
     var isIdentityExpanded = false
     var isContactInfoExpanded = false
     var isBehaviorExpanded = false
+    var isRegionsExpanded = false
     var isSecurityExpanded = false
 
     // State
@@ -164,15 +177,26 @@ final class RepeaterSettingsViewModel {
     /// - Parameters:
     ///   - command: The CLI command to send (e.g., "get name", "ver")
     ///   - timeout: Maximum time to wait for response (default 5 seconds)
+    ///   - rawMatching: Use FIFO matching instead of content-based matching.
+    ///     Required for commands whose responses don't match any CLIResponse pattern
+    ///     (e.g., bare `region` tree output, `region home` responses).
     /// - Returns: The raw response text from the repeater
     /// - Throws: RepeaterSettingsError.timeout if no response received
-    private func sendAndWait(_ command: String, timeout: Duration = .seconds(5)) async throws -> String {
+    private func sendAndWait(
+        _ command: String,
+        timeout: Duration = .seconds(5),
+        rawMatching: Bool = false
+    ) async throws -> String {
         guard let session, let service = repeaterAdminService else {
             throw RepeaterSettingsError.noService
         }
 
-        // Service now handles response collection and returns directly
-        let response = try await service.sendCommand(sessionID: session.id, command: command, timeout: timeout)
+        let response: String
+        if rawMatching {
+            response = try await service.sendRawCommand(sessionID: session.id, command: command, timeout: timeout)
+        } else {
+            response = try await service.sendCommand(sessionID: session.id, command: command, timeout: timeout)
+        }
         logger.debug("Command '\(command)' response: \(response.prefix(50))")
         return response
     }
@@ -353,6 +377,20 @@ final class RepeaterSettingsViewModel {
                     self.originalOwnerInfo = displayText
                     self.contactInfoError = nil
                     logger.info("Late response: received owner info")
+                    return
+                }
+            }
+        }
+
+        // Regions - only process if finished loading with error
+        if !isLoadingRegions && regionsError != nil {
+            if originalRegions == nil {
+                let parsed = Self.parseRegionTree(response)
+                if !parsed.isEmpty {
+                    self.regions = parsed
+                    self.originalRegions = parsed
+                    self.regionsError = nil
+                    logger.info("Late response: received region tree (\(parsed.count) regions)")
                     return
                 }
             }
@@ -885,6 +923,220 @@ final class RepeaterSettingsViewModel {
 
         isApplying = false
     }
+
+    // MARK: - Region Methods
+
+    /// Fetch regions from the repeater using bare `region` command (tree output)
+    func fetchRegions() async {
+        isLoadingRegions = true
+        regionsError = nil
+
+        do {
+            let treeResponse = try await sendAndWait("region", timeout: .seconds(10), rawMatching: true)
+            let parsed = Self.parseRegionTree(treeResponse)
+            self.regions = parsed
+            self.originalRegions = parsed
+            logger.debug("Fetched \(parsed.count) regions from tree output")
+        } catch {
+            if case RemoteNodeError.timeout = error {
+                regionsError = "error"
+            }
+            logger.warning("Failed to fetch regions: \(error)")
+        }
+
+        isLoadingRegions = false
+    }
+
+    /// Parse the tree output from bare `region` command into region entries.
+    ///
+    /// Format per line: `{spaces}{name}{^?}{ F?}`
+    /// - Leading spaces = hierarchy depth
+    /// - `^` suffix = home region
+    /// - ` F` suffix (with trailing newline stripped) = flood allowed
+    /// - `*` = wildcard root
+    static func parseRegionTree(_ response: String) -> [RepeaterRegionEntry] {
+        var entries: [RepeaterRegionEntry] = []
+        let lines = response.split(separator: "\n", omittingEmptySubsequences: true)
+
+        for line in lines {
+            var text = String(line)
+
+            // Strip leading spaces
+            text = String(text.drop(while: { $0 == " " }))
+            guard !text.isEmpty else { continue }
+
+            // Check for " F" suffix (flood allowed)
+            let floodAllowed: Bool
+            if text.hasSuffix(" F") {
+                floodAllowed = true
+                text = String(text.dropLast(2))
+            } else {
+                floodAllowed = false
+            }
+
+            // Check for "^" suffix (home region)
+            let isHome: Bool
+            if text.hasSuffix("^") {
+                isHome = true
+                text = String(text.dropLast(1))
+            } else {
+                isHome = false
+            }
+
+            guard !text.isEmpty else { continue }
+
+            entries.append(RepeaterRegionEntry(
+                name: text,
+                floodAllowed: floodAllowed,
+                isHome: isHome
+            ))
+        }
+
+        return entries
+    }
+
+    /// Toggle flood allow/deny for a region
+    func toggleRegionFlood(name: String) async {
+        guard let index = regions.firstIndex(where: { $0.name == name }) else { return }
+        let currentlyAllowed = regions[index].floodAllowed
+        let command = currentlyAllowed ? "region denyf \(name)" : "region allowf \(name)"
+
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let response = try await sendAndWait(command)
+            if case .ok = CLIResponse.parse(response) {
+                regions[index].floodAllowed = !currentlyAllowed
+                hasUnsavedRegionChanges = true
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.unknownRegion
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+
+    /// Set the home region
+    func setHomeRegion(name: String) async {
+        let command = "region home \(name)"
+
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let response = try await sendAndWait(command, rawMatching: true)
+            if response.contains("home is now") {
+                // Clear old home, set new
+                for i in regions.indices {
+                    regions[i].isHome = (regions[i].name == name)
+                }
+                hasUnsavedRegionChanges = true
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.unknownRegion
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+
+    /// Add a new region to the repeater
+    func addRegion(name: String) async {
+        let trimmed = name.trimmingCharacters(in: .whitespaces)
+        if let validationError = RegionNameValidator.validate(trimmed, existingRegions: regions.map(\.name)) {
+            switch validationError {
+            case .empty: return
+            case .invalidCharacters, .invalidPrefix, .duplicate:
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.addFailed
+            }
+            return
+        }
+
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let response = try await sendAndWait("region put \(trimmed)")
+            if case .ok = CLIResponse.parse(response) {
+                // New regions default to flood-denied on the firmware
+                regions.append(RepeaterRegionEntry(
+                    name: trimmed,
+                    floodAllowed: false,
+                    isHome: false
+                ))
+                hasUnsavedRegionChanges = true
+                newRegionName = ""
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.addFailed
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+
+    /// Remove a region from the repeater
+    func removeRegion(name: String) async {
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let response = try await sendAndWait("region remove \(name)")
+            if case .ok = CLIResponse.parse(response) {
+                regions.removeAll { $0.name == name }
+                hasUnsavedRegionChanges = true
+            } else if response.contains("not empty") {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.notEmpty
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.removeFailed
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+
+    /// Save region configuration to device flash
+    func saveRegions() async {
+        isApplying = true
+        errorMessage = nil
+
+        do {
+            let response = try await sendAndWait("region save")
+            if case .ok = CLIResponse.parse(response) {
+                hasUnsavedRegionChanges = false
+                withAnimation {
+                    isApplying = false
+                    regionsSaveSuccess = true
+                }
+                try? await Task.sleep(for: .seconds(1.5))
+                withAnimation { regionsSaveSuccess = false }
+                return
+            } else {
+                errorMessage = L10n.RemoteNodes.RemoteNodes.Settings.Regions.saveFailed
+            }
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+
+        isApplying = false
+    }
+}
+
+// MARK: - Region Entry
+
+struct RepeaterRegionEntry: Identifiable, Equatable {
+    var id: String { name }
+    let name: String
+    var floodAllowed: Bool
+    var isHome: Bool
+    var isWildcard: Bool { name == RepeaterSettingsViewModel.wildcardName }
 }
 
 // MARK: - Error Types

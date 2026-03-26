@@ -34,6 +34,7 @@ struct RepeaterSettingsView: View {
             makeIdentitySection()
             makeContactInfoSection()
             makeBehaviorSection()
+            makeRegionsSection()
             makeSecuritySection()
             makeDeviceInfoSection()
             makeActionsSection()
@@ -104,6 +105,10 @@ struct RepeaterSettingsView: View {
 
     private func makeBehaviorSection() -> some View {
         BehaviorSection(viewModel: viewModel, focusedField: $focusedField)
+    }
+
+    private func makeRegionsSection() -> some View {
+        RegionsSection(viewModel: viewModel)
     }
 
     private func makeSecuritySection() -> some View {
@@ -642,6 +647,136 @@ private struct BehaviorSection: View {
                 .animation(.default, value: viewModel.behaviorApplySuccess)
             }
             .disabled(viewModel.isApplying || viewModel.behaviorApplySuccess || !viewModel.behaviorSettingsModified)
+        }
+    }
+}
+
+// MARK: - Regions Section
+
+private struct RegionsSection: View {
+    @Bindable var viewModel: RepeaterSettingsViewModel
+
+    /// Regions sorted: wildcard first, then alphabetical
+    private var sortedRegions: [RepeaterRegionEntry] {
+        viewModel.regions.sorted { lhs, rhs in
+            if lhs.isWildcard { return true }
+            if rhs.isWildcard { return false }
+            return lhs.name.localizedCaseInsensitiveCompare(rhs.name) == .orderedAscending
+        }
+    }
+
+    /// Display name for a region entry
+    private func displayName(for region: RepeaterRegionEntry) -> String {
+        region.isWildcard
+            ? L10n.RemoteNodes.RemoteNodes.Settings.Regions.allTrafficWildcard
+            : region.name
+    }
+
+    var body: some View {
+        ExpandableSettingsSection(
+            title: L10n.RemoteNodes.RemoteNodes.Settings.regions,
+            icon: "globe",
+            isExpanded: $viewModel.isRegionsExpanded,
+            isLoaded: { viewModel.regionsLoaded },
+            isLoading: $viewModel.isLoadingRegions,
+            error: $viewModel.regionsError,
+            onLoad: { await viewModel.fetchRegions() },
+            footer: L10n.RemoteNodes.RemoteNodes.Settings.regionsFooter
+        ) {
+            if viewModel.regionsLoaded && viewModel.regions.isEmpty {
+                Text(L10n.RemoteNodes.RemoteNodes.Settings.Regions.empty)
+                    .foregroundStyle(.secondary)
+            }
+
+            // Home region picker
+            if !viewModel.regions.isEmpty {
+                Picker(L10n.RemoteNodes.RemoteNodes.Settings.Regions.homeRegion, selection: Binding(
+                    get: {
+                        viewModel.regions.first(where: \.isHome)?.name
+                            ?? RepeaterSettingsViewModel.wildcardName
+                    },
+                    set: { newValue in
+                        Task { await viewModel.setHomeRegion(name: newValue) }
+                    }
+                )) {
+                    ForEach(sortedRegions) { region in
+                        Text(displayName(for: region))
+                            .tag(region.name)
+                    }
+                }
+                .pickerStyle(.menu)
+                .tint(.primary)
+            }
+
+            // Region list with flood toggles
+            ForEach(sortedRegions) { region in
+                Toggle(
+                    displayName(for: region),
+                    isOn: Binding(
+                        get: { region.floodAllowed },
+                        set: { _ in
+                            Task { await viewModel.toggleRegionFlood(name: region.name) }
+                        }
+                    )
+                )
+                .accessibilityLabel(
+                    region.isWildcard
+                        ? L10n.RemoteNodes.RemoteNodes.Settings.Regions.allTraffic
+                        : region.name
+                )
+                .accessibilityHint(L10n.RemoteNodes.RemoteNodes.Settings.Regions.floodToggleHint)
+                .disabled(viewModel.isApplying)
+            }
+            .onDelete { offsets in
+                let sorted = sortedRegions
+                for offset in offsets {
+                    let region = sorted[offset]
+                    guard !region.isWildcard else { continue }
+                    Task { await viewModel.removeRegion(name: region.name) }
+                }
+            }
+
+            // Add region button
+            Button(L10n.RemoteNodes.RemoteNodes.Settings.Regions.addRegion, systemImage: "plus") {
+                viewModel.isAddingRegion = true
+            }
+            .disabled(viewModel.isApplying)
+
+            // Save to device button
+            if viewModel.regionsLoaded {
+                Button {
+                    Task { await viewModel.saveRegions() }
+                } label: {
+                    HStack {
+                        Spacer()
+                        if viewModel.isApplying {
+                            ProgressView()
+                        } else if viewModel.regionsSaveSuccess {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
+                                .transition(.scale.combined(with: .opacity))
+                        } else {
+                            Text(L10n.RemoteNodes.RemoteNodes.Settings.Regions.saveToDevice)
+                                .foregroundStyle(viewModel.hasUnsavedRegionChanges ? Color.accentColor : .secondary)
+                                .transition(.opacity)
+                        }
+                        Spacer()
+                    }
+                    .animation(.default, value: viewModel.regionsSaveSuccess)
+                }
+                .disabled(viewModel.isApplying || viewModel.regionsSaveSuccess || !viewModel.hasUnsavedRegionChanges)
+            }
+        }
+        .alert(L10n.RemoteNodes.RemoteNodes.Settings.Regions.addRegionTitle, isPresented: $viewModel.isAddingRegion) {
+            TextField(L10n.RemoteNodes.RemoteNodes.Settings.Regions.regionName, text: $viewModel.newRegionName)
+                .autocorrectionDisabled()
+                .textInputAutocapitalization(.never)
+            Button(L10n.RemoteNodes.RemoteNodes.Settings.Regions.addRegion) {
+                Task { await viewModel.addRegion(name: viewModel.newRegionName) }
+            }
+            Button(L10n.RemoteNodes.RemoteNodes.cancel, role: .cancel) {
+                viewModel.newRegionName = ""
+            }
         }
     }
 }

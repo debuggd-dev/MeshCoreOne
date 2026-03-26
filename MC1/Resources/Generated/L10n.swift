@@ -2615,6 +2615,10 @@ public enum L10n {
         public static let rebootMessage = L10n.tr("RemoteNodes", "remoteNodes.settings.rebootMessage", fallback: "The repeater will restart and be temporarily unavailable.")
         /// Location: RepeaterSettingsViewModel.swift - Reboot sent success
         public static let rebootSent = L10n.tr("RemoteNodes", "remoteNodes.settings.rebootSent", fallback: "Reboot command sent")
+        /// Location: RepeaterSettingsView.swift - Regions section title
+        public static let regions = L10n.tr("RemoteNodes", "remoteNodes.settings.regions", fallback: "Regions")
+        /// Location: RepeaterSettingsView.swift - Regions section footer
+        public static let regionsFooter = L10n.tr("RemoteNodes", "remoteNodes.settings.regionsFooter", fallback: "Save to Repeater to keep changes across restarts.")
         /// Location: RepeaterSettingsView.swift - Repeater mode toggle
         public static let repeaterMode = L10n.tr("RemoteNodes", "remoteNodes.settings.repeaterMode", fallback: "Repeater Mode")
         /// Location: RepeaterSettingsView.swift - Security section title
@@ -2662,6 +2666,42 @@ public enum L10n {
           public static func spreadingFactorLabel(_ p1: Int) -> String {
             return L10n.tr("RemoteNodes", "remoteNodes.settings.accessibility.spreadingFactorLabel", p1, fallback: "Spreading factor %d")
           }
+        }
+        public enum Regions {
+          /// Location: RepeaterSettingsViewModel.swift - Region add failure
+          public static let addFailed = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.addFailed", fallback: "Failed to add region")
+          /// Location: RepeaterSettingsView.swift - Add region button
+          public static let addRegion = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.addRegion", fallback: "Add Region")
+          /// Location: RepeaterSettingsView.swift - Add region alert title
+          public static let addRegionTitle = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.addRegionTitle", fallback: "Add Region")
+          /// Location: RepeaterSettingsView.swift - Toggle label for flood allow per region
+          public static let allowFlood = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.allowFlood", fallback: "Allow Flood Traffic")
+          /// Location: RepeaterSettingsView.swift - Wildcard region display name
+          public static let allTraffic = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.allTraffic", fallback: "All Traffic")
+          /// Location: RepeaterSettingsView.swift - Wildcard with asterisk display
+          public static let allTrafficWildcard = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.allTrafficWildcard", fallback: "* (All Traffic)")
+          /// Location: RepeaterSettingsViewModel.swift - No regions on device
+          public static let empty = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.empty", fallback: "No regions configured")
+          /// Location: RepeaterSettingsView.swift - Accessibility hint for flood toggle
+          public static let floodToggleHint = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.floodToggleHint", fallback: "When off, flood packets from this region are dropped")
+          /// Location: RepeaterSettingsView.swift - Home region picker label
+          public static let homeRegion = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.homeRegion", fallback: "Home Region")
+          /// Location: RepeaterSettingsView.swift - No home region set
+          public static let noHome = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.noHome", fallback: "None")
+          /// Location: RepeaterSettingsViewModel.swift - Region has children error
+          public static let notEmpty = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.notEmpty", fallback: "Remove child regions first")
+          /// Location: RepeaterSettingsView.swift - Region name placeholder
+          public static let regionName = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.regionName", fallback: "Region name")
+          /// Location: RepeaterSettingsViewModel.swift - Region remove failure
+          public static let removeFailed = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.removeFailed", fallback: "Failed to remove region")
+          /// Location: RepeaterSettingsViewModel.swift - Region save failure
+          public static let saveFailed = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.saveFailed", fallback: "Failed to save regions")
+          /// Location: RepeaterSettingsViewModel.swift - Region save success
+          public static let saveSuccess = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.saveSuccess", fallback: "Regions saved to device")
+          /// Location: RepeaterSettingsView.swift - Save regions to device button
+          public static let saveToDevice = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.saveToDevice", fallback: "Save to Repeater")
+          /// Location: RepeaterSettingsViewModel.swift - Region not found error
+          public static let unknownRegion = L10n.tr("RemoteNodes", "remoteNodes.settings.regions.unknownRegion", fallback: "Unknown region")
         }
       }
       public enum Status {
