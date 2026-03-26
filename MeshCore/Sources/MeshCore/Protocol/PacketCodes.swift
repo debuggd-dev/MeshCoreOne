@@ -218,6 +218,8 @@ public enum BinaryRequestType: UInt8, Sendable {
     case acl = 0x05
     /// Requests the list of visible neighbor nodes.
     case neighbours = 0x06
+    /// Requests owner information from a repeater.
+    case ownerInfo = 0x07
 }
 
 /// Defines the types of anonymous requests that can be sent to remote nodes.

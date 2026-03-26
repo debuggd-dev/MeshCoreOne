@@ -2058,6 +2058,104 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
         return try await requestTelemetry(from: publicKey)
     }
 
+    // MARK: - Owner Info
+
+    /// Requests owner information from a repeater using binary protocol.
+    ///
+    /// - Parameter publicKey: The full 32-byte public key of the repeater.
+    /// - Returns: An ``OwnerInfoResponse`` containing firmware version, node name, and owner info.
+    /// - Throws: ``MeshCoreError/timeout`` if no response within timeout period.
+    public func requestOwnerInfo(from publicKey: Data) async throws -> OwnerInfoResponse {
+        try requireFullPublicKey(publicKey, operation: "requestOwnerInfo")
+        return try await binaryRequestSerializer.withSerialization { [self] in
+            try await performOwnerInfoRequest(from: publicKey)
+        }
+    }
+
+    /// Internal implementation of owner info request, called within serialization.
+    private func performOwnerInfoRequest(from publicKey: Data) async throws -> OwnerInfoResponse {
+        let data = PacketBuilder.binaryRequest(to: publicKey, type: .ownerInfo)
+        let publicKeyPrefix = Data(publicKey.prefix(6))
+        let prefixHex = publicKeyPrefix.map { String(format: "%02x", $0) }.joined()
+        let startTime = ContinuousClock.now
+
+        logger.info("Owner info request to \(prefixHex): sending")
+
+        // Subscribe BEFORE sending to avoid race condition where binaryResponse
+        // arrives before we can register the pending request
+        let events = await dispatcher.subscribe()
+
+        // Send after subscribing
+        try await transport.send(data)
+
+        // Wait for messageSent (to get expectedAck) then binaryResponse (the actual response)
+        return try await withThrowingTaskGroup(of: OwnerInfoResponse?.self) { group in
+            let (timeoutStream, timeoutContinuation) = AsyncStream<TimeInterval>.makeStream()
+
+            group.addTask { [logger] in
+                var expectedAck: Data?
+
+                for await event in events {
+                    if Task.isCancelled { return nil }
+
+                    switch event {
+                    case .messageSent(let info):
+                        expectedAck = info.expectedAck
+                        let timeout = TimeInterval(info.suggestedTimeoutMs) / 1000.0 * 2.0
+                        logger.info("Owner info request to \(prefixHex): messageSent received, suggestedTimeoutMs=\(info.suggestedTimeoutMs), effective timeout=\(String(format: "%.1f", timeout))s")
+                        timeoutContinuation.yield(timeout)
+                        timeoutContinuation.finish()
+
+                    case .error(let code):
+                        timeoutContinuation.finish()
+                        throw MeshCoreError.deviceError(code: code ?? 0)
+
+                    case .binaryResponse(let tag, let responseData):
+                        guard let expected = expectedAck, tag == expected else { continue }
+
+                        // Response is UTF-8: "<firmware_ver>\n<node_name>\n<owner_info>"
+                        let text = String(data: responseData, encoding: .utf8) ?? ""
+                        let components = text.split(separator: "\n", maxSplits: 2, omittingEmptySubsequences: false)
+                        let firmwareVersion = components.count >= 1 ? String(components[0]) : ""
+                        let nodeName = components.count >= 2 ? String(components[1]) : ""
+                        let ownerInfo = components.count >= 3 ? String(components[2]) : ""
+
+                        let elapsed = ContinuousClock.now - startTime
+                        logger.info("Owner info request to \(prefixHex): response received in \(elapsed)")
+                        return OwnerInfoResponse(firmwareVersion: firmwareVersion, nodeName: nodeName, ownerInfo: ownerInfo)
+
+                    default:
+                        continue
+                    }
+                }
+                timeoutContinuation.finish()
+                return nil
+            }
+
+            group.addTask { [logger, clock = self.clock, defaultTimeout = configuration.defaultTimeout] in
+                var timeout = defaultTimeout
+                var usedFirmwareTimeout = false
+                for await t in timeoutStream {
+                    timeout = t
+                    usedFirmwareTimeout = true
+                    break
+                }
+                logger.info("Owner info request to \(prefixHex): timeout task sleeping for \(String(format: "%.1f", timeout))s (\(usedFirmwareTimeout ? "firmware" : "default"))")
+                try await clock.sleep(for: .seconds(timeout))
+                let elapsed = ContinuousClock.now - startTime
+                logger.warning("Owner info request to \(prefixHex): timed out after \(elapsed)")
+                return nil
+            }
+
+            if let result = try await group.next() ?? nil {
+                group.cancelAll()
+                return result
+            }
+            group.cancelAll()
+            throw MeshCoreError.timeout
+        }
+    }
+
     /// Requests Min-Max-Average (MMA) data for a time range.
     ///
     /// Retrieves aggregated sensor data statistics from a remote node.
@@ -2758,7 +2856,7 @@ public actor MeshCoreSession: MeshCoreSessionProtocol {
             )
             return .telemetryResponse(response)
 
-        case .keepAlive:
+        case .keepAlive, .ownerInfo:
             return nil
         }
     }

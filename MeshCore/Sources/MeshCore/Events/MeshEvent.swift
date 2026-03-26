@@ -501,8 +501,23 @@ public struct ChannelInfo: Sendable, Equatable {
     }
 }
 
+/// Response from a `REQ_TYPE_GET_OWNER_INFO` (0x07) binary request.
+///
+/// The firmware responds with a UTF-8 string: `"<firmware_ver>\n<node_name>\n<owner_info>"`.
+public struct OwnerInfoResponse: Sendable {
+    public let firmwareVersion: String
+    public let nodeName: String
+    public let ownerInfo: String
+
+    public init(firmwareVersion: String, nodeName: String, ownerInfo: String) {
+        self.firmwareVersion = firmwareVersion
+        self.nodeName = nodeName
+        self.ownerInfo = ownerInfo
+    }
+}
+
 /// Represents a status response from a remote node.
-/// 
+///
 /// Note on offset logic (per Python parsing.py):
 /// - Binary request responses: offset=0, fields start immediately after response code
 /// - Push notification responses: offset=8, pubkey_prefix at bytes 2-8, fields follow
