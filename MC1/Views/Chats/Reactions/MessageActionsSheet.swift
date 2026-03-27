@@ -396,14 +396,14 @@ private struct ActionsExpandedContent: View {
                 repeats: repeats,
                 contacts: contacts,
                 discoveredNodes: discoveredNodes,
-                userLocation: appState.locationService.currentLocation
+                userLocation: appState.bestAvailableLocation
             )
         } else if availability.canViewPath {
             MessagePathContent(
                 message: message,
                 viewModel: pathViewModel,
                 receiverName: appState.connectedDevice?.nodeName ?? L10n.Chats.Chats.Path.Receiver.you,
-                userLocation: appState.locationService.currentLocation
+                userLocation: appState.bestAvailableLocation
             )
         }
     }
