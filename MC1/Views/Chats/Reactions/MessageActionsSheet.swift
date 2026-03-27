@@ -434,7 +434,7 @@ private struct ActionsIncomingDetailsRows: View {
 
     var body: some View {
         ActionInfoRow(
-            text: L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message.pathLength)),
+            text: L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message)),
             icon: "arrowshape.bounce.right"
         )
 
@@ -468,13 +468,11 @@ private struct ActionsIncomingDetailsRows: View {
         return "\(snr.formatted(.number.precision(.fractionLength(1)))) dB (\(quality))"
     }
 
-    private func hopCountFormatted(_ pathLength: UInt8) -> String {
-        switch pathLength {
-        case 0, 0xFF:
+    private func hopCountFormatted(_ message: MessageDTO) -> String {
+        if message.isDirect {
             return L10n.Chats.Chats.Message.Hops.direct
-        default:
-            return "\(pathLength)"
         }
+        return "\(message.hopCount)"
     }
 }
 
