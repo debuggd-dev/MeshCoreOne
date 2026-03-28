@@ -16,9 +16,8 @@ extension SNRQuality {
     /// UIKit color for MapKit renderers.
     var uiColor: UIColor {
         switch self {
-        case .excellent: .systemGreen
-        case .good: .systemYellow
-        case .fair: .systemOrange
+        case .excellent, .good: .systemGreen
+        case .fair: .systemYellow
         case .poor: .systemRed
         case .unknown: .systemGray
         }

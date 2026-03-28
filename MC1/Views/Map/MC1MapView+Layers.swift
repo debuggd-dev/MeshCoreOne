@@ -1,4 +1,5 @@
 import MapLibre
+import MC1Services
 import UIKit
 
 /// Font stack available on the OpenFreeMap glyph server.
@@ -239,7 +240,7 @@ extension MC1MapView.Coordinator {
 
         let weakLayer = MLNLineStyleLayer(identifier: MapLayerID.lineTraceWeak, source: source)
         weakLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceWeak.rawValue)
-        weakLayer.lineColor = NSExpression(forConstantValue: UIColor.systemRed)
+        weakLayer.lineColor = NSExpression(forConstantValue: SNRQuality.poor.uiColor)
         weakLayer.lineWidth = NSExpression(forConstantValue: 3)
         weakLayer.lineDashPattern = NSExpression(forConstantValue: [1.4, 2.6])
         weakLayer.lineJoin = roundJoin
@@ -258,7 +259,7 @@ extension MC1MapView.Coordinator {
 
         let mediumLayer = MLNLineStyleLayer(identifier: MapLayerID.lineTraceMedium, source: source)
         mediumLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceMedium.rawValue)
-        mediumLayer.lineColor = NSExpression(forConstantValue: UIColor.systemYellow)
+        mediumLayer.lineColor = NSExpression(forConstantValue: SNRQuality.fair.uiColor)
         mediumLayer.lineWidth = NSExpression(forConstantValue: 3)
         mediumLayer.lineDashPattern = NSExpression(forConstantValue: [1.4, 2.6])
         mediumLayer.lineJoin = roundJoin
@@ -277,7 +278,7 @@ extension MC1MapView.Coordinator {
 
         let goodLayer = MLNLineStyleLayer(identifier: MapLayerID.lineTraceGood, source: source)
         goodLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceGood.rawValue)
-        goodLayer.lineColor = NSExpression(forConstantValue: UIColor.systemGreen)
+        goodLayer.lineColor = NSExpression(forConstantValue: SNRQuality.good.uiColor)
         goodLayer.lineWidth = NSExpression(forConstantValue: 4)
         style.addLayer(goodLayer)
     }
