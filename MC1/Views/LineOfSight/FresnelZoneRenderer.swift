@@ -105,8 +105,8 @@ struct ProfileSample {
         min(max(yTerrain, yBottom60), yTop60)
     }
 
-    /// Whether terrain intrudes into the Fresnel zone at this point
-    var isObstructed: Bool { yTerrain > yBottom }
+    /// Whether terrain intrudes past the 60% Fresnel clearance threshold at this point
+    var isObstructed: Bool { yTerrain > yBottom60 }
 
     /// Visible bottom of Fresnel zone (clamped to avoid path inversion)
     var yVisibleBottom: Double {

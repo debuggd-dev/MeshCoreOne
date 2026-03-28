@@ -62,48 +62,60 @@ enum PinSpriteRenderer {
 
     // MARK: - Sprite specifications
 
+    private enum RenderStyle {
+        case standard
+        case crosshair
+        case obstruction
+    }
+
     private struct SpriteSpec {
         let name: String
         let circleColor: UIColor
         let iconName: String?    // SF Symbol name
         let text: String?        // e.g. "A", "B" for point pins
         let ringColor: UIColor?  // selection ring
-        let isCrosshair: Bool
+        let renderStyle: RenderStyle
     }
 
     private static let allSpecs: [SpriteSpec] = [
         // Main map contacts
         SpriteSpec(name: "pin-chat", circleColor: UIColor(red: 204 / 255, green: 122 / 255, blue: 92 / 255, alpha: 1),
-                   iconName: "person.fill", text: nil, ringColor: nil, isCrosshair: false),
+                   iconName: "person.fill", text: nil, ringColor: nil, renderStyle: .standard),
         SpriteSpec(name: "pin-repeater", circleColor: .systemCyan,
-                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: nil, isCrosshair: false),
+                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: nil, renderStyle: .standard),
         SpriteSpec(name: "pin-room", circleColor: UIColor(red: 1, green: 136 / 255, blue: 0, alpha: 1),
-                   iconName: "person.3.fill", text: nil, ringColor: nil, isCrosshair: false),
+                   iconName: "person.3.fill", text: nil, ringColor: nil, renderStyle: .standard),
 
         // LOS/TracePath repeater states
         SpriteSpec(name: "pin-repeater-ring-blue", circleColor: .systemCyan,
-                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .systemBlue, isCrosshair: false),
+                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .systemBlue, renderStyle: .standard),
         SpriteSpec(name: "pin-repeater-ring-green", circleColor: .systemCyan,
-                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .systemGreen, isCrosshair: false),
+                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .systemGreen, renderStyle: .standard),
         SpriteSpec(name: "pin-repeater-ring-white", circleColor: .systemCyan,
-                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .white, isCrosshair: false),
+                   iconName: "antenna.radiowaves.left.and.right", text: nil, ringColor: .white, renderStyle: .standard),
 
         // LOS point pins
         SpriteSpec(name: "pin-point-a", circleColor: .systemBlue,
-                   iconName: nil, text: "A", ringColor: nil, isCrosshair: false),
+                   iconName: nil, text: "A", ringColor: nil, renderStyle: .standard),
         SpriteSpec(name: "pin-point-b", circleColor: .systemGreen,
-                   iconName: nil, text: "B", ringColor: nil, isCrosshair: false),
+                   iconName: nil, text: "B", ringColor: nil, renderStyle: .standard),
 
         // LOS crosshair target
         SpriteSpec(name: "pin-crosshair", circleColor: .systemPurple,
-                   iconName: nil, text: "R", ringColor: nil, isCrosshair: true),
+                   iconName: nil, text: "R", ringColor: nil, renderStyle: .crosshair),
+
+        // LOS obstruction marker
+        SpriteSpec(name: "pin-obstruction", circleColor: .systemRed,
+                   iconName: nil, text: nil, ringColor: nil, renderStyle: .obstruction),
     ]
 
     // MARK: - Rendering
 
     private static func render(_ spec: SpriteSpec, hopIndex: Int? = nil) -> UIImage {
-        if spec.isCrosshair {
-            return renderCrosshair(spec)
+        switch spec.renderStyle {
+        case .crosshair: return renderCrosshair(spec)
+        case .obstruction: return renderObstruction()
+        case .standard: break
         }
 
         let circleSize: CGFloat = 36
@@ -296,29 +308,84 @@ enum PinSpriteRenderer {
         }
     }
 
+    private static func renderObstruction() -> UIImage {
+        let size: CGFloat = 20
+        let padding: CGFloat = 3
+        let totalSize = size + padding * 2
+        let armLength: CGFloat = size / 2 - 1
+        let casingWidth: CGFloat = 6
+        let strokeWidth: CGFloat = 2.5
+
+        let renderer = UIGraphicsImageRenderer(size: CGSize(width: totalSize, height: totalSize), format: .preferred())
+        return renderer.image { ctx in
+            let cgContext = ctx.cgContext
+            let center = CGPoint(x: totalSize / 2, y: totalSize / 2)
+
+            // Draw white casing (thick white stroke behind the red X)
+            cgContext.setStrokeColor(UIColor.white.cgColor)
+            cgContext.setLineWidth(casingWidth)
+            cgContext.setLineCap(.round)
+
+            cgContext.move(to: CGPoint(x: center.x - armLength, y: center.y - armLength))
+            cgContext.addLine(to: CGPoint(x: center.x + armLength, y: center.y + armLength))
+            cgContext.move(to: CGPoint(x: center.x + armLength, y: center.y - armLength))
+            cgContext.addLine(to: CGPoint(x: center.x - armLength, y: center.y + armLength))
+            cgContext.strokePath()
+
+            // Draw red X on top
+            cgContext.setStrokeColor(UIColor.systemRed.cgColor)
+            cgContext.setLineWidth(strokeWidth)
+            cgContext.setLineCap(.round)
+
+            cgContext.move(to: CGPoint(x: center.x - armLength, y: center.y - armLength))
+            cgContext.addLine(to: CGPoint(x: center.x + armLength, y: center.y + armLength))
+            cgContext.move(to: CGPoint(x: center.x + armLength, y: center.y - armLength))
+            cgContext.addLine(to: CGPoint(x: center.x - armLength, y: center.y + armLength))
+            cgContext.strokePath()
+        }
+    }
+
     private static func renderCrosshair(_ spec: SpriteSpec) -> UIImage {
-        let size: CGFloat = 44
+        let casingWidth: CGFloat = 6
+        let capInset = casingWidth / 2
+        let size: CGFloat = 44 + capInset * 2
         let gapRadius: CGFloat = 4
-        let outerRadius = size / 2
+        let outerRadius: CGFloat = 22
         let badgeHeight: CGFloat = 20
-        let totalHeight = size + badgeHeight + 2
+        let badgeGap: CGFloat = 2
+        // Top padding so the crosshair center sits at the image's vertical midpoint
+        let topPadding = badgeHeight + badgeGap
+        let totalHeight = topPadding + size + badgeGap + badgeHeight
 
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: size, height: totalHeight), format: .preferred())
         return renderer.image { ctx in
             let cgContext = ctx.cgContext
-            let center = CGPoint(x: size / 2, y: size / 2)
+            let center = CGPoint(x: size / 2, y: topPadding + size / 2)
 
-            // Crosshair lines
-            cgContext.setStrokeColor(UIColor.systemPurple.cgColor)
-            cgContext.setLineWidth(2)
+            // White casing behind crosshair lines
+            cgContext.setStrokeColor(UIColor.white.cgColor)
+            cgContext.setLineWidth(6)
+            cgContext.setLineCap(.round)
 
-            // Vertical
             cgContext.move(to: CGPoint(x: center.x, y: center.y - outerRadius))
             cgContext.addLine(to: CGPoint(x: center.x, y: center.y - gapRadius))
             cgContext.move(to: CGPoint(x: center.x, y: center.y + gapRadius))
             cgContext.addLine(to: CGPoint(x: center.x, y: center.y + outerRadius))
+            cgContext.move(to: CGPoint(x: center.x - outerRadius, y: center.y))
+            cgContext.addLine(to: CGPoint(x: center.x - gapRadius, y: center.y))
+            cgContext.move(to: CGPoint(x: center.x + gapRadius, y: center.y))
+            cgContext.addLine(to: CGPoint(x: center.x + outerRadius, y: center.y))
+            cgContext.strokePath()
 
-            // Horizontal
+            // Crosshair lines
+            cgContext.setStrokeColor(UIColor.systemPurple.cgColor)
+            cgContext.setLineWidth(2)
+            cgContext.setLineCap(.round)
+
+            cgContext.move(to: CGPoint(x: center.x, y: center.y - outerRadius))
+            cgContext.addLine(to: CGPoint(x: center.x, y: center.y - gapRadius))
+            cgContext.move(to: CGPoint(x: center.x, y: center.y + gapRadius))
+            cgContext.addLine(to: CGPoint(x: center.x, y: center.y + outerRadius))
             cgContext.move(to: CGPoint(x: center.x - outerRadius, y: center.y))
             cgContext.addLine(to: CGPoint(x: center.x - gapRadius, y: center.y))
             cgContext.move(to: CGPoint(x: center.x + gapRadius, y: center.y))
@@ -327,7 +394,7 @@ enum PinSpriteRenderer {
 
             // "R" badge
             let badgeWidth: CGFloat = 20
-            let badgeRect = CGRect(x: center.x - badgeWidth / 2, y: size + 2, width: badgeWidth, height: badgeHeight)
+            let badgeRect = CGRect(x: center.x - badgeWidth / 2, y: topPadding + size + badgeGap, width: badgeWidth, height: badgeHeight)
             let badgePath = UIBezierPath(roundedRect: badgeRect, cornerRadius: 9)
             UIColor.systemPurple.setFill()
             badgePath.fill()

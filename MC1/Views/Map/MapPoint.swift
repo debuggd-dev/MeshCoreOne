@@ -18,6 +18,7 @@ struct MapPoint: Identifiable, Equatable {
         case pointA
         case pointB
         case crosshair
+        case obstruction
         case badge
     }
 

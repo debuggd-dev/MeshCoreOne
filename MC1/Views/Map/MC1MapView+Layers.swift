@@ -18,6 +18,7 @@ enum MapLayerID {
     static let fixedNameLabels = "fixed-name-labels"
     static let fixedBadgeText = "fixed-badge-text"
     static let lineLOS = "line-los"
+    static let lineLOSCasing = "line-los-casing"
     static let lineTraceUntraced = "line-trace-untraced"
     static let lineTraceWeak = "line-trace-weak"
     static let lineTraceMedium = "line-trace-medium"
@@ -158,7 +159,7 @@ extension MC1MapView.Coordinator {
     private func addFixedPointLayers(source: MLNShapeSource, style: MLNStyle) {
         let fixedIconLayer = MLNSymbolStyleLayer(identifier: MapLayerID.fixedIcons, source: source)
         fixedIconLayer.iconImageName = NSExpression(forKeyPath: "spriteName")
-        fixedIconLayer.iconAnchor = NSExpression(forConstantValue: "bottom")
+        fixedIconLayer.iconAnchor = NSExpression(forKeyPath: "anchorType")
         fixedIconLayer.iconAllowsOverlap = NSExpression(forConstantValue: true)
         fixedIconLayer.iconIgnoresPlacement = NSExpression(forConstantValue: true)
         fixedIconLayer.text = nil
@@ -182,11 +183,23 @@ extension MC1MapView.Coordinator {
         let source = MLNShapeSource(identifier: MapSourceID.lines, features: [], options: nil)
         style.addSource(source)
 
+        let losCasing = MLNLineStyleLayer(identifier: MapLayerID.lineLOSCasing, source: source)
+        losCasing.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.los.rawValue)
+        losCasing.lineColor = NSExpression(forConstantValue: UIColor.white)
+        losCasing.lineOpacity = NSExpression(forConstantValue: 0.8)
+        losCasing.lineWidth = NSExpression(forConstantValue: 6)
+        losCasing.lineDashPattern = NSExpression(forConstantValue: [0.7, 1.3])
+        losCasing.lineJoin = NSExpression(forConstantValue: "round")
+        losCasing.lineCap = NSExpression(forConstantValue: "round")
+        style.addLayer(losCasing)
+
         let losLayer = MLNLineStyleLayer(identifier: MapLayerID.lineLOS, source: source)
         losLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.los.rawValue)
         losLayer.lineColor = NSExpression(forConstantValue: UIColor.systemBlue)
         losLayer.lineWidth = NSExpression(forConstantValue: 3)
-        losLayer.lineDashPattern = NSExpression(forConstantValue: [8, 4])
+        losLayer.lineDashPattern = NSExpression(forConstantValue: [1.4, 2.6])
+        losLayer.lineJoin = NSExpression(forConstantValue: "round")
+        losLayer.lineCap = NSExpression(forConstantValue: "round")
         losLayer.lineOpacity = NSExpression(forKeyPath: "segmentOpacity")
         style.addLayer(losLayer)
 
@@ -195,13 +208,12 @@ extension MC1MapView.Coordinator {
         let roundJoin = NSExpression(forConstantValue: "round")
         let roundCap = NSExpression(forConstantValue: "round")
 
-        // Untraced: width 2, dash [8, 6] → casing width 5, dash scaled by 2/5
         let untracedCasing = MLNLineStyleLayer(identifier: MapLayerID.lineTraceUntracedCasing, source: source)
         untracedCasing.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceUntraced.rawValue)
         untracedCasing.lineColor = white
         untracedCasing.lineOpacity = casingOpacity
         untracedCasing.lineWidth = NSExpression(forConstantValue: 5)
-        untracedCasing.lineDashPattern = NSExpression(forConstantValue: [1.6, 1.2])
+        untracedCasing.lineDashPattern = NSExpression(forConstantValue: [0.7, 1.3])
         untracedCasing.lineJoin = roundJoin
         untracedCasing.lineCap = roundCap
         style.addLayer(untracedCasing)
@@ -210,16 +222,17 @@ extension MC1MapView.Coordinator {
         untracedLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceUntraced.rawValue)
         untracedLayer.lineColor = NSExpression(forConstantValue: UIColor.systemGray)
         untracedLayer.lineWidth = NSExpression(forConstantValue: 2)
-        untracedLayer.lineDashPattern = NSExpression(forConstantValue: [4, 3])
+        untracedLayer.lineDashPattern = NSExpression(forConstantValue: [1.75, 3.25])
+        untracedLayer.lineJoin = roundJoin
+        untracedLayer.lineCap = roundCap
         style.addLayer(untracedLayer)
 
-        // Weak: width 3, dash [4, 4] → casing width 6, dash scaled by 3/6
         let weakCasing = MLNLineStyleLayer(identifier: MapLayerID.lineTraceWeakCasing, source: source)
         weakCasing.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceWeak.rawValue)
         weakCasing.lineColor = white
         weakCasing.lineOpacity = casingOpacity
         weakCasing.lineWidth = NSExpression(forConstantValue: 6)
-        weakCasing.lineDashPattern = NSExpression(forConstantValue: [1, 1])
+        weakCasing.lineDashPattern = NSExpression(forConstantValue: [0.7, 1.3])
         weakCasing.lineJoin = roundJoin
         weakCasing.lineCap = roundCap
         style.addLayer(weakCasing)
@@ -228,16 +241,17 @@ extension MC1MapView.Coordinator {
         weakLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceWeak.rawValue)
         weakLayer.lineColor = NSExpression(forConstantValue: UIColor.systemRed)
         weakLayer.lineWidth = NSExpression(forConstantValue: 3)
-        weakLayer.lineDashPattern = NSExpression(forConstantValue: [2, 2])
+        weakLayer.lineDashPattern = NSExpression(forConstantValue: [1.4, 2.6])
+        weakLayer.lineJoin = roundJoin
+        weakLayer.lineCap = roundCap
         style.addLayer(weakLayer)
 
-        // Medium: width 3, dash [12, 4] → casing width 6, dash scaled by 3/6
         let mediumCasing = MLNLineStyleLayer(identifier: MapLayerID.lineTraceMediumCasing, source: source)
         mediumCasing.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceMedium.rawValue)
         mediumCasing.lineColor = white
         mediumCasing.lineOpacity = casingOpacity
         mediumCasing.lineWidth = NSExpression(forConstantValue: 6)
-        mediumCasing.lineDashPattern = NSExpression(forConstantValue: [3, 1])
+        mediumCasing.lineDashPattern = NSExpression(forConstantValue: [0.7, 1.3])
         mediumCasing.lineJoin = roundJoin
         mediumCasing.lineCap = roundCap
         style.addLayer(mediumCasing)
@@ -246,7 +260,9 @@ extension MC1MapView.Coordinator {
         mediumLayer.predicate = NSPredicate(format: "lineStyle == %@", MapLine.LineStyle.traceMedium.rawValue)
         mediumLayer.lineColor = NSExpression(forConstantValue: UIColor.systemYellow)
         mediumLayer.lineWidth = NSExpression(forConstantValue: 3)
-        mediumLayer.lineDashPattern = NSExpression(forConstantValue: [6, 2])
+        mediumLayer.lineDashPattern = NSExpression(forConstantValue: [1.4, 2.6])
+        mediumLayer.lineJoin = roundJoin
+        mediumLayer.lineCap = roundCap
         style.addLayer(mediumLayer)
 
         // Good: width 4, solid → casing width 7
@@ -356,6 +372,7 @@ extension MC1MapView.Coordinator {
         var attributes: [String: Any] = [
             "pointId": point.id.uuidString,
             "spriteName": spriteName(for: point),
+            "anchorType": iconAnchor(for: point),
         ]
         if let label = point.label {
             attributes["labelSpriteName"] = "\(PinSpriteRenderer.labelSpritePrefix)\(label)"
@@ -364,6 +381,13 @@ extension MC1MapView.Coordinator {
         if let badgeText = point.badgeText { attributes["badgeText"] = badgeText }
         feature.attributes = attributes
         return feature
+    }
+
+    private func iconAnchor(for point: MapPoint) -> String {
+        switch point.pinStyle {
+        case .crosshair, .obstruction: "center"
+        default: "bottom"
+        }
     }
 
     private func spriteName(for point: MapPoint) -> String {
@@ -383,6 +407,7 @@ extension MC1MapView.Coordinator {
         case .pointA: "pin-point-a"
         case .pointB: "pin-point-b"
         case .crosshair: "pin-crosshair"
+        case .obstruction: "pin-obstruction"
         case .badge: "pin-badge"
         }
     }

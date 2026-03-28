@@ -250,7 +250,12 @@ final class LineOfSightViewModel {
 
     // MARK: - Analysis State
 
-    private(set) var analysisStatus: AnalysisStatus = .idle
+    private(set) var analysisStatus: AnalysisStatus = .idle {
+        didSet {
+            rebuildMapPoints()
+            rebuildMapLines()
+        }
+    }
     private(set) var isAnalyzing = false
     private(set) var elevationProfile: [ElevationSample] = []
 
@@ -380,6 +385,25 @@ final class LineOfSightViewModel {
             ))
         }
 
+        if repeaterPoint == nil,
+           case .result(let result) = analysisStatus,
+           result.clearanceStatus != .clear {
+            for obstruction in result.peakObstructionPerRegion {
+                let pathFraction = obstruction.distanceFromAMeters / result.distanceMeters
+                if let coordinate = coordinateAt(pathFraction: pathFraction) {
+                    points.append(MapPoint(
+                        id: obstruction.id,
+                        coordinate: coordinate,
+                        pinStyle: .obstruction,
+                        label: nil,
+                        isClusterable: false,
+                        hopIndex: nil,
+                        badgeText: nil
+                    ))
+                }
+            }
+        }
+
         mapPoints = points
     }
 
@@ -394,17 +418,20 @@ final class LineOfSightViewModel {
         let dimOpacity = 0.3
 
         if let r = repeaterPoint?.coordinate {
+            let arCoords = elevationProfileAR.isEmpty ? [a, r] : elevationProfileAR.map(\.coordinate)
+            let rbCoords = elevationProfileRB.isEmpty ? [r, b] : elevationProfileRB.map(\.coordinate)
             let opacityAR = relocatingPoint == .pointA ? dimOpacity : activeOpacity
             let opacityRB = relocatingPoint == .pointB ? dimOpacity : activeOpacity
             mapLines = [
-                MapLine(id: "los-ar", coordinates: [a, r], style: .los,
-                        opacity: relocatingPoint == .repeater ? dimOpacity : opacityAR),
-                MapLine(id: "los-rb", coordinates: [r, b], style: .los,
-                        opacity: relocatingPoint == .repeater ? dimOpacity : opacityRB)
+                MapLine(id: "los-ar", coordinates: arCoords,
+                        style: .los, opacity: relocatingPoint == .repeater ? dimOpacity : opacityAR),
+                MapLine(id: "los-rb", coordinates: rbCoords,
+                        style: .los, opacity: relocatingPoint == .repeater ? dimOpacity : opacityRB)
             ]
         } else {
+            let coords = elevationProfile.isEmpty ? [a, b] : elevationProfile.map(\.coordinate)
             let opacity = relocatingPoint != nil ? dimOpacity : activeOpacity
-            mapLines = [MapLine(id: "los-ab", coordinates: [a, b], style: .los, opacity: opacity)]
+            mapLines = [MapLine(id: "los-ab", coordinates: coords, style: .los, opacity: opacity)]
         }
     }
 
@@ -650,12 +677,10 @@ final class LineOfSightViewModel {
     /// Adds repeater at the worst obstruction point
     func addRepeater() {
         guard case .result(let result) = analysisStatus,
-              !result.obstructionPoints.isEmpty,
-              let worstPoint = result.obstructionPoints.min(by: { $0.fresnelClearancePercent < $1.fresnelClearancePercent }) else {
+              let worstPoint = result.worstObstructionPoint else {
             return
         }
 
-        // Convert distance to path fraction
         let pathFraction = worstPoint.distanceFromAMeters / result.distanceMeters
 
         // Get coordinate and elevation from cached profile
