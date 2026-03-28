@@ -37,11 +37,6 @@ struct TracePathMapView: View {
                 )
             }
 
-            // Empty state
-            if mapViewModel.repeatersWithLocation.isEmpty {
-                TracePathEmptyState()
-            }
-
             // Floating buttons
             TracePathFloatingButtonsView(
                 mapViewModel: mapViewModel,
@@ -184,20 +179,3 @@ private struct TracePathResultsBanner: View {
     }
 }
 
-// MARK: - Empty State
-
-private struct TracePathEmptyState: View {
-    var body: some View {
-        VStack {
-            Spacer()
-            ContentUnavailableView(
-                L10n.Contacts.Contacts.Trace.Map.Empty.title,
-                systemImage: "map",
-                description: Text(L10n.Contacts.Contacts.Trace.Map.Empty.description)
-            )
-            .padding()
-            .background(.regularMaterial, in: .rect(cornerRadius: 16))
-            .padding()
-        }
-    }
-}
