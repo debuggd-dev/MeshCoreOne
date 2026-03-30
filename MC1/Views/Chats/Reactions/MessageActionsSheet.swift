@@ -396,14 +396,14 @@ private struct ActionsExpandedContent: View {
                 repeats: repeats,
                 contacts: contacts,
                 discoveredNodes: discoveredNodes,
-                userLocation: appState.locationService.currentLocation
+                userLocation: appState.bestAvailableLocation
             )
         } else if availability.canViewPath {
             MessagePathContent(
                 message: message,
                 viewModel: pathViewModel,
                 receiverName: appState.connectedDevice?.nodeName ?? L10n.Chats.Chats.Path.Receiver.you,
-                userLocation: appState.locationService.currentLocation
+                userLocation: appState.bestAvailableLocation
             )
         }
     }
@@ -434,7 +434,7 @@ private struct ActionsIncomingDetailsRows: View {
 
     var body: some View {
         ActionInfoRow(
-            text: L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message.pathLength)),
+            text: L10n.Chats.Chats.Message.Info.hops(hopCountFormatted(message)),
             icon: "arrowshape.bounce.right"
         )
 
@@ -452,29 +452,15 @@ private struct ActionsIncomingDetailsRows: View {
     }
 
     private func snrFormatted(_ snr: Double) -> String {
-        let quality: String
-        switch snr {
-        case 10...:
-            quality = L10n.Chats.Chats.Signal.excellent
-        case 5..<10:
-            quality = L10n.Chats.Chats.Signal.good
-        case 0..<5:
-            quality = L10n.Chats.Chats.Signal.fair
-        case -10..<0:
-            quality = L10n.Chats.Chats.Signal.poor
-        default:
-            quality = L10n.Chats.Chats.Signal.veryPoor
-        }
+        let quality = SNRQuality(snr: snr).localizedLabel
         return "\(snr.formatted(.number.precision(.fractionLength(1)))) dB (\(quality))"
     }
 
-    private func hopCountFormatted(_ pathLength: UInt8) -> String {
-        switch pathLength {
-        case 0, 0xFF:
+    private func hopCountFormatted(_ message: MessageDTO) -> String {
+        if message.isDirect {
             return L10n.Chats.Chats.Message.Hops.direct
-        default:
-            return "\(pathLength)"
         }
+        return "\(message.hopCount)"
     }
 }
 

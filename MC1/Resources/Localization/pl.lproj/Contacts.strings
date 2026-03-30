@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "Ostatnio widziany";
+"contacts.sort.lastHeard" = "Ostatnio zmodyfikowany";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "Nazwa";
@@ -206,11 +206,14 @@
 /* Location: ContactDetailView.swift - Purpose: Telemetry button */
 "contacts.detail.telemetry" = "Telemetria";
 
+/* Location: ContactDetailView.swift - Purpose: Saved History button for offline telemetry */
+"contacts.detail.savedHistory" = "Telemetry History";
+
 /* Location: ContactDetailView.swift - Purpose: Telemetry access sheet title */
 "contacts.detail.telemetryAccess" = "Dostęp do telemetrii";
 
-/* Location: ContactDetailView.swift - Purpose: Admin access button */
-"contacts.detail.adminAccess" = "Dostęp administratora";
+/* Location: ContactDetailView.swift - Purpose: Management button */
+"contacts.detail.management" = "Zarządzanie";
 
 /* Location: ContactDetailView.swift - Purpose: Send message button */
 "contacts.detail.sendMessage" = "Wyślij wiadomość";
@@ -229,6 +232,9 @@
 
 /* Location: ContactDetailView.swift - Purpose: Ping repeater button */
 "contacts.detail.pingRepeater" = "Pinguj przekaźnik";
+
+/* Location: ContactDetailView.swift - Purpose: Generalized ping button for non-repeater nodes */
+"contacts.detail.ping" = "Ping Zero-Hop";
 
 /* Location: ContactDetailView.swift - Purpose: Ping no response message */
 "contacts.detail.pingNoResponse" = "Brak odpowiedzi";
@@ -348,7 +354,7 @@
 "contacts.detail.alert.block.title" = "Zablokuj kontakt";
 
 /* Location: ContactDetailView.swift - Purpose: Block contact alert message */
-"contacts.detail.alert.block.message" = "Nie będziesz otrzymywać wiadomości od %@. Rozmowy od tego użytkownika będą ukryte na liście czatów, a ich wiadomości na kanałach nie będą wyświetlane. Odblokowanie odwróci te działania i uczyni widocznymi wszystkie wysłane wiadomości.";
+"contacts.detail.alert.block.message" = "Nie będziesz otrzymywać wiadomości od %@. Rozmowy będą ukryte na liście czatów, a nowe wiadomości na kanałach zostaną odrzucone. Odblokowanie pozwoli na nowe wiadomości, ale odrzuconych wiadomości nie można odzyskać.";
 
 /* Location: ContactDetailView.swift - Purpose: Delete contact alert title */
 "contacts.detail.alert.delete.title" = "Usuń %@";
@@ -425,6 +431,15 @@
 
 /* Location: AddContactSheet.swift, DiscoveryView.swift - Purpose: Node list full error without max count */
 "contacts.add.error.nodeListFullSimple" = "Node list is full";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL button label */
+"contacts.add.pasteURL" = "Paste Contact URL";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL section footer */
+"contacts.add.pasteURLFooter" = "Paste a meshcore:// contact link to auto-fill the fields above";
+
+/* Location: AddContactSheet.swift - Purpose: Invalid paste URL error */
+"contacts.add.error.invalidURL" = "Clipboard does not contain a valid contact URL";
 
 // MARK: - Contact QR Share Sheet
 
@@ -853,11 +868,6 @@
 /* Location: TracePathMapView.swift - Purpose: Hops count in results banner */
 "contacts.trace.map.hops" = "%d skoków";
 
-/* Location: TracePathMapView.swift - Purpose: Empty state title */
-"contacts.trace.map.empty.title" = "Brak przekaźników z lokalizacją";
-
-/* Location: TracePathMapView.swift - Purpose: Empty state description */
-"contacts.trace.map.empty.description" = "Użyj widoku listy do budowania ścieżek z przekaźnikami bez danych o lokalizacji.";
 
 /* Location: TracePathMapView.swift - Purpose: Clear button */
 "contacts.trace.map.clear" = "Wyczyść";
@@ -867,6 +877,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: Show labels accessibility */
 "contacts.trace.map.showLabels" = "Pokaż etykiety";
+
+/* Location: TracePathMapView.swift - Purpose: Center on path accessibility */
+"contacts.trace.map.centerOnPath" = "Wyśrodkuj na ścieżce";
 
 /* Location: TracePathMapView.swift - Purpose: Save path alert title */
 "contacts.trace.map.saveTitle" = "Zapisz ścieżkę";
@@ -891,6 +904,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: View results button */
 "contacts.trace.map.viewResults" = "Wyniki";
+
+/* Location: TracePathMapViewModel.swift - Purpose: Default path name fallback */
+"contacts.trace.map.defaultPathName" = "Ścieżka";
 
 // MARK: - Trace Results Sheet
 
@@ -920,6 +936,10 @@
 
 /* Location: TraceResultsSheet.swift - Purpose: Comparison text */
 "contacts.results.comparison" = "vs. %d ms w %@";
+
+/* Location: ComparisonRowView.swift - Purpose: Accessibility labels for change direction */
+"contacts.results.comparison.increased" = "Wzrosło";
+"contacts.results.comparison.decreased" = "Spadło";
 
 /* Location: TraceResultsSheet.swift - Purpose: View runs link */
 "contacts.results.viewRuns" = "Zobacz %d uruchomień";

@@ -287,6 +287,11 @@ extension SyncCoordinator {
                 self.logger.warning("Dedup check failed, proceeding with save: \(error)")
             }
 
+            // Discard messages from blocked senders
+            if await self.isBlockedSender(senderNodeName) {
+                return
+            }
+
             // Check if this is a reaction
             if await self.handleChannelReaction(
                 text: messageText,
@@ -410,7 +415,11 @@ extension SyncCoordinator {
             guard let self else { return }
 
             if let contact {
-                await services.repeaterAdminService.invokeCLIHandler(message, fromContact: contact)
+                if contact.type == .room {
+                    await services.roomAdminService.invokeCLIHandler(message, fromContact: contact)
+                } else {
+                    await services.repeaterAdminService.invokeCLIHandler(message, fromContact: contact)
+                }
             } else {
                 self.logger.warning("Dropping CLI response: no contact found for sender")
             }

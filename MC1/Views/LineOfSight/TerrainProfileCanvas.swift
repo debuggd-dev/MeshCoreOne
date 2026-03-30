@@ -500,17 +500,24 @@ extension TerrainProfileCanvas {
         let regionSamples = Array(samples[startIndex...endIndex])
         guard let first = regionSamples.first, let last = regionSamples.last else { return }
 
-        // Draw a rectangle spanning the full vertical height of the chart
-        let topLeft = coords.point(x: first.x, y: yRange.upperBound)
-        let topRight = coords.point(x: last.x, y: yRange.upperBound)
-        let bottomRight = coords.point(x: last.x, y: yRange.lowerBound)
-        let bottomLeft = coords.point(x: first.x, y: yRange.lowerBound)
+        // Ensure a minimum pixel width so single-sample obstructions are visible
+        let minWidth: CGFloat = 4
+        var leftX = coords.xPixel(first.x)
+        var rightX = coords.xPixel(last.x)
+        if rightX - leftX < minWidth {
+            let center = (leftX + rightX) / 2
+            leftX = center - minWidth / 2
+            rightX = center + minWidth / 2
+        }
+
+        let topY = coords.yPixel(yRange.upperBound)
+        let bottomY = coords.yPixel(yRange.lowerBound)
 
         var path = Path()
-        path.move(to: topLeft)
-        path.addLine(to: topRight)
-        path.addLine(to: bottomRight)
-        path.addLine(to: bottomLeft)
+        path.move(to: CGPoint(x: leftX, y: topY))
+        path.addLine(to: CGPoint(x: rightX, y: topY))
+        path.addLine(to: CGPoint(x: rightX, y: bottomY))
+        path.addLine(to: CGPoint(x: leftX, y: bottomY))
         path.closeSubpath()
 
         context.fill(path, with: .color(fresnelObstructed))

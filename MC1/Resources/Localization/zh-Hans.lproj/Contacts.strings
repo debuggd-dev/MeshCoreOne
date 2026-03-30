@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "最后听到";
+"contacts.sort.lastHeard" = "最后修改";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "名称";
@@ -206,11 +206,14 @@
 /* Location: ContactDetailView.swift - Purpose: Telemetry button */
 "contacts.detail.telemetry" = "遥测数据";
 
+/* Location: ContactDetailView.swift - Purpose: Saved History button for offline telemetry */
+"contacts.detail.savedHistory" = "Telemetry History";
+
 /* Location: ContactDetailView.swift - Purpose: Telemetry access sheet title */
 "contacts.detail.telemetryAccess" = "遥测数据访问权限";
 
-/* Location: ContactDetailView.swift - Purpose: Admin access button */
-"contacts.detail.adminAccess" = "管理员访问权限";
+/* Location: ContactDetailView.swift - Purpose: Management button */
+"contacts.detail.management" = "管理";
 
 /* Location: ContactDetailView.swift - Purpose: Send message button */
 "contacts.detail.sendMessage" = "发送消息";
@@ -229,6 +232,9 @@
 
 /* Location: ContactDetailView.swift - Purpose: Ping repeater button */
 "contacts.detail.pingRepeater" = "Ping 转发节点";
+
+/* Location: ContactDetailView.swift - Purpose: Generalized ping button for non-repeater nodes */
+"contacts.detail.ping" = "零跳 Ping";
 
 /* Location: ContactDetailView.swift - Purpose: Ping no response message */
 "contacts.detail.pingNoResponse" = "无响应";
@@ -348,7 +354,7 @@
 "contacts.detail.alert.block.title" = "屏蔽联系人";
 
 /* Location: ContactDetailView.swift - Purpose: Block contact alert message */
-"contacts.detail.alert.block.message" = "屏蔽后，你将不再接收来自 %@ 的消息。与他的对话会被隐藏，其频道消息也不会显示。取消屏蔽即可恢复。";
+"contacts.detail.alert.block.message" = "屏蔽后，你将不再接收来自 %@ 的消息。对话会被隐藏，新的频道消息将被丢弃。取消屏蔽后可接收新消息，但已丢弃的消息无法恢复。";
 
 /* Location: ContactDetailView.swift - Purpose: Delete contact alert title */
 "contacts.detail.alert.delete.title" = "删除%@";
@@ -425,6 +431,15 @@
 
 /* Location: AddContactSheet.swift, DiscoveryView.swift - Purpose: Node list full error without max count */
 "contacts.add.error.nodeListFullSimple" = "节点列表已满";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL button label */
+"contacts.add.pasteURL" = "Paste Contact URL";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL section footer */
+"contacts.add.pasteURLFooter" = "Paste a meshcore:// contact link to auto-fill the fields above";
+
+/* Location: AddContactSheet.swift - Purpose: Invalid paste URL error */
+"contacts.add.error.invalidURL" = "Clipboard does not contain a valid contact URL";
 
 // MARK: - Contact QR Share Sheet
 
@@ -866,11 +881,6 @@
 /* Location: TracePathMapView.swift - Purpose: Hops count in results banner */
 "contacts.trace.map.hops" = "%d 跳";
 
-/* Location: TracePathMapView.swift - Purpose: Empty state title */
-"contacts.trace.map.empty.title" = "无位置信息的转发节点";
-
-/* Location: TracePathMapView.swift - Purpose: Empty state description */
-"contacts.trace.map.empty.description" = "使用列表视图以构建没有位置数据的转发路径";
 
 /* Location: TracePathMapView.swift - Purpose: Clear button */
 "contacts.trace.map.clear" = "清除";
@@ -880,6 +890,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: Show labels accessibility */
 "contacts.trace.map.showLabels" = "显示标签";
+
+/* Location: TracePathMapView.swift - Purpose: Center on path accessibility */
+"contacts.trace.map.centerOnPath" = "以路径为中心";
 
 /* Location: TracePathMapView.swift - Purpose: Save path alert title */
 "contacts.trace.map.saveTitle" = "保存路径";
@@ -904,6 +917,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: View results button */
 "contacts.trace.map.viewResults" = "结果";
+
+/* Location: TracePathMapViewModel.swift - Purpose: Default path name fallback */
+"contacts.trace.map.defaultPathName" = "路径";
 
 // MARK: - Trace Results Sheet
 
@@ -933,6 +949,10 @@
 
 /* Location: TraceResultsSheet.swift - Purpose: Comparison text */
 "contacts.results.comparison" = "对比 %@ 毫秒在 %@";
+
+/* Location: ComparisonRowView.swift - Purpose: Accessibility labels for change direction */
+"contacts.results.comparison.increased" = "增加";
+"contacts.results.comparison.decreased" = "减少";
 
 /* Location: TraceResultsSheet.swift - Purpose: View runs link */
 "contacts.results.viewRuns" = "查看 %d 次运行";

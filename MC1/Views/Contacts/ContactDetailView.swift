@@ -57,13 +57,15 @@ struct ContactDetailView: View {
 
     /// Sheet types for the contact detail view
     private enum ActiveSheet: Identifiable, Hashable {
-        case repeaterAuth
+        case nodeAuth
         case repeaterStatus(RemoteNodeSessionDTO)
+        case roomStatus(RemoteNodeSessionDTO)
 
         var id: String {
             switch self {
-            case .repeaterAuth: return "auth"
+            case .nodeAuth: return "auth"
             case .repeaterStatus(let session): return "status-\(session.id)"
+            case .roomStatus(let session): return "room-status-\(session.id)"
             }
         }
     }
@@ -80,8 +82,6 @@ struct ContactDetailView: View {
     @State private var showRoomJoinSheet = false
     @State private var activeSheet: ActiveSheet?
     @State private var pendingSheet: ActiveSheet?
-    @State private var showRoomConversation = false
-    @State private var connectedRoomSession: RemoteNodeSessionDTO?
     // Admin access navigation state (separate from telemetry sheet flow)
     @State private var showRepeaterAdminAuth = false
     @State private var adminSession: RemoteNodeSessionDTO?
@@ -116,7 +116,7 @@ struct ContactDetailView: View {
                 isTogglingFavorite: isTogglingFavorite,
                 pingResult: pingResult,
                 onJoinRoom: { showRoomJoinSheet = true },
-                onShowTelemetry: { activeSheet = .repeaterAuth },
+                onShowTelemetry: { activeSheet = .nodeAuth },
                 onShowAdminAccess: {
                     adminSession = nil
                     showRepeaterAdminAuth = true
@@ -245,31 +245,38 @@ struct ContactDetailView: View {
         }
         .sheet(item: $activeSheet, onDismiss: presentPendingSheet) { sheet in
             switch sheet {
-            case .repeaterAuth:
+            case .nodeAuth:
                 if let role = RemoteNodeRole(contactType: currentContact.type) {
                     NodeAuthenticationSheet(
                         contact: currentContact,
                         role: role,
                         customTitle: L10n.Contacts.Contacts.Detail.telemetryAccess
                     ) { session in
-                        pendingSheet = .repeaterStatus(session)
+                        if currentContact.type == .room {
+                            pendingSheet = .roomStatus(session)
+                        } else {
+                            pendingSheet = .repeaterStatus(session)
+                        }
                         activeSheet = nil  // Triggers dismissal, then onDismiss fires
                     }
                     .presentationSizing(.page)
                 }
             case .repeaterStatus(let session):
                 RepeaterStatusView(session: session)
-            }
-        }
-        .navigationDestination(isPresented: $showRoomConversation) {
-            if let session = connectedRoomSession {
-                RoomConversationView(session: session)
+            case .roomStatus(let session):
+                RoomStatusView(session: session)
             }
         }
         .sheet(isPresented: $showRepeaterAdminAuth, onDismiss: {
             // Trigger navigation after sheet is fully dismissed to avoid race conditions
-            if adminSession != nil {
-                navigateToSettings = true
+            if let session = adminSession {
+                if session.isAdmin {
+                    navigateToSettings = true
+                } else if session.isRoom {
+                    activeSheet = .roomStatus(session)
+                } else {
+                    activeSheet = .repeaterStatus(session)
+                }
             }
         }) {
             if let role = RemoteNodeRole(contactType: currentContact.type) {
@@ -292,7 +299,11 @@ struct ContactDetailView: View {
         }
         .navigationDestination(isPresented: $navigateToSettings) {
             if let session = adminSession {
-                RepeaterSettingsView(session: session)
+                if session.isRoom {
+                    RoomSettingsView(session: session)
+                } else {
+                    RepeaterSettingsView(session: session)
+                }
             }
         }
     }
@@ -540,35 +551,28 @@ private struct ContactActionsSection: View {
                 }
                 .radioDisabled(for: appState.connectionState)
 
+                NodeActionRows(
+                    contact: currentContact,
+                    pingLabel: L10n.Contacts.Contacts.Detail.ping,
+                    isPinging: isPinging,
+                    pingResult: pingResult,
+                    connectionState: appState.connectionState,
+                    onShowTelemetry: onShowTelemetry,
+                    onShowAdminAccess: onShowAdminAccess,
+                    onPing: onPingRepeater
+                )
+
             case .repeater:
-                // Telemetry button - shows read-only status sheet after auth
-                Button(action: onShowTelemetry) {
-                    Label(L10n.Contacts.Contacts.Detail.telemetry, systemImage: "chart.line.uptrend.xyaxis")
-                }
-                .radioDisabled(for: appState.connectionState)
-
-                // Admin Access - navigates to settings view after auth
-                Button(action: onShowAdminAccess) {
-                    Label(L10n.Contacts.Contacts.Detail.adminAccess, systemImage: "gearshape.2")
-                }
-                .radioDisabled(for: appState.connectionState)
-
-                // Ping Repeater
-                Button(action: onPingRepeater) {
-                    HStack {
-                        Label(L10n.Contacts.Contacts.Detail.pingRepeater, systemImage: "wave.3.right")
-                        if isPinging {
-                            Spacer()
-                            ProgressView()
-                        }
-                    }
-                }
-                .disabled(isPinging)
-                .radioDisabled(for: appState.connectionState)
-
-                if let result = pingResult {
-                    PingResultRow(result: result)
-                }
+                NodeActionRows(
+                    contact: currentContact,
+                    pingLabel: L10n.Contacts.Contacts.Detail.pingRepeater,
+                    isPinging: isPinging,
+                    pingResult: pingResult,
+                    connectionState: appState.connectionState,
+                    onShowTelemetry: onShowTelemetry,
+                    onShowAdminAccess: onShowAdminAccess,
+                    onPing: onPingRepeater
+                )
 
             case .chat:
                 // Send message - only show when NOT from direct chat and NOT blocked
@@ -608,6 +612,55 @@ private struct ContactActionsSection: View {
                 Label(L10n.Contacts.Contacts.Detail.shareViaAdvert, systemImage: "antenna.radiowaves.left.and.right")
             }
             .radioDisabled(for: appState.connectionState)
+        }
+    }
+}
+
+private struct NodeActionRows: View {
+    let contact: ContactDTO
+    let pingLabel: String
+    let isPinging: Bool
+    let pingResult: PingResult?
+    let connectionState: ConnectionState
+    let onShowTelemetry: () -> Void
+    let onShowAdminAccess: () -> Void
+    let onPing: () -> Void
+
+    var body: some View {
+        Button(action: onShowTelemetry) {
+            Label(L10n.Contacts.Contacts.Detail.telemetry, systemImage: "chart.line.uptrend.xyaxis")
+        }
+        .radioDisabled(for: connectionState)
+
+        NavigationLink {
+            TelemetryHistoryOverviewView(
+                publicKey: contact.publicKey,
+                deviceID: contact.deviceID
+            )
+        } label: {
+            Label(L10n.Contacts.Contacts.Detail.savedHistory, systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90")
+                .foregroundStyle(.tint)
+        }
+
+        Button(action: onShowAdminAccess) {
+            Label(L10n.Contacts.Contacts.Detail.management, systemImage: "gearshape.2")
+        }
+        .radioDisabled(for: connectionState)
+
+        Button(action: onPing) {
+            HStack {
+                Label(pingLabel, systemImage: "wave.3.right")
+                if isPinging {
+                    Spacer()
+                    ProgressView()
+                }
+            }
+        }
+        .disabled(isPinging)
+        .radioDisabled(for: connectionState)
+
+        if let result = pingResult {
+            PingResultRow(result: result)
         }
     }
 }
@@ -683,24 +736,41 @@ private struct ContactInfoSection: View {
 }
 
 private struct ContactLocationSection: View {
-    let currentContact: ContactDTO
+    @Environment(\.appState) private var appState
+    @Environment(\.colorScheme) private var colorScheme
 
-    private var contactCoordinate: CLLocationCoordinate2D {
-        CLLocationCoordinate2D(
-            latitude: currentContact.latitude,
-            longitude: currentContact.longitude
-        )
-    }
+    let currentContact: ContactDTO
 
     var body: some View {
         Section {
             // Mini map
-            Map(position: .constant(.region(MKCoordinateRegion(
-                center: contactCoordinate,
-                span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
-            )))) {
-                Marker(currentContact.displayName, coordinate: contactCoordinate)
-            }
+            MC1MapView(
+                points: [MapPoint(
+                    id: currentContact.id,
+                    coordinate: currentContact.coordinate,
+                    pinStyle: currentContact.type.pinStyle,
+                    label: currentContact.displayName,
+                    isClusterable: false,
+                    hopIndex: nil,
+                    badgeText: nil
+                )],
+                lines: [],
+                mapStyle: .standard,
+                isDarkMode: colorScheme == .dark,
+                isOffline: !appState.offlineMapService.isNetworkAvailable,
+                showLabels: false,
+                showsUserLocation: false,
+                isInteractive: false,
+                showsScale: false,
+                cameraRegion: .constant(MKCoordinateRegion(
+                    center: currentContact.coordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.02, longitudeDelta: 0.02)
+                )),
+                cameraRegionVersion: currentContact.latitude.hashValue ^ currentContact.longitude.hashValue,
+                onPointTap: nil,
+                onMapTap: nil,
+                onCameraRegionChange: nil
+            )
             .frame(height: 200)
             .clipShape(.rect(cornerRadius: 12))
             .listRowInsets(EdgeInsets())
@@ -717,7 +787,7 @@ private struct ContactLocationSection: View {
             }
             .listRowBackground(
                 UnevenRoundedRectangle(topLeadingRadius: 10, topTrailingRadius: 10)
-                    .fill(Color(uiColor: .secondarySystemGroupedBackground))
+                    .fill(Color(.secondarySystemGroupedBackground))
             )
 
             // Open in Maps
@@ -732,7 +802,7 @@ private struct ContactLocationSection: View {
     }
 
     private func openInMaps() {
-        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: contactCoordinate))
+        let mapItem = MKMapItem(placemark: MKPlacemark(coordinate: currentContact.coordinate))
         mapItem.name = currentContact.displayName
         mapItem.openInMaps()
     }
@@ -827,7 +897,7 @@ private struct ContactNetworkPathSection: View {
                             .foregroundStyle(.primary)
                     }
                 } icon: {
-                    Image(systemName: "chevron.forward.2")
+                    Image(systemName: "arrowshape.bounce.right")
                         .foregroundStyle(.secondary)
                 }
             }

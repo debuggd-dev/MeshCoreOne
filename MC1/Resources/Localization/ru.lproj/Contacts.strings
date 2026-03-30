@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "Последняя активность";
+"contacts.sort.lastHeard" = "Последнее изменение";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "Имя";
@@ -206,11 +206,14 @@
 /* Location: ContactDetailView.swift - Purpose: Telemetry button */
 "contacts.detail.telemetry" = "Телеметрия";
 
+/* Location: ContactDetailView.swift - Purpose: Saved History button for offline telemetry */
+"contacts.detail.savedHistory" = "Telemetry History";
+
 /* Location: ContactDetailView.swift - Purpose: Telemetry access sheet title */
 "contacts.detail.telemetryAccess" = "Доступ к телеметрии";
 
-/* Location: ContactDetailView.swift - Purpose: Admin access button */
-"contacts.detail.adminAccess" = "Доступ администратора";
+/* Location: ContactDetailView.swift - Purpose: Management button */
+"contacts.detail.management" = "Управление";
 
 /* Location: ContactDetailView.swift - Purpose: Send message button */
 "contacts.detail.sendMessage" = "Отправить сообщение";
@@ -229,6 +232,9 @@
 
 /* Location: ContactDetailView.swift - Purpose: Ping repeater button */
 "contacts.detail.pingRepeater" = "Пинг ретранслятора";
+
+/* Location: ContactDetailView.swift - Purpose: Generalized ping button for non-repeater nodes */
+"contacts.detail.ping" = "Zero-Hop Ping";
 
 /* Location: ContactDetailView.swift - Purpose: Ping no response message */
 "contacts.detail.pingNoResponse" = "Нет ответа";
@@ -348,7 +354,7 @@
 "contacts.detail.alert.block.title" = "Заблокировать контакт";
 
 /* Location: ContactDetailView.swift - Purpose: Block contact alert message */
-"contacts.detail.alert.block.message" = "Ты больше не будешь получать сообщения от %@. Переписки с этим пользователем будут скрыты из списка чатов, а их сообщения в каналах не будут отображаться. Разблокировка отменит эти действия и покажет все полученные сообщения.";
+"contacts.detail.alert.block.message" = "Ты больше не будешь получать сообщения от %@. Переписки будут скрыты из списка чатов, а новые сообщения в каналах будут отклонены. Разблокировка позволит получать новые сообщения, но отклонённые сообщения восстановить невозможно.";
 
 /* Location: ContactDetailView.swift - Purpose: Delete contact alert title */
 "contacts.detail.alert.delete.title" = "Удалить %@";
@@ -425,6 +431,15 @@
 
 /* Location: AddContactSheet.swift, DiscoveryView.swift - Purpose: Node list full error without max count */
 "contacts.add.error.nodeListFullSimple" = "Node list is full";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL button label */
+"contacts.add.pasteURL" = "Paste Contact URL";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL section footer */
+"contacts.add.pasteURLFooter" = "Paste a meshcore:// contact link to auto-fill the fields above";
+
+/* Location: AddContactSheet.swift - Purpose: Invalid paste URL error */
+"contacts.add.error.invalidURL" = "Clipboard does not contain a valid contact URL";
 
 // MARK: - Contact QR Share Sheet
 
@@ -853,11 +868,6 @@
 /* Location: TracePathMapView.swift - Purpose: Hops count in results banner */
 "contacts.trace.map.hops" = "%d переходов";
 
-/* Location: TracePathMapView.swift - Purpose: Empty state title */
-"contacts.trace.map.empty.title" = "Нет ретрансляторов с местоположением";
-
-/* Location: TracePathMapView.swift - Purpose: Empty state description */
-"contacts.trace.map.empty.description" = "Используй режим «Список» для построения путей с ретрансляторами без данных о местоположении.";
 
 /* Location: TracePathMapView.swift - Purpose: Clear button */
 "contacts.trace.map.clear" = "Очистить";
@@ -867,6 +877,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: Show labels accessibility */
 "contacts.trace.map.showLabels" = "Показать метки";
+
+/* Location: TracePathMapView.swift - Purpose: Center on path accessibility */
+"contacts.trace.map.centerOnPath" = "Центрировать на маршруте";
 
 /* Location: TracePathMapView.swift - Purpose: Save path alert title */
 "contacts.trace.map.saveTitle" = "Сохранить путь";
@@ -891,6 +904,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: View results button */
 "contacts.trace.map.viewResults" = "Результаты";
+
+/* Location: TracePathMapViewModel.swift - Purpose: Default path name fallback */
+"contacts.trace.map.defaultPathName" = "Путь";
 
 // MARK: - Trace Results Sheet
 
@@ -920,6 +936,10 @@
 
 /* Location: TraceResultsSheet.swift - Purpose: Comparison text */
 "contacts.results.comparison" = "по сравнению с %d мс %@";
+
+/* Location: ComparisonRowView.swift - Purpose: Accessibility labels for change direction */
+"contacts.results.comparison.increased" = "Увеличено";
+"contacts.results.comparison.decreased" = "Уменьшено";
 
 /* Location: TraceResultsSheet.swift - Purpose: View runs link */
 "contacts.results.viewRuns" = "Просмотреть %d запусков";

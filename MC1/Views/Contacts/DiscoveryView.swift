@@ -13,7 +13,7 @@ struct DiscoveryView: View {
     @State private var showClearConfirmation = false
 
     private var filteredNodes: [DiscoveredNodeDTO] {
-        let effectiveSortOrder = (sortOrder == .distance && appState.locationService.currentLocation == nil)
+        let effectiveSortOrder = (sortOrder == .distance && appState.bestAvailableLocation == nil)
             ? .lastHeard
             : sortOrder
 
@@ -21,7 +21,7 @@ struct DiscoveryView: View {
             searchText: searchText,
             segment: selectedSegment,
             sortOrder: effectiveSortOrder,
-            userLocation: appState.locationService.currentLocation
+            userLocation: appState.bestAvailableLocation
         )
     }
 
@@ -301,6 +301,26 @@ private struct DiscoveryNodeRow: View {
                 }
                 .font(.caption)
                 .foregroundStyle(.secondary)
+
+                HStack(spacing: 4) {
+                    Image(systemName: "arrowshape.bounce.right")
+                    if node.isFloodRouted {
+                        Text(L10n.Contacts.Contacts.Route.flood)
+                    } else if node.pathHopCount == 0 {
+                        Text(L10n.Contacts.Contacts.Route.direct)
+                    } else {
+                        let pathNodes = node.pathNodesHex
+                        Text("\(node.pathHopCount)")
+
+                        if !pathNodes.isEmpty {
+                            Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
+                            Text(formattedPath(pathNodes))
+                                .monospaced()
+                        }
+                    }
+                }
+                .font(.caption2)
+                .foregroundStyle(.secondary)
             }
 
             Spacer()
@@ -350,8 +370,17 @@ private struct DiscoveryNodeRow: View {
         }
     }
 
+    private func formattedPath(_ nodes: [String]) -> String {
+        if nodes.count > 6 {
+            let first = nodes.prefix(3).joined(separator: ",")
+            let last = nodes.suffix(3).joined(separator: ",")
+            return "\(first)…\(last)"
+        }
+        return nodes.joined(separator: ",")
+    }
+
     private var distanceToNode: String? {
-        guard let userLocation = appState.locationService.currentLocation,
+        guard let userLocation = appState.bestAvailableLocation,
               node.hasLocation else { return nil }
 
         let nodeLocation = CLLocation(
@@ -390,7 +419,7 @@ private struct DiscoverySortMenu: View {
         } label: {
             Label(L10n.Contacts.Contacts.List.sort, systemImage: "arrow.up.arrow.down")
         }
-        .modifier(GlassButtonModifier())
+        .liquidGlassSecondaryButtonStyle()
         .accessibilityLabel(L10n.Contacts.Contacts.Discovery.sortMenu)
         .accessibilityHint(L10n.Contacts.Contacts.Discovery.sortMenuHint)
     }
@@ -413,7 +442,7 @@ private struct DiscoveryMoreMenu: View {
         } label: {
             Label(L10n.Contacts.Contacts.Discovery.menu, systemImage: "ellipsis.circle")
         }
-        .modifier(GlassButtonModifier())
+        .liquidGlassSecondaryButtonStyle()
     }
 }
 

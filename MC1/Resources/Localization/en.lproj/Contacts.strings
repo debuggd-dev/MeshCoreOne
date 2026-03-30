@@ -77,7 +77,7 @@
 // MARK: - Sort Order
 
 /* Location: ContactsViewModel.swift - Purpose: Last heard sort option */
-"contacts.sort.lastHeard" = "Last Heard";
+"contacts.sort.lastHeard" = "Last Modified";
 
 /* Location: ContactsViewModel.swift - Purpose: Name sort option */
 "contacts.sort.name" = "Name";
@@ -206,11 +206,14 @@
 /* Location: ContactDetailView.swift - Purpose: Telemetry button */
 "contacts.detail.telemetry" = "Telemetry";
 
+/* Location: ContactDetailView.swift - Purpose: Saved History button for offline telemetry */
+"contacts.detail.savedHistory" = "Telemetry History";
+
 /* Location: ContactDetailView.swift - Purpose: Telemetry access sheet title */
 "contacts.detail.telemetryAccess" = "Telemetry Access";
 
-/* Location: ContactDetailView.swift - Purpose: Admin access button */
-"contacts.detail.adminAccess" = "Admin Access";
+/* Location: ContactDetailView.swift - Purpose: Management button */
+"contacts.detail.management" = "Management";
 
 /* Location: ContactDetailView.swift - Purpose: Send message button */
 "contacts.detail.sendMessage" = "Send Message";
@@ -229,6 +232,9 @@
 
 /* Location: ContactDetailView.swift - Purpose: Ping repeater button */
 "contacts.detail.pingRepeater" = "Ping Repeater";
+
+/* Location: ContactDetailView.swift - Purpose: Generalized ping button for non-repeater nodes */
+"contacts.detail.ping" = "Zero-Hop Ping";
 
 /* Location: ContactDetailView.swift - Purpose: Ping no response message */
 "contacts.detail.pingNoResponse" = "No response";
@@ -348,7 +354,7 @@
 "contacts.detail.alert.block.title" = "Block Contact";
 
 /* Location: ContactDetailView.swift - Purpose: Block contact alert message */
-"contacts.detail.alert.block.message" = "You won't receive messages from %@. Conversations from this user will be hidden from your Chats list, and their channel messages will not appear. Unblocking will reverse these actions and make visible any messages they have sent.";
+"contacts.detail.alert.block.message" = "You won't receive messages from %@. Their conversations will be hidden from your Chats list and new channel messages will be discarded. Unblocking will allow new messages, but discarded messages cannot be recovered.";
 
 /* Location: ContactDetailView.swift - Purpose: Delete contact alert title */
 "contacts.detail.alert.delete.title" = "Delete %@";
@@ -425,6 +431,15 @@
 
 /* Location: AddContactSheet.swift, DiscoveryView.swift - Purpose: Node list full error without max count */
 "contacts.add.error.nodeListFullSimple" = "Node list is full";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL button label */
+"contacts.add.pasteURL" = "Paste Contact URL";
+
+/* Location: AddContactSheet.swift - Purpose: Paste URL section footer */
+"contacts.add.pasteURLFooter" = "Paste a meshcore:// contact link to auto-fill the fields above";
+
+/* Location: AddContactSheet.swift - Purpose: Invalid paste URL error */
+"contacts.add.error.invalidURL" = "Clipboard does not contain a valid contact URL";
 
 // MARK: - Contact QR Share Sheet
 
@@ -866,11 +881,6 @@
 /* Location: TracePathMapView.swift - Purpose: Hops count in results banner */
 "contacts.trace.map.hops" = "%d hops";
 
-/* Location: TracePathMapView.swift - Purpose: Empty state title */
-"contacts.trace.map.empty.title" = "No Repeaters with Location";
-
-/* Location: TracePathMapView.swift - Purpose: Empty state description */
-"contacts.trace.map.empty.description" = "Use List view to build paths with repeaters that don't have location data.";
 
 /* Location: TracePathMapView.swift - Purpose: Clear button */
 "contacts.trace.map.clear" = "Clear";
@@ -880,6 +890,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: Show labels accessibility */
 "contacts.trace.map.showLabels" = "Show labels";
+
+/* Location: TracePathMapView.swift - Purpose: Center on path accessibility */
+"contacts.trace.map.centerOnPath" = "Center on path";
 
 /* Location: TracePathMapView.swift - Purpose: Save path alert title */
 "contacts.trace.map.saveTitle" = "Save Path";
@@ -904,6 +917,9 @@
 
 /* Location: TracePathMapView.swift - Purpose: View results button */
 "contacts.trace.map.viewResults" = "Results";
+
+/* Location: TracePathMapViewModel.swift - Purpose: Default path name fallback */
+"contacts.trace.map.defaultPathName" = "Path";
 
 // MARK: - Trace Results Sheet
 
@@ -933,6 +949,10 @@
 
 /* Location: TraceResultsSheet.swift - Purpose: Comparison text */
 "contacts.results.comparison" = "vs. %d ms on %@";
+
+/* Location: ComparisonRowView.swift - Purpose: Accessibility labels for change direction */
+"contacts.results.comparison.increased" = "Increased";
+"contacts.results.comparison.decreased" = "Decreased";
 
 /* Location: TraceResultsSheet.swift - Purpose: View runs link */
 "contacts.results.viewRuns" = "View %d runs";
