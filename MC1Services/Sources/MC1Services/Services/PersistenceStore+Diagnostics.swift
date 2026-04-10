@@ -222,14 +222,14 @@ extension PersistenceStore {
         withinSeconds: Double,
         contactName: String? = nil
     ) throws -> RxLogEntryDTO? {
-        let targetTimestamp = Int(senderTimestamp)
+        let targetTimestamp: Int? = Int(senderTimestamp)
 
         if let channelIndex {
             // Channel message: match on channelIndex and senderTimestamp
-            let channelIndexInt = Int(channelIndex)
+            let targetChannelIndex: Int? = Int(channelIndex)
 
             let predicate = #Predicate<RxLogEntry> { entry in
-                entry.channelIndex == channelIndexInt &&
+                entry.channelIndex == targetChannelIndex &&
                 entry.senderTimestamp == targetTimestamp
             }
 
