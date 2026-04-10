@@ -35,7 +35,7 @@ extension PersistenceStore {
             if let contactID = msg.contactID {
                 conversationIDs.insert(contactID)
             } else if let channelIndex = msg.channelIndex {
-                let indexToMatch: UInt8? = channelIndex
+                let indexToMatch = channelIndex
                 let channelPredicate = #Predicate<Channel> { ch in
                     ch.deviceID == targetDeviceID && ch.index == indexToMatch
                 }
