@@ -443,7 +443,7 @@ extension PersistenceStore {
         }
         var descriptor = FetchDescriptor(
             predicate: predicate,
-            sortBy: [SortDescriptor(\RoomMessage.timestamp, order: .forward)]
+            sortBy: [SortDescriptor(\RoomMessage.timestamp, order: .reverse)]
         )
         if let limit {
             descriptor.fetchLimit = limit
@@ -452,6 +452,6 @@ extension PersistenceStore {
             descriptor.fetchOffset = offset
         }
         let messages = try modelContext.fetch(descriptor)
-        return messages.map { RoomMessageDTO(from: $0) }
+        return messages.reversed().map { RoomMessageDTO(from: $0) }
     }
 }

@@ -40,6 +40,9 @@ public protocol PersistenceStoreProtocol: Actor {
     /// Fetch messages for a channel
     func fetchMessages(deviceID: UUID, channelIndex: UInt8, limit: Int, offset: Int) async throws -> [MessageDTO]
 
+    /// Searches messages across all conversations on the device and returns the set of matching conversation IDs.
+    func searchMessageConversations(query: String, deviceID: UUID) async throws -> Set<UUID>
+
     /// Batch fetch last messages for multiple contacts in a single actor call.
     /// Avoids N actor hops when loading message previews for the conversation list.
     func fetchLastMessages(contactIDs: [UUID], limit: Int) throws -> [UUID: [MessageDTO]]
@@ -118,6 +121,12 @@ public protocol PersistenceStoreProtocol: Actor {
 
     /// Fetch contacts with recent messages
     func fetchConversations(deviceID: UUID) async throws -> [ContactDTO]
+
+    /// Fetch total number of contacts for a device
+    func fetchContactCount(deviceID: UUID) async throws -> Int
+
+    /// Fetch the most recently heard repeater
+    func fetchLastHeardRepeater(deviceID: UUID) async throws -> ContactDTO?
 
     /// Fetch a contact by ID
     func fetchContact(id: UUID) async throws -> ContactDTO?

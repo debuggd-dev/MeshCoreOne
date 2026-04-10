@@ -24,6 +24,9 @@ struct AdvancedSettingsView: View {
             // Nodes Settings
             NodesSettingsSection()
 
+            // Smart Delete
+            SmartDeleteSection()
+
             // Auto-Remove Old Nodes
             StaleNodeCleanupSection()
 

@@ -75,6 +75,9 @@ public final class Contact {
     /// Custom OCV array as comma-separated string (e.g., "4240,4112,4029,...")
     public var customOCVArrayString: String?
 
+    /// Whether this contact is currently stored on the device
+    public var isOnDevice: Bool = true
+
     public init(
         id: UUID = UUID(),
         deviceID: UUID,
@@ -96,7 +99,8 @@ public final class Contact {
         unreadCount: Int = 0,
         unreadMentionCount: Int = 0,
         ocvPreset: String? = nil,
-        customOCVArrayString: String? = nil
+        customOCVArrayString: String? = nil,
+        isOnDevice: Bool = true
     ) {
         self.id = id
         self.deviceID = deviceID
@@ -119,6 +123,7 @@ public final class Contact {
         self.unreadMentionCount = unreadMentionCount
         self.ocvPreset = ocvPreset
         self.customOCVArrayString = customOCVArrayString
+        self.isOnDevice = isOnDevice
     }
 
     /// Applies all mutable fields from a DTO to this model instance.
@@ -141,6 +146,7 @@ public final class Contact {
         unreadMentionCount = dto.unreadMentionCount
         ocvPreset = dto.ocvPreset
         customOCVArrayString = dto.customOCVArrayString
+        isOnDevice = dto.isOnDevice
     }
 
     /// Creates a Contact from a protocol ContactFrame
@@ -260,6 +266,7 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
     public let unreadMentionCount: Int
     public let ocvPreset: String?
     public let customOCVArrayString: String?
+    public let isOnDevice: Bool
 
     public init(from contact: Contact) {
         self.id = contact.id
@@ -283,6 +290,7 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
         self.unreadMentionCount = contact.unreadMentionCount
         self.ocvPreset = contact.ocvPreset
         self.customOCVArrayString = contact.customOCVArrayString
+        self.isOnDevice = contact.isOnDevice
     }
 
     /// Memberwise initializer for creating DTOs directly
@@ -307,7 +315,8 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
         unreadCount: Int,
         unreadMentionCount: Int = 0,
         ocvPreset: String? = nil,
-        customOCVArrayString: String? = nil
+        customOCVArrayString: String? = nil,
+        isOnDevice: Bool = true
     ) {
         self.id = id
         self.deviceID = deviceID
@@ -330,6 +339,7 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
         self.unreadMentionCount = unreadMentionCount
         self.ocvPreset = ocvPreset
         self.customOCVArrayString = customOCVArrayString
+        self.isOnDevice = isOnDevice
     }
 
     public var type: ContactType {
@@ -385,7 +395,8 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
             nickname: nickname, isBlocked: isBlocked, isMuted: isMuted,
             isFavorite: isFavorite, lastMessageDate: lastMessageDate,
             unreadCount: unreadCount, unreadMentionCount: unreadMentionCount,
-            ocvPreset: ocvPreset, customOCVArrayString: customOCVArrayString
+            ocvPreset: ocvPreset, customOCVArrayString: customOCVArrayString,
+            isOnDevice: isOnDevice
         )
     }
 
@@ -399,7 +410,8 @@ public struct ContactDTO: Sendable, Equatable, Identifiable, Hashable, RepeaterR
             nickname: nickname, isBlocked: isBlocked, isMuted: isMuted,
             isFavorite: isFavorite, lastMessageDate: lastMessageDate,
             unreadCount: unreadCount, unreadMentionCount: unreadMentionCount,
-            ocvPreset: ocvPreset, customOCVArrayString: customOCVArrayString
+            ocvPreset: ocvPreset, customOCVArrayString: customOCVArrayString,
+            isOnDevice: isOnDevice
         )
     }
 

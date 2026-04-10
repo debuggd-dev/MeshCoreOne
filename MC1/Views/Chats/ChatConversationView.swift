@@ -166,8 +166,16 @@ struct ChatConversationView: View {
         .fullScreenCover(item: $imageViewerData) { data in
             FullScreenImageViewer(data: data)
         }
+        .onChange(of: isAtBottom) { _, newValue in
+            if newValue {
+                clearChatNotifications()
+            }
+        }
         .onAppear {
             eventCursor = appState.messageEventBroadcaster.currentEventSequence
+            if isAtBottom {
+                clearChatNotifications()
+            }
         }
         .task(id: appState.servicesVersion) {
             await performInitialLoad()
@@ -591,6 +599,7 @@ struct ChatConversationView: View {
         case .copy:
             UIPasteboard.general.string = message.text
         case .sendAgain:
+            scrollToBottomRequest += 1
             Task { await chatViewModel.sendAgain(message) }
         case .blockSender:
             guard case .channel(let channel) = conversationType, let name = message.senderNodeName else { return }
@@ -611,6 +620,18 @@ struct ChatConversationView: View {
                 await chatViewModel.retryMessage(message)
             case .channel:
                 await chatViewModel.retryChannelMessage(message)
+            }
+        }
+    }
+
+    private func clearChatNotifications() {
+        guard isAtBottom else { return }
+        Task {
+            switch conversationType {
+            case .dm(let contact):
+                await appState.services?.notificationService.removeDeliveredNotifications(forContactID: contact.id)
+            case .channel(let channel):
+                await appState.services?.notificationService.removeDeliveredNotifications(forChannelIndex: channel.index, deviceID: channel.deviceID)
             }
         }
     }

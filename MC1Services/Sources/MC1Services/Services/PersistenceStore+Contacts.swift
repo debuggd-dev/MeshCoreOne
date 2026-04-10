@@ -23,14 +23,36 @@ extension PersistenceStore {
     public func fetchConversations(deviceID: UUID) throws -> [ContactDTO] {
         let targetDeviceID = deviceID
         let predicate = #Predicate<Contact> { contact in
-            contact.deviceID == targetDeviceID && contact.lastMessageDate != nil
+            contact.deviceID == targetDeviceID && contact.lastModified > 0
         }
         let descriptor = FetchDescriptor(
             predicate: predicate,
-            sortBy: [SortDescriptor(\Contact.lastMessageDate, order: .reverse)]
+            sortBy: [SortDescriptor(\.lastModified, order: .reverse)]
         )
         let contacts = try modelContext.fetch(descriptor)
         return contacts.map { ContactDTO(from: $0) }
+    }
+
+    /// Fetch total number of contacts for a device
+    public func fetchContactCount(deviceID: UUID) throws -> Int {
+        let targetDeviceID = deviceID
+        let predicate = #Predicate<Contact> { $0.deviceID == targetDeviceID }
+        return try modelContext.fetchCount(FetchDescriptor(predicate: predicate))
+    }
+
+    /// Fetch the most recently heard repeater
+    public func fetchLastHeardRepeater(deviceID: UUID) throws -> ContactDTO? {
+        let targetDeviceID = deviceID
+        let repeaterType = ContactType.repeater.rawValue
+        let predicate = #Predicate<Contact> { contact in
+            contact.deviceID == targetDeviceID && contact.typeRawValue == repeaterType
+        }
+        var descriptor = FetchDescriptor(
+            predicate: predicate,
+            sortBy: [SortDescriptor(\.lastModified, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+        return try modelContext.fetch(descriptor).first.map { ContactDTO(from: $0) }
     }
 
     /// Fetch a contact by ID
@@ -135,11 +157,14 @@ extension PersistenceStore {
                 lastModified: dto.lastModified,
                 nickname: dto.nickname,
                 isBlocked: dto.isBlocked,
+                isMuted: dto.isMuted,
                 isFavorite: dto.isFavorite,
                 lastMessageDate: dto.lastMessageDate,
                 unreadCount: dto.unreadCount,
+                unreadMentionCount: dto.unreadMentionCount,
                 ocvPreset: dto.ocvPreset,
-                customOCVArrayString: dto.customOCVArrayString
+                customOCVArrayString: dto.customOCVArrayString,
+                isOnDevice: dto.isOnDevice
             )
             modelContext.insert(contact)
         }

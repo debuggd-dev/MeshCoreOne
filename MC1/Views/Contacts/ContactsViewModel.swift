@@ -228,6 +228,40 @@ final class ContactsViewModel {
         }
     }
 
+    /// Set of contact IDs whose messages match the current search text
+    var searchMatchingContactIDs: Set<UUID>?
+
+    /// Task for debounced message searching
+    @ObservationIgnored var messageSearchTask: Task<Void, Never>?
+
+    /// Updates the search text and triggers a background search of message contents
+    func updateSearchText(_ text: String, deviceID: UUID) {
+        messageSearchTask?.cancel()
+
+        guard !text.isEmpty else {
+            searchMatchingContactIDs = nil
+            return
+        }
+
+        guard let dataStore = dataStore else { return }
+
+        messageSearchTask = Task {
+            do {
+                // Short debounce to avoid thrashing the database while typing
+                try await Task.sleep(for: .milliseconds(300))
+                if Task.isCancelled { return }
+
+                let matches = try await dataStore.searchMessageConversations(query: text, deviceID: deviceID)
+                
+                if !Task.isCancelled {
+                    self.searchMatchingContactIDs = matches
+                }
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+
     // MARK: - Filtering
 
     /// Returns contacts filtered by segment and sorted
@@ -239,8 +273,14 @@ final class ContactsViewModel {
     ) -> [ContactDTO] {
         var result = contacts
 
-        // If searching, show all types (ignore segment)
-        if searchText.isEmpty {
+        // Search filtering (if active)
+        if !searchText.isEmpty {
+            result = result.filter { contact in
+                contact.displayName.localizedStandardContains(searchText) ||
+                contact.publicKey.hexString().hasPrefix(searchText.uppercased()) ||
+                (searchMatchingContactIDs?.contains(contact.id) == true)
+            }
+        } else {
             // Filter by segment
             switch segment {
             case .favorites:
@@ -249,12 +289,6 @@ final class ContactsViewModel {
                 result = result.filter { $0.type == .chat }
             case .network:
                 result = result.filter { $0.type == .repeater || $0.type == .room }
-            }
-        } else {
-            // Filter by search text only
-            result = result.filter { contact in
-                contact.displayName.localizedStandardContains(searchText)
-                    || contact.publicKey.hexString().hasPrefix(searchText.uppercased())
             }
         }
 

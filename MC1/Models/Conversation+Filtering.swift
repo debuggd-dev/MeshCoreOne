@@ -5,12 +5,14 @@ extension Array where Element == Conversation {
     /// - Parameters:
     ///   - filter: Filter category
     ///   - searchText: Search string to match against display names
+    ///   - matchingMessageConversationIDs: Optional set of conversation IDs that contain matching messages
     /// - Returns: Filtered array of conversations
-    func filtered(by filter: ChatFilter, searchText: String) -> [Conversation] {
+    func filtered(by filter: ChatFilter, searchText: String, matchingMessageConversationIDs: Set<UUID>? = nil) -> [Conversation] {
         // When searching, ignore the selected filter and search all conversations
         if !searchText.isEmpty {
             return self.filter { conversation in
-                conversation.displayName.localizedStandardContains(searchText)
+                conversation.displayName.localizedStandardContains(searchText) ||
+                (matchingMessageConversationIDs?.contains(conversation.id) == true)
             }
         }
 

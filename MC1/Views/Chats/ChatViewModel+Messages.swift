@@ -377,10 +377,11 @@ extension ChatViewModel {
             containsSelfMention: message.containsSelfMention,
             mentionSeen: message.mentionSeen,
             heardRepeats: message.heardRepeats,
+            sendCount: message.sendCount,
             retryAttempt: message.retryAttempt,
             maxRetryAttempts: message.maxRetryAttempts,
             reactionSummary: message.reactionSummary,
-            previewState: .idle,
+            previewState: previewState,
             loadedPreview: nil
         )
         displayItems.append(newItem)
@@ -425,10 +426,11 @@ extension ChatViewModel {
             containsSelfMention: item.containsSelfMention,
             mentionSeen: item.mentionSeen,
             heardRepeats: item.heardRepeats,
+            sendCount: item.sendCount,
             retryAttempt: item.retryAttempt,
             maxRetryAttempts: item.maxRetryAttempts,
             reactionSummary: item.reactionSummary,
-            previewState: previewStates[messageID] ?? .idle,
+            previewState: previewState,
             loadedPreview: loadedPreviews[messageID]
         )
     }
@@ -889,10 +891,11 @@ extension ChatViewModel {
                 containsSelfMention: message.containsSelfMention,
                 mentionSeen: message.mentionSeen,
                 heardRepeats: message.heardRepeats,
+                sendCount: message.sendCount,
                 retryAttempt: message.retryAttempt,
                 maxRetryAttempts: message.maxRetryAttempts,
                 reactionSummary: message.reactionSummary,
-                previewState: previewStates[message.id] ?? .idle,
+                previewState: previewState,
                 loadedPreview: loadedPreviews[message.id]
             )
         }
@@ -982,5 +985,8 @@ extension ChatViewModel {
                 await loadConversations(deviceID: deviceID)
             }
         } while !sendQueue.isEmpty
+    }
+}
+ndQueue.isEmpty
     }
 }

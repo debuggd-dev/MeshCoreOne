@@ -194,6 +194,8 @@ public actor RemoteNodeService {
 
     // MARK: - Initialization
 
+    private var contactService: ContactService?
+
     public init(
         session: MeshCoreSession,
         dataStore: PersistenceStore,
@@ -202,6 +204,11 @@ public actor RemoteNodeService {
         self.session = session
         self.dataStore = dataStore
         self.keychainService = keychainService
+    }
+
+    /// Wire ContactService dependency
+    public func setContactService(_ service: ContactService) {
+        self.contactService = service
     }
 
     deinit {
@@ -399,6 +406,10 @@ public actor RemoteNodeService {
 
         guard contact.publicKey.count == ProtocolLimits.publicKeySize else {
             throw RemoteNodeError.loginFailed("Invalid public key length: expected \(ProtocolLimits.publicKeySize) bytes, got \(contact.publicKey.count)")
+        }
+
+        if !contact.isOnDevice {
+            try? await contactService?.reactivateGhostNode(deviceID: deviceID, publicKey: contact.publicKey)
         }
 
         let pubKeyHex = contact.publicKey.prefix(6).map { String(format: "%02x", $0) }.joined()

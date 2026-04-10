@@ -66,16 +66,41 @@ struct MeshStatusLiveActivity: Widget {
                     .foregroundStyle(context.state.isConnected ? .green : .orange)
             } compactTrailing: {
                 if context.state.isConnected {
-                    let rate = context.isStale ? 0 : context.state.packetsPerMinute
-                    Text("↓\(rate)/m")
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
+                    if let value = context.state.primaryStatValue {
+                        Text(value)
+                            .monospacedDigit()
+                    } else {
+                        let rate = context.isStale ? 0 : context.state.packetsPerMinute
+                        Text("↓\(rate)/m")
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                    }
                 } else {
                     Text("—")
                 }
             } minimal: {
                 if context.state.isConnected {
-                    let rate = context.isStale ? 0 : context.state.packetsPerMinute
+                    if let value = context.state.primaryStatValue {
+                        Text(value)
+                            .font(.caption2)
+                            .monospacedDigit()
+                    } else {
+                        let rate = context.isStale ? 0 : context.state.packetsPerMinute
+                        Text("\(rate)")
+                            .font(.caption2)
+                            .monospacedDigit()
+                            .contentTransition(.numericText())
+                    }
+                } else {
+                    Image(systemName: context.state.antennaIconName)
+                        .foregroundStyle(.orange)
+                }
+            }
+            .widgetURL(URL(string: "pocketmesh://status"))
+        }
+    }
+}
+? 0 : context.state.packetsPerMinute
                     Text("\(rate)")
                         .font(.caption2)
                         .monospacedDigit()

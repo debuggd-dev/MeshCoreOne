@@ -7,9 +7,13 @@ struct MeshStatusAttributes: ActivityAttributes, Sendable {
     struct ContentState: Codable, Hashable, Sendable {
         var isConnected: Bool
         var batteryPercent: Int?
-        var packetsPerMinute: Int
+        var packetsPerMinute: Int // Legacy field for backwards compatibility
         var unreadCount: Int
         var disconnectedDate: Date?
+        
+        var primaryStatValue: String?
+        var primaryStatLabel: String?
+        var primaryStatIcon: String?
 
         var antennaIconName: String {
             isConnected

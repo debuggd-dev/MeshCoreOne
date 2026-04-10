@@ -78,5 +78,8 @@ struct ChatsListModifiers: ViewModifier {
                     await onLoadConversations()
                 }
             }
+            .onChange(of: searchText) { _, newValue in
+                viewModel.updateSearchText(newValue)
+            }
     }
 }

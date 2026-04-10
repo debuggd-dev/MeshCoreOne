@@ -33,11 +33,11 @@ struct ChatsView: View {
     }
 
     private var filteredFavorites: [Conversation] {
-        viewModel.favoriteConversations.filtered(by: selectedFilter, searchText: searchText)
+        viewModel.favoriteConversations.filtered(by: selectedFilter, searchText: searchText, matchingMessageConversationIDs: viewModel.searchMatchingConversationIDs)
     }
 
     private var filteredOthers: [Conversation] {
-        viewModel.nonFavoriteConversations.filtered(by: selectedFilter, searchText: searchText)
+        viewModel.nonFavoriteConversations.filtered(by: selectedFilter, searchText: searchText, matchingMessageConversationIDs: viewModel.searchMatchingConversationIDs)
     }
 
     private var emptyStateMessage: (title: String, description: String, systemImage: String) {

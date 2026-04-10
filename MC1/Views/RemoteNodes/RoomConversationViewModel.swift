@@ -48,18 +48,32 @@ final class RoomConversationViewModel {
         self.notificationService = appState.services?.notificationService
     }
 
+    /// Number of messages to fetch per page
+    let pageSize = 200
+
+    /// Whether more messages exist beyond what's loaded
+    var hasMoreMessages = true
+
+    /// Current pagination offset
+    private var currentOffset = 0
+
     // MARK: - Messages
 
-    /// Load messages for the current session
+    /// Load initial messages for the current session
     func loadMessages(for session: RemoteNodeSessionDTO) async {
         guard let roomServerService else { return }
 
         self.session = session
         isLoading = true
         errorMessage = nil
+        currentOffset = 0
+        hasMoreMessages = true
 
         do {
-            messages = try await roomServerService.fetchMessages(sessionID: session.id)
+            let fetchedMessages = try await roomServerService.fetchMessages(sessionID: session.id, limit: pageSize, offset: 0)
+            messages = fetchedMessages
+            currentOffset = fetchedMessages.count
+            hasMoreMessages = fetchedMessages.count == pageSize
 
             // Clear unread count and update badge
             try await roomServerService.markAsRead(sessionID: session.id)
@@ -71,6 +85,26 @@ final class RoomConversationViewModel {
 
         hasLoadedOnce = true
         isLoading = false
+    }
+
+    /// Load older messages (pagination)
+    func loadOlderMessages() async {
+        guard let roomServerService, let session = session, hasMoreMessages, !isLoading else { return }
+        
+        do {
+            let olderMessages = try await roomServerService.fetchMessages(sessionID: session.id, limit: pageSize, offset: currentOffset)
+            
+            // Filter duplicates
+            let existingIDs = Set(messages.map(\.id))
+            let uniqueOlder = olderMessages.filter { !existingIDs.contains($0.id) }
+            
+            // Prepend to messages
+            messages.insert(contentsOf: uniqueOlder, at: 0)
+            currentOffset += olderMessages.count
+            hasMoreMessages = olderMessages.count == pageSize
+        } catch {
+            errorMessage = error.localizedDescription
+        }
     }
 
     /// Optimistically append a message if not already present.

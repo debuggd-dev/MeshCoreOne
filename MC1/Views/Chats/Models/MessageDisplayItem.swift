@@ -28,6 +28,7 @@ struct MessageDisplayItem: Identifiable, Hashable, Sendable {
     let containsSelfMention: Bool
     let mentionSeen: Bool
     let heardRepeats: Int
+    let sendCount: Int
     let retryAttempt: Int
     let maxRetryAttempts: Int
     let reactionSummary: String?

@@ -79,6 +79,23 @@ private struct SettingsListContent: View {
                     TintedLabel(L10n.Settings.LiveActivity.title, systemImage: "platter.filled.bottom.and.arrow.down.iphone")
                 }
 
+                if appState.liveActivityManager.isEnabled {
+                    Picker(selection: Binding(
+                        get: { appState.liveActivityManager.statPreference },
+                        set: { newValue in
+                            appState.liveActivityManager.statPreference = newValue
+                            appState.refreshLiveActivityStat()
+                        }
+                    )) {
+                        ForEach(LiveActivityStatPreference.allCases) { pref in
+                            Text(pref.rawValue).tag(pref)
+                        }
+                    } label: {
+                        Text("Display Stat")
+                    }
+                    .pickerStyle(.menu)
+                }
+
                 Button {
                     if let url = URL(string: UIApplication.openSettingsURLString) {
                         openURL(url)
@@ -99,6 +116,8 @@ private struct SettingsListContent: View {
             } header: {
                 Text(L10n.Settings.AppSettings.header)
             }
+
+            ThemeSettingsSection()
 
             AboutSection()
 

@@ -149,16 +149,42 @@ public actor ContactService {
             // On full sync, remove local contacts that no longer exist on device
             if since == nil {
                 let localContacts = try await dataStore.fetchContacts(deviceID: deviceID)
-                let orphans = localContacts.filter { !devicePublicKeys.contains($0.publicKey) }
+                // Only prune contacts that were previously marked as isOnDevice=true, but missing from full sync.
+                // Leave the already offloaded (isOnDevice=false) contacts alone.
+                let orphans = localContacts.filter { $0.isOnDevice && !devicePublicKeys.contains($0.publicKey) }
                 if !orphans.isEmpty {
                     logger.notice("Full sync prune: \(orphans.count) local contact(s) not found on device (device has \(devicePublicKeys.count), local has \(localContacts.count))")
                 }
                 for localContact in orphans {
                     let keyPrefix = localContact.publicKey.prefix(4).map { String(format: "%02x", $0) }.joined()
-                    logger.notice("Full sync prune: deleting '\(localContact.name)' [\(keyPrefix)…] (favorite=\(localContact.isFavorite), type=\(localContact.typeRawValue), lastModified=\(localContact.lastModified))")
-                    try await dataStore.deleteMessagesForContact(contactID: localContact.id)
-                    try await dataStore.deleteContact(id: localContact.id)
-                    await cleanupHandler?(localContact.id, .deleted, localContact.publicKey)
+                    logger.notice("Full sync prune: offloading '\(localContact.name)' [\(keyPrefix)…] (favorite=\(localContact.isFavorite), type=\(localContact.typeRawValue), lastModified=\(localContact.lastModified))")
+                    
+                    // We offload instead of delete so ghost nodes stay on the map
+                    let contactDTO = ContactDTO(
+                        id: localContact.id,
+                        deviceID: localContact.deviceID,
+                        publicKey: localContact.publicKey,
+                        name: localContact.name,
+                        typeRawValue: localContact.typeRawValue,
+                        flags: localContact.flags,
+                        outPathLength: localContact.outPathLength,
+                        outPath: localContact.outPath,
+                        lastAdvertTimestamp: localContact.lastAdvertTimestamp,
+                        latitude: localContact.latitude,
+                        longitude: localContact.longitude,
+                        lastModified: localContact.lastModified,
+                        nickname: localContact.nickname,
+                        isBlocked: localContact.isBlocked,
+                        isMuted: localContact.isMuted,
+                        isFavorite: localContact.isFavorite,
+                        lastMessageDate: localContact.lastMessageDate,
+                        unreadCount: localContact.unreadCount,
+                        unreadMentionCount: localContact.unreadMentionCount,
+                        ocvPreset: localContact.ocvPreset,
+                        customOCVArrayString: localContact.customOCVArrayString,
+                        isOnDevice: false
+                    )
+                    try await dataStore.saveContact(contactDTO)
                 }
             }
 
@@ -205,6 +231,131 @@ public actor ContactService {
             }
             throw ContactServiceError.sessionError(error)
         }
+    }
+
+    // MARK: - Offload Contact
+
+    /// Remove a contact from the device but keep it in the local database as a ghost node.
+    /// - Parameters:
+    ///   - deviceID: The device ID
+    ///   - publicKey: The contact's 32-byte public key
+    public func offloadContact(deviceID: UUID, publicKey: Data) async throws {
+        do {
+            try await session.removeContact(publicKey: publicKey)
+
+            // Update in local database to indicate it's no longer on the device
+            if var contactDTO = try await dataStore.fetchContact(deviceID: deviceID, publicKey: publicKey) {
+                let contactID = contactDTO.id
+
+                // We don't delete messages or the contact itself. Just update the flag.
+                // Re-instantiate the DTO with isOnDevice = false
+                contactDTO = ContactDTO(
+                    id: contactDTO.id,
+                    deviceID: contactDTO.deviceID,
+                    publicKey: contactDTO.publicKey,
+                    name: contactDTO.name,
+                    typeRawValue: contactDTO.typeRawValue,
+                    flags: contactDTO.flags,
+                    outPathLength: contactDTO.outPathLength,
+                    outPath: contactDTO.outPath,
+                    lastAdvertTimestamp: contactDTO.lastAdvertTimestamp,
+                    latitude: contactDTO.latitude,
+                    longitude: contactDTO.longitude,
+                    lastModified: contactDTO.lastModified,
+                    nickname: contactDTO.nickname,
+                    isBlocked: contactDTO.isBlocked,
+                    isMuted: contactDTO.isMuted,
+                    isFavorite: contactDTO.isFavorite,
+                    lastMessageDate: contactDTO.lastMessageDate,
+                    unreadCount: contactDTO.unreadCount,
+                    unreadMentionCount: contactDTO.unreadMentionCount,
+                    ocvPreset: contactDTO.ocvPreset,
+                    customOCVArrayString: contactDTO.customOCVArrayString,
+                    isOnDevice: false
+                )
+                try await dataStore.saveContact(contactDTO)
+            }
+
+            // Notify that a node was deleted (for clearing storage full flag)
+            await nodeDeletedHandler?()
+
+            // Notify UI to refresh contacts list
+            await syncCoordinator?.notifyContactsChanged()
+        } catch let error as MeshCoreError {
+            if case .deviceError(let code) = error, code == ProtocolError.notFound.rawValue {
+                throw ContactServiceError.contactNotFound
+            }
+            throw ContactServiceError.sessionError(error)
+        }
+    }
+
+    // MARK: - Ghost Node Reactivation
+
+    /// Reactivates a ghost node by ensuring there is space on the device and then re-adding it.
+    public func reactivateGhostNode(deviceID: UUID, publicKey: Data) async throws {
+        guard var contact = try await dataStore.fetchContact(deviceID: deviceID, publicKey: publicKey) else {
+            throw ContactServiceError.contactNotFound
+        }
+
+        if contact.isOnDevice { return }
+
+        // Ensure space by triggering Smart Delete logic
+        let smartDeleteEnabled = UserDefaults.standard.bool(forKey: "smartDeleteEnabled")
+        
+        if let device = try? await dataStore.fetchDevice(id: deviceID) {
+            let maxContacts = Int(device.maxContacts)
+            let contacts = try await dataStore.fetchContacts(deviceID: deviceID)
+            let onDeviceContacts = contacts.filter { $0.isOnDevice }
+
+            if onDeviceContacts.count >= maxContacts {
+                if smartDeleteEnabled {
+                    var targetToRemove = onDeviceContacts
+                        .filter { !$0.isFavorite && $0.typeRawValue == ContactType.repeater.rawValue && $0.publicKey != publicKey }
+                        .min(by: { $0.lastModified < $1.lastModified })
+                    
+                    if targetToRemove == nil {
+                        targetToRemove = onDeviceContacts
+                            .filter { !$0.isFavorite && $0.typeRawValue == ContactType.chat.rawValue && $0.publicKey != publicKey }
+                            .min(by: { $0.lastModified < $1.lastModified })
+                    }
+                    
+                    if let target = targetToRemove {
+                        logger.info("Smart Delete: Offloading '\(target.name)' to reactivate ghost node '\(contact.name)'")
+                        try? await offloadContact(deviceID: deviceID, publicKey: target.publicKey)
+                    }
+                }
+            }
+        }
+
+        // Now add the contact back
+        let frame = contact.toContactFrame()
+        do {
+            let meshContact = frame.toMeshContact()
+            try await session.addContact(meshContact)
+        } catch let error as MeshCoreError {
+            if case .deviceError(let code) = error, code == ProtocolError.tableFull.rawValue {
+                throw ContactServiceError.contactTableFull
+            }
+            throw ContactServiceError.sessionError(error)
+        }
+
+        // Mark it as on device
+        contact = ContactDTO(
+            id: contact.id, deviceID: contact.deviceID, publicKey: contact.publicKey,
+            name: contact.name, typeRawValue: contact.typeRawValue, flags: contact.flags,
+            outPathLength: contact.outPathLength, outPath: contact.outPath,
+            lastAdvertTimestamp: contact.lastAdvertTimestamp, latitude: contact.latitude,
+            longitude: contact.longitude, lastModified: contact.lastModified,
+            nickname: contact.nickname, isBlocked: contact.isBlocked, isMuted: contact.isMuted,
+            isFavorite: contact.isFavorite, lastMessageDate: contact.lastMessageDate,
+            unreadCount: contact.unreadCount, unreadMentionCount: contact.unreadMentionCount,
+            ocvPreset: contact.ocvPreset, customOCVArrayString: contact.customOCVArrayString,
+            isOnDevice: true
+        )
+        try await dataStore.saveContact(contact)
+        
+        // Notify UI
+        await syncCoordinator?.notifyContactsChanged()
     }
 
     // MARK: - Remove Contact

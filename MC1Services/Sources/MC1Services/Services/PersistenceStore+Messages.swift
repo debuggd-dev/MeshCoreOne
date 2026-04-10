@@ -19,6 +19,43 @@ extension PersistenceStore {
         try modelContext.save()
     }
 
+    // MARK: - Search
+
+    /// Searches messages across all conversations on the device and returns the set of matching conversation IDs.
+    public func searchMessageConversations(query: String, deviceID: UUID) throws -> Set<UUID> {
+        let targetDeviceID = deviceID
+        let predicate = #Predicate<Message> { message in
+            message.deviceID == targetDeviceID && message.text.localizedStandardContains(query)
+        }
+        let descriptor = FetchDescriptor(predicate: predicate)
+        let messages = try modelContext.fetch(descriptor)
+        var conversationIDs = Set<UUID>()
+        
+        for msg in messages {
+            if let contactID = msg.contactID {
+                conversationIDs.insert(contactID)
+            } else if let channelIndex = msg.channelIndex {
+                let indexToMatch: UInt8? = channelIndex
+                let channelPredicate = #Predicate<Channel> { ch in
+                    ch.deviceID == targetDeviceID && ch.index == indexToMatch
+                }
+                if let channel = try modelContext.fetch(FetchDescriptor(predicate: channelPredicate)).first {
+                    conversationIDs.insert(channel.id)
+                }
+            }
+        }
+        
+        let roomPredicate = #Predicate<RoomMessage> { message in
+            message.text.localizedStandardContains(query)
+        }
+        let roomMessages = try modelContext.fetch(FetchDescriptor(predicate: roomPredicate))
+        for msg in roomMessages {
+            conversationIDs.insert(msg.sessionID)
+        }
+        
+        return conversationIDs
+    }
+
     // MARK: - Message Operations
 
     /// Batch fetch last messages for multiple contacts in a single actor-isolated call.

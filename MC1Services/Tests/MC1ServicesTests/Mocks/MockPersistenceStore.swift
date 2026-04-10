@@ -112,6 +112,15 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
         return Array(filtered.dropFirst(offset).prefix(limit))
     }
 
+    public func searchMessageConversations(query: String, deviceID: UUID) async throws -> Set<UUID> {
+        let matchedMessages = messages.values.filter { $0.deviceID == deviceID && $0.text.localizedCaseInsensitiveContains(query) }
+        var ids = Set<UUID>()
+        for msg in matchedMessages {
+            if let cid = msg.contactID { ids.insert(cid) }
+        }
+        return ids
+    }
+
     public func findChannelMessageForReaction(
         deviceID: UUID,
         channelIndex: UInt8,
@@ -440,7 +449,18 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
         }
         return contacts.values
             .filter { $0.deviceID == deviceID && $0.lastMessageDate != nil }
-            .sorted { ($0.lastMessageDate ?? .distantPast) > ($1.lastMessageDate ?? .distantPast) }
+            .sorted { $0.lastMessageDate ?? Date.distantPast > $1.lastMessageDate ?? Date.distantPast }
+    }
+
+    public func fetchContactCount(deviceID: UUID) async throws -> Int {
+        contacts.values.filter { $0.deviceID == deviceID }.count
+    }
+
+    public func fetchLastHeardRepeater(deviceID: UUID) async throws -> ContactDTO? {
+        contacts.values
+            .filter { $0.deviceID == deviceID && $0.type == .repeater }
+            .sorted { $0.lastModified > $1.lastModified }
+            .first
     }
 
     public func fetchContact(id: UUID) async throws -> ContactDTO? {
@@ -1226,7 +1246,7 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
 
     public func fetchRoomMessages(sessionID: UUID, limit: Int?, offset: Int?) async throws -> [RoomMessageDTO] {
         let filtered = roomMessages.values.filter { $0.sessionID == sessionID }
-            .sorted { $0.timestamp < $1.timestamp }
+            .sorted { $0.timestamp > $1.timestamp }
         var result = Array(filtered)
         if let offset {
             result = Array(result.dropFirst(offset))
@@ -1234,7 +1254,7 @@ public actor MockPersistenceStore: PersistenceStoreProtocol {
         if let limit {
             result = Array(result.prefix(limit))
         }
-        return result
+        return result.reversed()
     }
 
     public func isDuplicateRoomMessage(sessionID: UUID, deduplicationKey: String) async throws -> Bool {

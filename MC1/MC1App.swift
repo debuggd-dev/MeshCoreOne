@@ -11,6 +11,7 @@ struct MC1App: App {
     @State private var appState: AppState
     @State private var awaitingDataProtection = false
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("appThemeColor") private var appTheme: AppTheme = .system
 
     #if DEBUG
     /// Whether running in screenshot mode for App Store screenshots
@@ -58,6 +59,7 @@ struct MC1App: App {
         WindowGroup {
             ContentView()
                 .environment(\.appState, appState)
+                .tint(appTheme.color)
                 .task {
                     if awaitingDataProtection {
                         await waitForProtectedData()

@@ -137,6 +137,10 @@ extension MessageService {
     ) async throws -> MessageDTO {
         try validateDirectMessage(text: text, to: contact)
 
+        if !contact.isOnDevice {
+            try await contactService?.reactivateGhostNode(deviceID: contact.deviceID, publicKey: contact.publicKey)
+        }
+
         let messageID = UUID()
         let timestamp = UInt32(Date().timeIntervalSince1970)
 

@@ -146,10 +146,13 @@ struct RoomConversationView: View {
             unreadCount: $unreadCount,
             scrollToBottomRequest: $scrollToBottomRequest,
             session: session,
-            onRetry: { id in
-                Task { await viewModel.retryMessage(id: id) }
-            }
+            viewModel: viewModel,
+            onRetry: { retryMessage(id: $0) }
         )
+    }
+
+    private func retryMessage(id: UUID) {
+        Task { await viewModel.retryMessage(id: id) }
     }
 
     private func makeInputBar() -> some View {
@@ -197,6 +200,7 @@ private struct MessagesView: View {
     @Binding var unreadCount: Int
     @Binding var scrollToBottomRequest: Int
     let session: RemoteNodeSessionDTO
+    let viewModel: RoomConversationViewModel
     let onRetry: (UUID) -> Void
 
     var body: some View {
@@ -217,7 +221,11 @@ private struct MessagesView: View {
                     scrollToBottomRequest: $scrollToBottomRequest,
                     scrollToMentionRequest: .constant(0),
                     scrollToDividerRequest: .constant(0),
-                    isDividerVisible: .constant(false)
+                    isDividerVisible: .constant(false),
+                    onNearTop: {
+                        Task { await viewModel.loadOlderMessages() }
+                    },
+                    isLoadingOlderMessages: viewModel.isLoadingOlder
                 )
                 .overlay(alignment: .bottomTrailing) {
                     ScrollToBottomButton(

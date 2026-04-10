@@ -143,6 +143,40 @@ final class ChatViewModel {
     /// Whether to show retry error alert
     var showRetryError = false
 
+    /// Set of conversation IDs whose messages match the current search text
+    var searchMatchingConversationIDs: Set<UUID>?
+
+    /// Task for debounced message searching
+    @ObservationIgnored var messageSearchTask: Task<Void, Never>?
+
+    /// Updates the search text and triggers a background search of message contents
+    func updateSearchText(_ text: String) {
+        messageSearchTask?.cancel()
+
+        guard !text.isEmpty else {
+            searchMatchingConversationIDs = nil
+            return
+        }
+
+        guard let dataStore = appState?.services?.dataStore, let deviceID = appState?.currentDeviceID else { return }
+
+        messageSearchTask = Task {
+            do {
+                // Short debounce to avoid thrashing the database while typing
+                try await Task.sleep(for: .milliseconds(300))
+                if Task.isCancelled { return }
+
+                let matches = try await dataStore.searchMessageConversations(query: text, deviceID: deviceID)
+                
+                if !Task.isCancelled {
+                    self.searchMatchingConversationIDs = matches
+                }
+            } catch {
+                logger.error("Failed to search messages: \(error.localizedDescription)")
+            }
+        }
+    }
+
     /// Message text being composed
     var composingText = ""
 
@@ -232,7 +266,7 @@ final class ChatViewModel {
     var hasMoreMessages = true
 
     /// Number of messages to fetch per page
-    let pageSize = 50
+    let pageSize = 200
 
     /// Total messages fetched from database (unfiltered, for accurate offset calculation)
     var totalFetchedCount = 0

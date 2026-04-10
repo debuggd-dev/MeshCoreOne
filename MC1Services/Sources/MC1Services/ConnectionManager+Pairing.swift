@@ -224,10 +224,25 @@ extension ConnectionManager {
     /// - Throws: `ConnectionError.notConnected` if no device is connected
     public func removeStaleNodes(olderThanDays days: Int) async throws -> RemoveUnfavoritedResult {
         let cutoff = UInt32(Date().addingTimeInterval(-Double(days) * 86400).timeIntervalSince1970)
-        return try await removeContacts(matching: { !$0.isFavorite && $0.lastModified < cutoff }) { contact in
+        let ghostClientCutoff = UInt32(Date().addingTimeInterval(-120 * 86400).timeIntervalSince1970)
+
+        return try await removeContacts(matching: { contact in
+            guard !contact.isFavorite else { return false }
+            
+            if contact.isOnDevice {
+                return contact.lastModified < cutoff
+            } else {
+                // Ghost node logic
+                if contact.type == .chat {
+                    return contact.lastModified < ghostClientCutoff
+                } else {
+                    return false // Keep ghost repeaters forever
+                }
+            }
+        }) { contact in
             let ageDays = (Int(Date().timeIntervalSince1970) - Int(contact.lastModified)) / 86400
             let keyPrefix = contact.publicKeyHex.prefix(8)
-            self.logger.info("Auto-removed stale node '\(contact.name)' [\(keyPrefix)] (last heard \(ageDays)d ago)")
+            self.logger.info("Auto-removed stale node '\(contact.name)' [\(keyPrefix)] (last heard \(ageDays)d ago, isOnDevice=\(contact.isOnDevice))")
         }
     }
 

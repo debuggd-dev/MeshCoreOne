@@ -34,6 +34,7 @@ public actor AdvertisementService {
 
     private let session: MeshCoreSession
     private let dataStore: PersistenceStore
+    private var contactService: ContactService?
 
     /// Task monitoring for events
     private var eventMonitorTask: Task<Void, Never>?
@@ -86,6 +87,11 @@ public actor AdvertisementService {
     public init(session: MeshCoreSession, dataStore: PersistenceStore) {
         self.session = session
         self.dataStore = dataStore
+    }
+
+    /// Wire ContactService dependency
+    public func setContactService(_ service: ContactService) {
+        self.contactService = service
     }
 
     deinit {
@@ -176,9 +182,11 @@ public actor AdvertisementService {
     private func handleEvent(_ event: MeshEvent, deviceID: UUID) async {
         switch event {
         case .advertisement(let publicKey):
+            await enforceSmartDelete(deviceID: deviceID)
             await handleAdvertEvent(publicKey: publicKey, deviceID: deviceID)
 
         case .newContact(let contact):
+            await enforceSmartDelete(deviceID: deviceID)
             await handleNewAdvertEvent(contact: contact, deviceID: deviceID)
 
         case .pathUpdate(let publicKey):
@@ -261,6 +269,43 @@ public actor AdvertisementService {
     }
 
     // MARK: - Private Event Handlers
+
+    /// Proactively manage device storage by deleting stale repeaters or clients
+    /// before the firmware's 'overwrite oldest' kicks in and blindly deletes nodes.
+    private func enforceSmartDelete(deviceID: UUID) async {
+        let smartDeleteEnabled = UserDefaults.standard.bool(forKey: "smartDeleteEnabled")
+        guard smartDeleteEnabled else { return }
+
+        guard let device = try? await dataStore.fetchDevice(id: deviceID) else { return }
+        let maxContacts = Int(device.maxContacts)
+
+        guard let contacts = try? await dataStore.fetchContacts(deviceID: deviceID) else { return }
+        let onDeviceContacts = contacts.filter { $0.isOnDevice }
+
+        // Start offloading when we are 1 node away from full
+        if onDeviceContacts.count >= (maxContacts - 1) {
+            // Prefer oldest non-favorite repeater
+            var targetToRemove = onDeviceContacts
+                .filter { !$0.isFavorite && $0.type == .repeater }
+                .min(by: { $0.lastModified < $1.lastModified })
+
+            // Fallback to oldest non-favorite client
+            if targetToRemove == nil {
+                targetToRemove = onDeviceContacts
+                    .filter { !$0.isFavorite && $0.type == .chat }
+                    .min(by: { $0.lastModified < $1.lastModified })
+            }
+
+            if let target = targetToRemove {
+                logger.info("Smart Delete: Offloading oldest non-favorite node '\(target.name)' (type=\(target.type)) to make space for new advert")
+                do {
+                    try await contactService?.offloadContact(deviceID: deviceID, publicKey: target.publicKey)
+                } catch {
+                    logger.error("Smart Delete failed to offload contact: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
 
     /// Handle advertisement event - Existing contact updated
     private func handleAdvertEvent(publicKey: Data, deviceID: UUID) async {

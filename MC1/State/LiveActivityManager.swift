@@ -10,6 +10,8 @@ public final class LiveActivityManager {
 
     static let enabledKey = "liveActivityEnabled"
 
+    static let statPreferenceKey = "liveActivityStatPreference"
+
     private let logger = Logger(subsystem: "com.mc1", category: "LiveActivityManager")
 
     private var currentActivity: Activity<MeshStatusAttributes>?
@@ -22,6 +24,10 @@ public final class LiveActivityManager {
     private var recentPacketTimestamps: [Date] = []
     private var pendingUpdate: PendingUpdate?
     private var lastFlushDate: Date = .distantPast
+    
+    private(set) var primaryStatValue: String?
+    private(set) var primaryStatLabel: String?
+    private(set) var primaryStatIcon: String?
 
     static let decayInterval: TimeInterval = 15
     static let packetWindowSeconds: TimeInterval = 15
@@ -40,6 +46,22 @@ public final class LiveActivityManager {
     var isEnabled: Bool {
         didSet { UserDefaults.standard.set(isEnabled, forKey: Self.enabledKey) }
     }
+    
+    var statPreference: LiveActivityStatPreference {
+        get {
+            if let raw = UserDefaults.standard.string(forKey: Self.statPreferenceKey),
+               let pref = LiveActivityStatPreference(rawValue: raw) {
+                return pref
+            }
+            return .packetsPerMinute
+        }
+        set {
+            UserDefaults.standard.set(newValue.rawValue, forKey: Self.statPreferenceKey)
+            if newValue == .packetsPerMinute {
+                handleStatChanged(value: nil, label: nil, icon: nil)
+            }
+        }
+    }
 
     init() {
         isEnabled = UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
@@ -53,9 +75,23 @@ public final class LiveActivityManager {
         var packetsPerMinute: Int?
         var unreadCount: Int?
         var disconnectedDate: Date??
+        var primaryStatValue: String??
+        var primaryStatLabel: String??
+        var primaryStatIcon: String??
     }
 
     // MARK: - Lifecycle
+
+    func handleStatChanged(value: String?, label: String?, icon: String?) {
+        self.primaryStatValue = value
+        self.primaryStatLabel = label
+        self.primaryStatIcon = icon
+        
+        Task {
+            await scheduleUpdate(primaryStatValue: .some(value), primaryStatLabel: .some(label), primaryStatIcon: .some(icon))
+            await flushPendingUpdate()
+        }
+    }
 
     func startObservingEnablement() {
         enablementTask?.cancel()
@@ -330,7 +366,10 @@ public final class LiveActivityManager {
         battery: Int?? = nil,
         packetsPerMinute: Int? = nil,
         unreadCount: Int? = nil,
-        disconnectedDate: Date?? = nil
+        disconnectedDate: Date?? = nil,
+        primaryStatValue: String?? = nil,
+        primaryStatLabel: String?? = nil,
+        primaryStatIcon: String?? = nil
     ) async {
         guard currentActivity != nil else { return }
 
@@ -341,6 +380,9 @@ public final class LiveActivityManager {
         if let packetsPerMinute { pending.packetsPerMinute = packetsPerMinute }
         if let unreadCount { pending.unreadCount = unreadCount }
         if let disconnectedDate { pending.disconnectedDate = disconnectedDate }
+        if let primaryStatValue { pending.primaryStatValue = primaryStatValue }
+        if let primaryStatLabel { pending.primaryStatLabel = primaryStatLabel }
+        if let primaryStatIcon { pending.primaryStatIcon = primaryStatIcon }
         pendingUpdate = pending
 
         // Leading edge: flush immediately if enough time has passed
@@ -370,7 +412,10 @@ public final class LiveActivityManager {
             battery: pending.battery,
             packetsPerMinute: pending.packetsPerMinute,
             unreadCount: pending.unreadCount,
-            disconnectedDate: pending.disconnectedDate
+            disconnectedDate: pending.disconnectedDate,
+            primaryStatValue: pending.primaryStatValue,
+            primaryStatLabel: pending.primaryStatLabel,
+            primaryStatIcon: pending.primaryStatIcon
         )
     }
 
@@ -386,7 +431,10 @@ public final class LiveActivityManager {
         battery: Int?? = nil,
         packetsPerMinute: Int? = nil,
         unreadCount: Int? = nil,
-        disconnectedDate: Date?? = nil
+        disconnectedDate: Date?? = nil,
+        primaryStatValue: String?? = nil,
+        primaryStatLabel: String?? = nil,
+        primaryStatIcon: String?? = nil
     ) async {
         guard let current = currentActivity?.content.state else { return }
         let state = MeshStatusAttributes.ContentState(
@@ -394,7 +442,10 @@ public final class LiveActivityManager {
             batteryPercent: battery ?? current.batteryPercent,
             packetsPerMinute: packetsPerMinute ?? current.packetsPerMinute,
             unreadCount: unreadCount ?? current.unreadCount,
-            disconnectedDate: disconnectedDate ?? current.disconnectedDate
+            disconnectedDate: disconnectedDate ?? current.disconnectedDate,
+            primaryStatValue: primaryStatValue ?? current.primaryStatValue,
+            primaryStatLabel: primaryStatLabel ?? current.primaryStatLabel,
+            primaryStatIcon: primaryStatIcon ?? current.primaryStatIcon
         )
         let staleDate: Date? = if state.isConnected && state.packetsPerMinute > 0 {
             Date.now.addingTimeInterval(Self.connectedStaleInterval)

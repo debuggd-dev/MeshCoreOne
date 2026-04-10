@@ -86,6 +86,11 @@ struct ContactsListView: View {
                     }
             }
         }
+        .onChange(of: searchText) { _, newValue in
+            if let deviceID = appState.currentDeviceID {
+                viewModel.updateSearchText(newValue, deviceID: deviceID)
+            }
+        }
     }
 
     private var sidebarContent: some View {

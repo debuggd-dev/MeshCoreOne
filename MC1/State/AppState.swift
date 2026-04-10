@@ -399,6 +399,7 @@ public final class AppState {
             Task { @MainActor [weak self] in
                 guard let self else { return }
                 await self.liveActivityManager.handlePacketReceived()
+                self.refreshLiveActivityStat()
                 if self.liveActivityManager.hasActiveActivity {
                     await self.batteryMonitor.fetchBatteryIfOverdue(
                         services: self.services, device: self.connectedDevice
@@ -423,6 +424,7 @@ public final class AppState {
                 ocvArray: ocvArray,
                 unreadCount: unreadCount
             )
+            refreshLiveActivityStat()
         }
     }
 
@@ -431,6 +433,30 @@ public final class AppState {
         let counts = (try? await services.dataStore.getTotalUnreadCounts(deviceID: deviceID))
             ?? (contacts: 0, channels: 0, rooms: 0)
         return counts.contacts + counts.channels + counts.rooms
+    }
+
+    /// Refreshes the active configurable stat on the Live Activity based on user preference.
+    func refreshLiveActivityStat() {
+        guard let services = services, let deviceID = currentDeviceID else { return }
+        let preference = liveActivityManager.statPreference
+        
+        Task {
+            switch preference {
+            case .packetsPerMinute:
+                // This is already handled by handlePacketReceived
+                break
+            case .lastHeardRepeater:
+                if let last = try? await services.dataStore.fetchLastHeardRepeater(deviceID: deviceID) {
+                    await liveActivityManager.handleStatChanged(value: last.name, label: "Last Repeater", icon: "antenna.radiowaves.left.and.right")
+                } else {
+                    await liveActivityManager.handleStatChanged(value: "None", label: "Last Repeater", icon: "antenna.radiowaves.left.and.right.slash")
+                }
+            case .totalNodes:
+                if let count = try? await services.dataStore.fetchContactCount(deviceID: deviceID) {
+                    await liveActivityManager.handleStatChanged(value: "\(count)", label: "Total Nodes", icon: "person.2")
+                }
+            }
+        }
     }
 
     // MARK: - Stale Node Cleanup
@@ -455,7 +481,7 @@ public final class AppState {
                 let result = try await connectionManager.removeStaleNodes(olderThanDays: threshold)
                 UserDefaults.standard.set(Date().timeIntervalSinceReferenceDate, forKey: "lastStaleCleanupDate")
                 if result.total > 0 {
-                    logger.info("Stale node cleanup: removed \(result.removed) of \(result.total) nodes older than \(threshold) days")
+                    logger.info("Stale node cleanup: removed \(result.removed) of \(result.total) stale or ghost nodes")
                 } else {
                     logger.debug("Stale node cleanup: no stale nodes found")
                 }
