@@ -182,7 +182,9 @@ public final class ServiceContainer {
             dataStore: dataStore,
             keychainService: keychainService
         )
-        await self.remoteNodeService.setContactService(self.contactService)
+        Task {
+            await self.remoteNodeService.setContactService(self.contactService)
+        }
         self.repeaterAdminService = RepeaterAdminService(
             session: session,
             remoteNodeService: remoteNodeService,
