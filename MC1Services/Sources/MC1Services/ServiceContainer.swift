@@ -156,7 +156,11 @@ public final class ServiceContainer {
         self.settingsService = SettingsService(session: session)
         self.deviceService = DeviceService(dataStore: dataStore)
         self.advertisementService = AdvertisementService(session: session, dataStore: dataStore)
-        await self.advertisementService.setContactService(self.contactService)
+        
+        Task {
+            await self.advertisementService.setContactService(self.contactService)
+        }
+        
         self.messagePollingService = MessagePollingService(session: session, dataStore: dataStore)
         self.binaryProtocolService = BinaryProtocolService(session: session, dataStore: dataStore)
         self.rxLogService = RxLogService(session: session, dataStore: dataStore)

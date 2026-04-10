@@ -196,6 +196,10 @@ public final class AccessorySetupKitService {
         case .migrationComplete:
             logger.info("Migration complete")
 
+        case .accessoryDiscovered:
+            // This event is not used in the current flow as we use the system picker.
+            break
+
         case .unknown:
             // Explicit handling per Apple sample code
             logger.info("Received unknown event type")

@@ -306,6 +306,14 @@ public protocol PersistenceStoreProtocol: Actor {
     /// Clear all debug log entries
     func clearDebugLogEntries() async throws
 
+    // MARK: - Device Operations
+
+    /// Fetch all devices
+    func fetchDevices() async throws -> [DeviceDTO]
+
+    /// Fetch a device by ID
+    func fetchDevice(id: UUID) async throws -> DeviceDTO?
+
     // MARK: - Link Preview Data
 
     /// Fetch link preview data by URL

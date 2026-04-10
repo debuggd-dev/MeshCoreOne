@@ -245,8 +245,6 @@ public actor ContactService {
 
             // Update in local database to indicate it's no longer on the device
             if var contactDTO = try await dataStore.fetchContact(deviceID: deviceID, publicKey: publicKey) {
-                let contactID = contactDTO.id
-
                 // We don't delete messages or the contact itself. Just update the flag.
                 // Re-instantiate the DTO with isOnDevice = false
                 contactDTO = ContactDTO(
