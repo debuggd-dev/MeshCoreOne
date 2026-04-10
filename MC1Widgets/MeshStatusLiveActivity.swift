@@ -100,17 +100,3 @@ struct MeshStatusLiveActivity: Widget {
         }
     }
 }
-? 0 : context.state.packetsPerMinute
-                    Text("\(rate)")
-                        .font(.caption2)
-                        .monospacedDigit()
-                        .contentTransition(.numericText())
-                } else {
-                    Image(systemName: context.state.antennaIconName)
-                        .foregroundStyle(.orange)
-                }
-            }
-            .widgetURL(URL(string: "pocketmesh://status"))
-        }
-    }
-}
