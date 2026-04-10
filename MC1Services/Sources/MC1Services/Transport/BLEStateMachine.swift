@@ -681,7 +681,7 @@ public actor BLEStateMachine: BLEStateMachineProtocol {
         autoReconnectDiscoveryTimeoutTask = Task {
             try? await Task.sleep(for: .seconds(autoReconnectDiscoveryTimeout))
             guard !Task.isCancelled else { return }
-            await handleAutoReconnectDiscoveryTimeout(
+            handleAutoReconnectDiscoveryTimeout(
                 for: peripheral,
                 generation: generation
             )

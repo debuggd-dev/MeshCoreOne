@@ -34,10 +34,10 @@ extension PersistenceStore {
         for msg in messages {
             if let contactID = msg.contactID {
                 conversationIDs.insert(contactID)
-            } else if let channelIndex = msg.channelIndex {
-                let indexToMatch = channelIndex
+            } else if let unwrappedIndex = msg.channelIndex {
+                let targetIndex: UInt8 = unwrappedIndex
                 let channelPredicate = #Predicate<Channel> { ch in
-                    ch.deviceID == targetDeviceID && ch.index == indexToMatch
+                    ch.deviceID == targetDeviceID && ch.index == targetIndex
                 }
                 if let channel = try modelContext.fetch(FetchDescriptor(predicate: channelPredicate)).first {
                     conversationIDs.insert(channel.id)

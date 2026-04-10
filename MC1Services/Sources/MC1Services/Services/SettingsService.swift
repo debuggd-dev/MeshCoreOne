@@ -319,7 +319,7 @@ public actor SettingsService {
         }
     }
 
-    private func setContinuation(_ continuation: AsyncStream<SettingsEvent>.Continuation) {
+    private func setContinuation(_ continuation: AsyncStream<SettingsEvent>.Continuation) async {
         if eventContinuation != nil {
             logger.warning("Replacing existing SettingsService event stream subscriber")
         }
@@ -327,7 +327,7 @@ public actor SettingsService {
         self.eventContinuation = continuation
     }
 
-    private func clearContinuation() {
+    private func clearContinuation() async {
         eventContinuation = nil
     }
 
